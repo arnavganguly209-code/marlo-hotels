@@ -113,19 +113,21 @@ jobs:
             fi
             echo "BUILD_ID=$(cat .next/BUILD_ID)"
 
-            echo "==> Reloading PM2 with production build"
+            echo "==> (Re)starting ONLY the marlo-hotels PM2 app on port 3001"
+            # Recreate just the marlo-hotels process from its dedicated
+            # ecosystem file so PORT=3001 is always applied. This never
+            # references hotel-thamel-park, so that process is untouched.
             if pm2 describe marlo-hotels >/dev/null 2>&1; then
-              pm2 restart marlo-hotels --update-env
-            else
-              pm2 start npm --name marlo-hotels -- start
+              pm2 delete marlo-hotels
             fi
+            pm2 start ecosystem.config.js --update-env
             pm2 save
             pm2 status marlo-hotels
 
-            echo "==> Smoke check local Next.js"
+            echo "==> Smoke check Marlo on port 3001"
             sleep 3
-            curl -fsS -o /dev/null -w "local_status=%{http_code}\n" http://127.0.0.1:3000/ || {
-              echo "FATAL: local Next.js did not return HTTP 200 after PM2 restart"
+            curl -fsS -o /dev/null -w "marlo_local_status=%{http_code}\n" http://127.0.0.1:3001/ || {
+              echo "FATAL: Marlo did not return HTTP 200 on 127.0.0.1:3001 after PM2 restart"
               pm2 logs marlo-hotels --lines 40 --nostream || true
               exit 1
             }

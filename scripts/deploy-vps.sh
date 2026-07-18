@@ -34,12 +34,25 @@ echo "==> Seeding media placements (idempotent)"
 node --env-file=.env scripts/seed-media.mjs || echo "WARN: media seed skipped (non-fatal if already seeded)"
 
 echo "==> Building Next.js"
+rm -rf .next
 npm run build
+test -f .next/BUILD_ID || { echo "FATAL: .next/BUILD_ID missing after build"; exit 1; }
 
-echo "==> Reloading PM2"
-pm2 reload marlo-hotels --update-env || pm2 start npm --name marlo-hotels -- start
+echo "==> (Re)starting ONLY the marlo-hotels PM2 app on port 3001"
+# Marlo must always bind 3001 (Hotel Thamel Park owns 3000). Recreate just
+# the marlo-hotels process from its dedicated ecosystem file. This never
+# references hotel-thamel-park, so that process stays untouched.
+if pm2 describe marlo-hotels >/dev/null 2>&1; then
+  pm2 delete marlo-hotels
+fi
+pm2 start ecosystem.config.js --update-env
 pm2 save
 pm2 status marlo-hotels
+
+echo "==> Smoke check Marlo on port 3001"
+sleep 3
+curl -fsS -o /dev/null -w "marlo_local_status=%{http_code}\n" http://127.0.0.1:3001/ \
+  || { echo "FATAL: Marlo not answering on 127.0.0.1:3001"; pm2 logs marlo-hotels --lines 40 --nostream || true; exit 1; }
 
 cat <<'NGINX'
 
@@ -54,7 +67,7 @@ location /media/ {
 }
 
 location @next_media {
-    proxy_pass http://127.0.0.1:3000;
+    proxy_pass http://127.0.0.1:3001;   # Marlo listens on 3001 (Thamel = 3000)
     proxy_http_version 1.1;
     proxy_set_header Host $host;
 }
