@@ -15,94 +15,178 @@ import {
 import Link from "next/link";
 import { MetricCard } from "@/components/orbit/metric-card";
 import { getDb } from "@/lib/db";
+import { orbitLog } from "@/lib/orbit/logger";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function OrbitDashboardPage() {
+type DashboardData = {
+  revenueValue: number;
+  previousRevenueValue: number;
+  visitorValue: number;
+  previousVisitorValue: number;
+  occupancy: number;
+  recentBookings: Array<{
+    id: string;
+    guestName: string;
+    reference: string;
+    checkIn: Date;
+    totalAmount: { toString(): string } | null;
+    status: string;
+    room: { name: string };
+  }>;
+  recentMessages: Array<{
+    name: string;
+    subject: string;
+    createdAt: Date;
+  }>;
+  recentSubscribers: Array<{
+    email: string;
+    createdAt: Date;
+  }>;
+  recentReviews: Array<{
+    guestName: string;
+    rating: number;
+    body: string;
+    createdAt: Date;
+  }>;
+  recentPosts: Array<{
+    title: string;
+    published: boolean;
+    updatedAt: Date;
+  }>;
+};
+
+async function loadDashboardData(): Promise<DashboardData | null> {
   const db = getDb();
-  if (!db) {
-    return (
-      <div className="p-6 sm:p-10">
-        <div className="orbit-panel mx-auto max-w-2xl rounded-2xl p-10 text-center">
-          <h2 className="font-display text-3xl font-semibold text-[#10251e]">
-            Database configuration required
-          </h2>
-          <p className="mt-3 text-sm leading-relaxed text-[#62716b]">
-            Set <code>DATABASE_URL</code>, apply the Prisma schema, then sign in
-            again. Orbit never presents fabricated dashboard values.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (!db) return null;
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-  const [
-    revenue,
-    previousRevenue,
-    visitors,
-    previousVisitors,
-    totalRooms,
-    occupiedRooms,
-    recentBookings,
-    recentMessages,
-    recentSubscribers,
-    recentReviews,
-    recentPosts,
-  ] = await Promise.all([
-    db.booking.aggregate({
-      where: { paymentStatus: "PAID", createdAt: { gte: monthStart } },
-      _sum: { totalAmount: true },
-    }),
-    db.booking.aggregate({
-      where: {
-        paymentStatus: "PAID",
-        createdAt: { gte: previousMonthStart, lt: monthStart },
-      },
-      _sum: { totalAmount: true },
-    }),
-    db.websiteMetric.aggregate({
-      where: { date: { gte: monthStart } },
-      _sum: { visitors: true },
-    }),
-    db.websiteMetric.aggregate({
-      where: { date: { gte: previousMonthStart, lt: monthStart } },
-      _sum: { visitors: true },
-    }),
-    db.room.count({ where: { published: true } }),
-    db.booking.aggregate({
-      where: {
-        status: "CONFIRMED",
-        checkIn: { lte: now },
-        checkOut: { gt: now },
-      },
-      _sum: { rooms: true },
-    }),
-    db.booking.findMany({
-      take: 6,
-      orderBy: { createdAt: "desc" },
-      include: { room: { select: { name: true } } },
-    }),
-    db.contactMessage.findMany({ take: 5, orderBy: { createdAt: "desc" } }),
-    db.newsletterSubscriber.findMany({
-      take: 5,
-      orderBy: { createdAt: "desc" },
-    }),
-    db.review.findMany({ take: 5, orderBy: { createdAt: "desc" } }),
-    db.post.findMany({ take: 5, orderBy: { updatedAt: "desc" } }),
-  ]);
+  try {
+    const [
+      revenue,
+      previousRevenue,
+      visitors,
+      previousVisitors,
+      totalRooms,
+      occupiedRooms,
+      recentBookings,
+      recentMessages,
+      recentSubscribers,
+      recentReviews,
+      recentPosts,
+    ] = await Promise.all([
+      db.booking.aggregate({
+        where: { paymentStatus: "PAID", createdAt: { gte: monthStart } },
+        _sum: { totalAmount: true },
+      }),
+      db.booking.aggregate({
+        where: {
+          paymentStatus: "PAID",
+          createdAt: { gte: previousMonthStart, lt: monthStart },
+        },
+        _sum: { totalAmount: true },
+      }),
+      db.websiteMetric.aggregate({
+        where: { date: { gte: monthStart } },
+        _sum: { visitors: true },
+      }),
+      db.websiteMetric.aggregate({
+        where: { date: { gte: previousMonthStart, lt: monthStart } },
+        _sum: { visitors: true },
+      }),
+      db.room.count({ where: { published: true } }),
+      db.booking.aggregate({
+        where: {
+          status: "CONFIRMED",
+          checkIn: { lte: now },
+          checkOut: { gt: now },
+        },
+        _sum: { rooms: true },
+      }),
+      db.booking.findMany({
+        take: 6,
+        orderBy: { createdAt: "desc" },
+        include: { room: { select: { name: true } } },
+      }),
+      db.contactMessage.findMany({ take: 5, orderBy: { createdAt: "desc" } }),
+      db.newsletterSubscriber.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+      }),
+      db.review.findMany({ take: 5, orderBy: { createdAt: "desc" } }),
+      db.post.findMany({ take: 5, orderBy: { updatedAt: "desc" } }),
+    ]);
 
-  const revenueValue = Number(revenue._sum.totalAmount ?? 0);
-  const previousRevenueValue = Number(previousRevenue._sum.totalAmount ?? 0);
-  const visitorValue = visitors._sum.visitors ?? 0;
-  const previousVisitorValue = previousVisitors._sum.visitors ?? 0;
-  const occupancy = totalRooms
-    ? Math.round(((occupiedRooms._sum.rooms ?? 0) / totalRooms) * 100)
-    : 0;
+    const revenueValue = Number(revenue._sum.totalAmount ?? 0);
+    const previousRevenueValue = Number(previousRevenue._sum.totalAmount ?? 0);
+    const visitorValue = visitors._sum.visitors ?? 0;
+    const previousVisitorValue = previousVisitors._sum.visitors ?? 0;
+    const occupancy = totalRooms
+      ? Math.round(((occupiedRooms._sum.rooms ?? 0) / totalRooms) * 100)
+      : 0;
+
+    return {
+      revenueValue,
+      previousRevenueValue,
+      visitorValue,
+      previousVisitorValue,
+      occupancy,
+      recentBookings,
+      recentMessages,
+      recentSubscribers,
+      recentReviews,
+      recentPosts,
+    };
+  } catch (error) {
+    orbitLog("error", "Orbit dashboard data query failed", error);
+    return null;
+  }
+}
+
+function DatabaseNotice({
+  title,
+  body,
+}: {
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="p-6 sm:p-10">
+      <div className="orbit-panel mx-auto max-w-2xl rounded-2xl p-10 text-center">
+        <h2 className="font-display text-3xl font-semibold text-[#10251e]">
+          {title}
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-[#62716b]">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+export default async function OrbitDashboardPage() {
+  const data = await loadDashboardData();
+  if (!data) {
+    const hasDatabase = Boolean(process.env.DATABASE_URL?.trim());
+    return (
+      <DatabaseNotice
+        title={
+          hasDatabase
+            ? "Dashboard data temporarily unavailable"
+            : "Database configuration required"
+        }
+        body={
+          hasDatabase
+            ? "Orbit authenticated successfully, but the database could not be queried. Confirm PostgreSQL is running, DATABASE_URL is correct in the PM2 environment, and Prisma migrations have been applied (npx prisma db push)."
+            : "Set DATABASE_URL, apply the Prisma schema, then reload Orbit. Authentication works without a database; CMS metrics require PostgreSQL."
+        }
+      />
+    );
+  }
+
+  const now = new Date();
   const percentageChange = (current: number, previous: number) =>
     previous ? Math.round(((current - previous) / previous) * 100) : 0;
 
@@ -112,6 +196,19 @@ export default async function OrbitDashboardPage() {
     { label: "Upload media", href: "/orbit/media-library?upload=1", Icon: ImagePlus },
     { label: "Edit homepage", href: "/orbit/homepage", Icon: Edit3 },
   ];
+
+  const {
+    revenueValue,
+    previousRevenueValue,
+    visitorValue,
+    previousVisitorValue,
+    occupancy,
+    recentBookings,
+    recentMessages,
+    recentSubscribers,
+    recentReviews,
+    recentPosts,
+  } = data;
 
   return (
     <div className="p-5 sm:p-8 lg:p-10">

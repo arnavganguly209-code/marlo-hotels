@@ -64,16 +64,21 @@ component.
 
 Orbit is the isolated enterprise administration system at `/orbit`.
 
-1. Configure `DATABASE_URL`, `ORBIT_ADMIN_PASSKEY` and a random
-   `ORBIT_SESSION_SECRET` in the server `.env`.
-2. Apply the committed Prisma migration with `npm run db:migrate`.
+1. Set `ORBIT_ADMIN_PASSKEY`, a random `ORBIT_SESSION_SECRET`, and
+   `NEXT_PUBLIC_SITE_URL=https://…` in the **PM2 runtime** `.env`
+   (not only in the build machine).
+2. Optionally set `DATABASE_URL` and run `npm run db:push` (or
+   `npm run db:migrate`) for CMS metrics, content, and media.
 3. Open `/orbit` and enter the server-configured passkey.
 
-Authentication is validated only on the server. Orbit uses opaque,
-database-backed HttpOnly cookies, strict same-site policy, a 30-minute
-inactivity timeout, an eight-hour absolute expiry, persistent login
-throttling and an audit trail. No credential or session token is stored in
-browser storage.
+Login works with only the Orbit env vars. PostgreSQL is required for CMS
+data after sign-in, not for authentication itself.
+
+Authentication is validated only on the server. Orbit uses signed
+HttpOnly cookies (`SameSite=Lax`, `Secure` on HTTPS), a 30-minute
+inactivity timeout, an eight-hour absolute expiry, login throttling and
+an optional audit trail. No credential is stored in browser storage.
+Production errors are prefixed with `[orbit]` in PM2 logs.
 
 Uploaded media is validated, compressed and converted to WebP by Sharp.
 Files are written below `public/uploads` by default and metadata is held in

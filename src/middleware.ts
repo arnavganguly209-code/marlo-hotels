@@ -3,24 +3,40 @@ import { NextResponse, type NextRequest } from "next/server";
 const ORBIT_COOKIE = "marlo_orbit_session";
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isProtectedPage = pathname.startsWith("/orbit/");
-  const isProtectedApi =
-    pathname.startsWith("/api/orbit/") &&
-    !pathname.startsWith("/api/orbit/auth/");
+  try {
+    const { pathname } = request.nextUrl;
 
-  if ((isProtectedPage || isProtectedApi) && !request.cookies.has(ORBIT_COOKIE)) {
-    if (isProtectedApi) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Exact /orbit login page must remain publicly reachable.
+    if (pathname === "/orbit" || pathname === "/orbit/") {
+      return NextResponse.next();
     }
-    const login = new URL("/orbit", request.url);
-    login.searchParams.set("next", pathname);
-    return NextResponse.redirect(login);
-  }
 
-  return NextResponse.next();
+    const isProtectedPage = pathname.startsWith("/orbit/");
+    const isProtectedApi =
+      pathname.startsWith("/api/orbit/") &&
+      !pathname.startsWith("/api/orbit/auth/");
+
+    if (
+      (isProtectedPage || isProtectedApi) &&
+      !request.cookies.has(ORBIT_COOKIE)
+    ) {
+      if (isProtectedApi) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      const login = request.nextUrl.clone();
+      login.pathname = "/orbit";
+      login.search = "";
+      login.searchParams.set("next", pathname);
+      return NextResponse.redirect(login);
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    console.error("[orbit] middleware failure", error);
+    return NextResponse.next();
+  }
 }
 
 export const config = {
-  matcher: ["/orbit/:path*", "/api/orbit/:path*"],
+  matcher: ["/orbit", "/orbit/:path*", "/api/orbit/:path*"],
 };

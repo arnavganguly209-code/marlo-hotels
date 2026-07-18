@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { OrbitLoginForm } from "@/components/orbit/login-form";
 import { getOrbitSession } from "@/lib/orbit/auth";
+import { isNextNavigationError } from "@/lib/orbit/logger";
 import { getBrandSettings } from "@/lib/site-settings";
+
+export const dynamic = "force-dynamic";
 
 const particles = [
   ["8%", "18%", "0s", "5px"],
@@ -19,8 +22,17 @@ const particles = [
 ] as const;
 
 export default async function OrbitLoginPage() {
-  if (await getOrbitSession()) redirect("/orbit/dashboard");
-  const brand = await getBrandSettings();
+  try {
+    if (await getOrbitSession()) redirect("/orbit/dashboard");
+  } catch (error) {
+    if (isNextNavigationError(error)) throw error;
+  }
+
+  const brand = await getBrandSettings().catch(() => ({
+    logoUrl: "/images/brand/logo.png",
+    footerLogoUrl: "/images/brand/logo.png",
+    faviconUrl: "/images/brand/logo.png",
+  }));
 
   return (
     <section className="orbit-login-bg relative grid min-h-svh place-items-center overflow-hidden px-5 py-12">

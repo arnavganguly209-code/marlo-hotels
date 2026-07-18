@@ -6,6 +6,7 @@ import {
 } from "@/components/orbit/operational-manager";
 import { PasskeySettings } from "@/components/orbit/passkey-settings";
 import { getDb } from "@/lib/db";
+import { isNextNavigationError, orbitLog } from "@/lib/orbit/logger";
 import { moduleBySlug } from "@/lib/orbit/modules";
 import { formatCurrency } from "@/lib/utils";
 
@@ -13,7 +14,39 @@ export const dynamic = "force-dynamic";
 
 type PageProps = { params: Promise<{ module: string }> };
 
+function ModuleUnavailable({ label }: { label: string }) {
+  return (
+    <div className="p-6 sm:p-10">
+      <div className="orbit-panel mx-auto max-w-2xl rounded-2xl p-10 text-center">
+        <h2 className="font-display text-3xl font-semibold text-[#10251e]">
+          {label} temporarily unavailable
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-[#62716b]">
+          Orbit could not load this module from the database. Confirm
+          PostgreSQL, DATABASE_URL, and Prisma migrations, then reload. Details
+          are written to the PM2 server logs.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default async function OrbitModulePage({ params }: PageProps) {
+  try {
+    return await renderOrbitModulePage({ params });
+  } catch (error) {
+    if (isNextNavigationError(error)) throw error;
+    const { module: slug } = await params;
+    orbitLog("error", `Orbit module page failed (${slug})`, error);
+    return (
+      <ModuleUnavailable
+        label={moduleBySlug.get(slug)?.label ?? "Module"}
+      />
+    );
+  }
+}
+
+async function renderOrbitModulePage({ params }: PageProps) {
   const { module: slug } = await params;
   const moduleConfig = moduleBySlug.get(slug);
   if (!moduleConfig) notFound();
