@@ -4,7 +4,13 @@ import Link from "next/link";
 import type { Post } from "@/types/content";
 import { formatDate } from "@/lib/utils";
 
-export function PostCard({ post }: { post: Post }) {
+export function PostCard({
+  post,
+  actionLabel = "Read Article",
+}: {
+  post: Post;
+  actionLabel?: string;
+}) {
   return (
     <article className="group relative flex h-full flex-col">
       <div className="img-hover-frame shadow-luxury-sm relative aspect-[16/10] overflow-hidden rounded-xl">
@@ -13,6 +19,8 @@ export function PostCard({ post }: { post: Post }) {
           alt={post.image.alt}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          quality={100}
+          unoptimized={post.image.src.startsWith("/media/")}
           className="object-cover"
         />
         <span className="glass-dark absolute top-4 left-4 rounded-full px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase">
@@ -43,7 +51,7 @@ export function PostCard({ post }: { post: Post }) {
           {post.excerpt}
         </p>
         <span className="mt-5 inline-flex items-center gap-2 text-[10px] font-medium tracking-[0.3em] text-gold-600 uppercase">
-          Read Article
+          {actionLabel}
           <ArrowRight className="size-3.5 transition-transform duration-500 group-hover:translate-x-1.5" />
         </span>
       </div>

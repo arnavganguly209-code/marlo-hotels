@@ -12,27 +12,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BookingWidget } from "@/components/home/booking-widget";
-import { siteConfig } from "@/lib/site";
+import type { HeroEditorContent } from "@/lib/homepage-content";
 
-export type HeroContent = {
-  heading?: string;
-  subheading?: string;
-  buttonText?: string;
-  buttonLink?: string;
-  imageUrl?: string;
-  imageAlt?: string;
-  backgroundOverlay?: string;
-  bookingWidget?: boolean;
-  mediaType?: "IMAGE" | "VIDEO";
-  focalX?: number;
-  focalY?: number;
-  videoAutoplay?: boolean;
-  videoLoop?: boolean;
-  videoMuted?: boolean;
-  posterUrl?: string | null;
-};
-
-export function Hero({ content }: { content?: HeroContent }) {
+export function Hero({ content }: { content: HeroEditorContent }) {
   const reduceMotion = useReducedMotion();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -40,27 +22,40 @@ export function Hero({ content }: { content?: HeroContent }) {
   const springY = useSpring(mouseY, { stiffness: 40, damping: 20 });
   const imageX = useTransform(springX, [-0.5, 0.5], [14, -14]);
   const imageY = useTransform(springY, [-0.5, 0.5], [10, -10]);
-  const headingWords = (content?.heading || "Stay Beyond Extraordinary").split(
-    /\s+/
-  );
-  const accentWord = headingWords.at(-1) ?? "Extraordinary";
-  const leadWords = headingWords.slice(0, -1);
-  const focalX = content?.focalX ?? 50;
-  const focalY = content?.focalY ?? 45;
+
+  const highlighted = content.highlightedText?.trim();
+  let leadWords: string[];
+  let accentWord: string;
+  if (highlighted && content.heading.includes(highlighted)) {
+    const idx = content.heading.indexOf(highlighted);
+    leadWords = content.heading
+      .slice(0, idx)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    accentWord = highlighted;
+  } else {
+    const headingWords = content.heading.split(/\s+/).filter(Boolean);
+    accentWord = headingWords.at(-1) ?? "";
+    leadWords = headingWords.slice(0, -1);
+  }
+
+  const focalX = content.image.focalX ?? 50;
+  const focalY = content.image.focalY ?? 45;
   const objectPosition = `${focalX}% ${focalY}%`;
-  const heroImage = {
-    src: content?.imageUrl || "/images/brand/hero-reception.png",
-    alt:
-      content?.imageAlt ||
-      "Marlo Hotels lobby and reception — Hotel Marlo",
-  };
-  const isVideo = content?.mediaType === "VIDEO";
+  const isVideo = content.mediaType === "VIDEO";
+  const mediaSrc = isVideo
+    ? content.videoUrl || content.image.src
+    : content.image.src;
+  const description = content.subheading || content.description;
   const overlayOpacity =
-    content?.backgroundOverlay === "Light"
+    content.overlay === "Light"
       ? "from-charcoal-950/55"
-      : content?.backgroundOverlay === "Dark"
+      : content.overlay === "Dark"
         ? "from-charcoal-950/90"
         : "from-charcoal-950/80";
+
+  if (!content.enabled) return null;
 
   function onMouseMove(event: React.MouseEvent<HTMLElement>) {
     if (reduceMotion) return;
@@ -83,25 +78,26 @@ export function Hero({ content }: { content?: HeroContent }) {
           <video
             className="absolute inset-0 h-full w-full object-cover"
             style={{ objectPosition }}
-            autoPlay={content?.videoAutoplay !== false}
-            loop={content?.videoLoop !== false}
-            muted={content?.videoMuted !== false}
+            autoPlay={content.videoAutoplay !== false}
+            loop={content.videoLoop !== false}
+            muted={content.videoMuted !== false}
             playsInline
-            poster={content?.posterUrl || undefined}
+            poster={content.poster?.src || undefined}
             preload="metadata"
           >
-            <source src={heroImage.src} />
+            <source src={mediaSrc} />
           </video>
         ) : (
           <Image
-            src={heroImage.src}
-            alt={heroImage.alt}
+            src={mediaSrc}
+            alt={content.image.alt}
             fill
             priority
             quality={100}
             sizes="100vw"
             className="animate-kenburns object-cover"
             style={{ objectPosition }}
+            unoptimized={mediaSrc.startsWith("/media/")}
           />
         )}
       </motion.div>
@@ -118,14 +114,14 @@ export function Hero({ content }: { content?: HeroContent }) {
             transition={{ duration: 1, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="eyebrow"
           >
-            Experience Timeless Elegance
+            {content.eyebrow}
           </motion.p>
 
           <h1 className="font-display mt-6 text-6xl leading-[1.02] font-medium text-ivory md:text-7xl lg:text-[5.6rem]">
             <span className="flex flex-wrap gap-x-5 overflow-hidden">
               {leadWords.map((word, index) => (
                 <motion.span
-                  key={word}
+                  key={`${word}-${index}`}
                   initial={{ y: "110%" }}
                   animate={{ y: 0 }}
                   transition={{
@@ -172,7 +168,7 @@ export function Hero({ content }: { content?: HeroContent }) {
             transition={{ duration: 1, delay: 1.25, ease: [0.22, 1, 0.36, 1] }}
             className="mt-8 max-w-md text-[15px] leading-relaxed font-light tracking-wide text-cream-200/85"
           >
-            {content?.subheading || siteConfig.description}
+            {description}
           </motion.p>
 
           <motion.div
@@ -182,8 +178,8 @@ export function Hero({ content }: { content?: HeroContent }) {
             className="mt-10 flex flex-wrap items-center gap-5"
           >
             <Button asChild variant="outline" size="lg">
-              <Link href={content?.buttonLink || "/rooms"}>
-                {content?.buttonText || "Discover More"}
+              <Link href={content.buttonLink || "/rooms"}>
+                {content.buttonText || "Discover More"}
                 <ArrowRight />
               </Link>
             </Button>
@@ -199,21 +195,21 @@ export function Hero({ content }: { content?: HeroContent }) {
         className="absolute right-8 bottom-44 hidden flex-col items-center gap-3 lg:flex"
       >
         <span className="text-[9px] tracking-[0.4em] text-cream-200/60 uppercase [writing-mode:vertical-lr]">
-          Scroll
+          {content.scrollLabel}
         </span>
         <span className="flex h-10 w-6 items-start justify-center rounded-full border border-cream-200/30 pt-1.5">
           <span className="animate-scroll-dot block size-1.5 rounded-full bg-gold-400" />
         </span>
       </motion.div>
 
-      {content?.bookingWidget !== false ? (
+      {content.bookingWidget !== false ? (
         <motion.div
           initial={{ opacity: 0, y: 60 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.1, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
           className="relative mx-auto w-full max-w-7xl px-5 pb-8 md:px-8"
         >
-          <BookingWidget />
+          <BookingWidget content={content.booking} />
         </motion.div>
       ) : null}
     </section>

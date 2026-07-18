@@ -4,34 +4,48 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { testimonials } from "@/content/gallery";
+import type { CollectionSection } from "@/lib/homepage-content";
+import type { Testimonial } from "@/types/content";
 import { cn } from "@/lib/utils";
 
-const AUTOPLAY_MS = 7000;
-
-export function TestimonialsSection() {
+export function TestimonialsSection({
+  content,
+}: {
+  content: CollectionSection<Testimonial> & { autoplayMs: number };
+}) {
+  const items = content.items;
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
 
-  const go = useCallback((next: number, dir: number) => {
-    setDirection(dir);
-    setIndex((next + testimonials.length) % testimonials.length);
-  }, []);
+  const go = useCallback(
+    (next: number, dir: number) => {
+      if (!items.length) return;
+      setDirection(dir);
+      setIndex((next + items.length) % items.length);
+    },
+    [items.length]
+  );
 
   useEffect(() => {
-    const timer = setInterval(() => go(index + 1, 1), AUTOPLAY_MS);
+    if (!items.length) return;
+    const timer = setInterval(
+      () => go(index + 1, 1),
+      content.autoplayMs || 7000
+    );
     return () => clearInterval(timer);
-  }, [index, go]);
+  }, [index, go, items.length, content.autoplayMs]);
 
-  const current = testimonials[index];
+  if (!content.enabled || !items.length) return null;
+
+  const current = items[index] ?? items[0];
 
   return (
     <section className="bg-forest-950 py-24 md:py-36">
       <div className="mx-auto max-w-4xl px-5 text-center md:px-8">
         <SectionHeading
           tone="light"
-          eyebrow="Guest Reviews"
-          title="In our guests' words"
+          eyebrow={content.eyebrow}
+          title={content.heading}
         />
 
         <div className="relative mt-14 min-h-72" aria-live="polite">
@@ -80,7 +94,7 @@ export function TestimonialsSection() {
             <ChevronLeft className="size-4" />
           </button>
           <div className="flex gap-2.5">
-            {testimonials.map((testimonial, dotIndex) => (
+            {items.map((testimonial, dotIndex) => (
               <button
                 key={testimonial.name}
                 type="button"

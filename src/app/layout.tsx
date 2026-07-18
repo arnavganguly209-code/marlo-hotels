@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Jost } from "next/font/google";
 import { headers } from "next/headers";
 import { SiteShell } from "@/components/layout/site-shell";
 import { JsonLd } from "@/components/shared/json-ld";
+import { getHomepageContent } from "@/lib/homepage-content";
 import { hotelJsonLd } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 import { getBrandSettings } from "@/lib/site-settings";
@@ -112,8 +113,12 @@ export default async function RootLayout({
     footerLogoUrl: "/images/brand/logo.png",
     faviconUrl: "/images/brand/logo.png",
   };
+  let homepage: Awaited<ReturnType<typeof getHomepageContent>> | null = null;
   try {
-    brand = await getBrandSettings();
+    [brand, homepage] = await Promise.all([
+      getBrandSettings(),
+      getHomepageContent(),
+    ]);
   } catch {
     // Keep the public shell rendering even if brand settings fail.
   }
@@ -123,8 +128,11 @@ export default async function RootLayout({
       <body className="antialiased">
         <JsonLd data={hotelJsonLd()} />
         <SiteShell
-          logoUrl={brand.logoUrl}
+          logoUrl={homepage?.hero.logo.src || brand.logoUrl}
           footerLogoUrl={brand.footerLogoUrl}
+          footerContent={homepage?.footer}
+          footerCtaContent={homepage?.footerCta}
+          logoDisplay={homepage?.hero}
         >
           {children}
         </SiteShell>

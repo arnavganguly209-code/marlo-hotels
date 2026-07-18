@@ -3,15 +3,34 @@
 import { usePathname } from "next/navigation";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import type {
+  FooterCtaEditorContent,
+  FooterEditorContent,
+  HeroEditorContent,
+} from "@/lib/homepage-content";
 
 export function SiteShell({
   children,
   logoUrl,
   footerLogoUrl,
+  footerContent,
+  footerCtaContent,
+  logoDisplay,
 }: {
   children: React.ReactNode;
   logoUrl?: string;
   footerLogoUrl?: string;
+  footerContent?: FooterEditorContent;
+  footerCtaContent?: FooterCtaEditorContent;
+  logoDisplay?: Pick<
+    HeroEditorContent,
+    | "logoDesktopWidth"
+    | "logoTabletWidth"
+    | "logoMobileWidth"
+    | "logoLeftMargin"
+    | "logoTopMargin"
+    | "logoOpacity"
+  >;
 }) {
   const pathname = usePathname() ?? "";
   const isOrbit = pathname.startsWith("/orbit");
@@ -26,9 +45,27 @@ export function SiteShell({
       >
         Skip to main content
       </a>
-      <Header logoUrl={logoUrl} />
+      <Header
+        logoUrl={logoUrl}
+        logoDisplay={
+          logoDisplay
+            ? {
+                desktopWidth: logoDisplay.logoDesktopWidth,
+                tabletWidth: logoDisplay.logoTabletWidth,
+                mobileWidth: logoDisplay.logoMobileWidth,
+                leftMargin: logoDisplay.logoLeftMargin,
+                topMargin: logoDisplay.logoTopMargin,
+                opacity: logoDisplay.logoOpacity,
+              }
+            : undefined
+        }
+      />
       <main id="main-content">{children}</main>
-      <Footer logoUrl={footerLogoUrl ?? logoUrl} />
+      <Footer
+        logoUrl={footerLogoUrl ?? logoUrl}
+        content={footerContent}
+        ctaContent={footerCtaContent}
+      />
     </>
   );
 }

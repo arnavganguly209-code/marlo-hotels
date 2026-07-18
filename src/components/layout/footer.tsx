@@ -8,45 +8,87 @@ import {
   XIcon,
   YoutubeIcon,
 } from "@/components/shared/social-icons";
+import type {
+  FooterCtaEditorContent,
+  FooterEditorContent,
+} from "@/lib/homepage-content";
 import { footerNav, siteConfig } from "@/lib/site";
 
-const socials = [
-  { label: "Instagram", href: siteConfig.social.instagram, Icon: InstagramIcon },
-  { label: "Facebook", href: siteConfig.social.facebook, Icon: FacebookIcon },
-  { label: "X (Twitter)", href: siteConfig.social.twitter, Icon: XIcon },
-  { label: "YouTube", href: siteConfig.social.youtube, Icon: YoutubeIcon },
-];
+const socialIcons = {
+  Instagram: InstagramIcon,
+  Facebook: FacebookIcon,
+  "X (Twitter)": XIcon,
+  YouTube: YoutubeIcon,
+};
 
-export function Footer({ logoUrl }: { logoUrl?: string }) {
+export function Footer({
+  logoUrl,
+  content,
+  ctaContent,
+}: {
+  logoUrl?: string;
+  content?: FooterEditorContent;
+  ctaContent?: FooterCtaEditorContent;
+}) {
+  if (content && !content.enabled) return null;
+
+  const newsletterEyebrow = ctaContent?.eyebrow ?? "The Marlo Letter";
+  const newsletterHeading =
+    ctaContent?.heading ?? "Stories & private offers, occasionally";
+  const newsletterDescription =
+    ctaContent?.description ??
+    "A considered letter from the valley — new seasons, quiet openings and offers reserved for subscribers.";
+  const description =
+    content?.description ??
+    "A five-star sanctuary in the heart of Kathmandu — timeless elegance, celebrated dining and Himalayan hospitality.";
+  const hotelHeading = content?.hotelHeading ?? "The Hotel";
+  const discoverHeading = content?.discoverHeading ?? "Discover";
+  const findUsHeading = content?.findUsHeading ?? "Find Us";
+  const address = content?.address ?? siteConfig.contact.address;
+  const phone = content?.phone ?? siteConfig.contact.phone;
+  const email = content?.email ?? siteConfig.contact.email;
+  const checkIn = content?.checkIn ?? siteConfig.hours.checkIn;
+  const checkOut = content?.checkOut ?? siteConfig.hours.checkOut;
+  const resolvedLogoUrl = content?.logo.src || logoUrl;
+  const hotelLinks = content?.hotelLinks ?? footerNav.hotel;
+  const discoverLinks = content?.discoverLinks ?? footerNav.discover;
+  const socialLinks = content?.socialLinks ?? [
+    { label: "Instagram", href: siteConfig.social.instagram },
+    { label: "Facebook", href: siteConfig.social.facebook },
+    { label: "X (Twitter)", href: siteConfig.social.twitter },
+    { label: "YouTube", href: siteConfig.social.youtube },
+  ];
+
   return (
     <footer className="bg-forest-950 text-cream-200">
       {/* Newsletter band */}
-      <div className="border-b border-ivory/10">
+      {ctaContent?.enabled !== false ? <div className="border-b border-ivory/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 px-5 py-16 md:flex-row md:justify-between md:px-8">
           <div className="max-w-md text-center md:text-left">
-            <p className="eyebrow">The Marlo Letter</p>
+            <p className="eyebrow">{newsletterEyebrow}</p>
             <h2 className="font-display mt-3 text-3xl font-medium text-ivory">
-              Stories & private offers, occasionally
+              {newsletterHeading}
             </h2>
             <p className="mt-3 text-sm font-light text-cream-200/70">
-              A considered letter from the valley — new seasons, quiet
-              openings and offers reserved for subscribers.
+              {newsletterDescription}
             </p>
           </div>
           <NewsletterForm />
         </div>
-      </div>
+      </div> : null}
 
       {/* Main columns */}
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 md:grid-cols-2 md:px-8 lg:grid-cols-4">
         <div>
-          <Logo tone="light" src={logoUrl} />
+          <Logo tone="light" src={resolvedLogoUrl} />
           <p className="mt-6 max-w-xs text-sm leading-relaxed font-light text-cream-200/70">
-            A five-star sanctuary in the heart of Kathmandu — timeless
-            elegance, celebrated dining and Himalayan hospitality.
+            {description}
           </p>
           <div className="mt-6 flex gap-3">
-            {socials.map(({ label, href, Icon }) => (
+            {socialLinks.map(({ label, href }) => {
+              const Icon =
+                socialIcons[label as keyof typeof socialIcons] ?? InstagramIcon;
+              return (
               <a
                 key={label}
                 href={href}
@@ -57,14 +99,15 @@ export function Footer({ logoUrl }: { logoUrl?: string }) {
               >
                 <Icon className="size-4" />
               </a>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         <nav aria-label="Hotel">
-          <p className="eyebrow">The Hotel</p>
+          <p className="eyebrow">{hotelHeading}</p>
           <ul className="mt-5 space-y-3">
-            {footerNav.hotel.map((link) => (
+            {hotelLinks.map((link) => (
               <li key={link.label}>
                 <Link
                   href={link.href}
@@ -78,9 +121,9 @@ export function Footer({ logoUrl }: { logoUrl?: string }) {
         </nav>
 
         <nav aria-label="Discover">
-          <p className="eyebrow">Discover</p>
+          <p className="eyebrow">{discoverHeading}</p>
           <ul className="mt-5 space-y-3">
-            {footerNav.discover.map((link) => (
+            {discoverLinks.map((link) => (
               <li key={link.label}>
                 <Link
                   href={link.href}
@@ -94,35 +137,31 @@ export function Footer({ logoUrl }: { logoUrl?: string }) {
         </nav>
 
         <div>
-          <p className="eyebrow">Find Us</p>
+          <p className="eyebrow">{findUsHeading}</p>
           <ul className="mt-5 space-y-4 text-sm font-light text-cream-200/75">
             <li className="flex gap-3">
               <MapPin className="mt-0.5 size-4 shrink-0 text-gold-500" />
-              <span>{siteConfig.contact.address}</span>
+              <span>{address}</span>
             </li>
             <li className="flex gap-3">
               <Phone className="mt-0.5 size-4 shrink-0 text-gold-500" />
               <a
-                href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
+                href={`tel:${phone.replace(/\s/g, "")}`}
                 className="hover:text-gold-300"
               >
-                {siteConfig.contact.phone}
+                {phone}
               </a>
             </li>
             <li className="flex gap-3">
               <Mail className="mt-0.5 size-4 shrink-0 text-gold-500" />
-              <a
-                href={`mailto:${siteConfig.contact.email}`}
-                className="hover:text-gold-300"
-              >
-                {siteConfig.contact.email}
+              <a href={`mailto:${email}`} className="hover:text-gold-300">
+                {email}
               </a>
             </li>
             <li className="flex gap-3">
               <Clock className="mt-0.5 size-4 shrink-0 text-gold-500" />
               <span>
-                Check-in {siteConfig.hours.checkIn} · Check-out{" "}
-                {siteConfig.hours.checkOut}
+                Check-in {checkIn} · Check-out {checkOut}
               </span>
             </li>
           </ul>
@@ -132,18 +171,19 @@ export function Footer({ logoUrl }: { logoUrl?: string }) {
       <div className="border-t border-ivory/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 text-xs font-light tracking-wider text-cream-200/50 md:flex-row md:px-8">
           <p>
-            © {new Date().getFullYear()} {siteConfig.legalName} All rights
-            reserved.
+            © {new Date().getFullYear()}{" "}
+            {content?.copyrightText ??
+              `${siteConfig.legalName} All rights reserved.`}
           </p>
           <p>
-            Developed By{" "}
+            {content?.developerLabel ?? "Developed By"}{" "}
             <a
-              href="https://theglobalorbit.com/"
+              href={content?.developerUrl ?? "https://theglobalorbit.com/"}
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-gold-500 transition-colors hover:text-gold-300"
             >
-              The Global Orbit
+              {content?.developerName ?? "The Global Orbit"}
             </a>
           </p>
         </div>

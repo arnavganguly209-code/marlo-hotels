@@ -4,7 +4,7 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Logo } from "@/components/layout/logo";
+import { Logo, type LogoDisplaySettings } from "@/components/layout/logo";
 import { NavPanel } from "@/components/layout/nav-panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,13 @@ const primaryLinks = [
   { label: "Offers", href: "/offers" },
 ];
 
-export function Header({ logoUrl }: { logoUrl?: string }) {
+export function Header({
+  logoUrl,
+  logoDisplay,
+}: {
+  logoUrl?: string;
+  logoDisplay?: LogoDisplaySettings;
+}) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -40,7 +46,7 @@ export function Header({ logoUrl }: { logoUrl?: string }) {
         )}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 md:px-8">
-          <Logo tone="light" src={logoUrl} />
+          <Logo tone="light" src={logoUrl} display={logoDisplay} />
 
           <nav aria-label="Primary" className="hidden items-center gap-9 xl:flex">
             {primaryLinks.map((link) => (

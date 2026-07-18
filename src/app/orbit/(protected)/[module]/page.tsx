@@ -1,18 +1,27 @@
 import { notFound } from "next/navigation";
 import { ContentManager } from "@/components/orbit/content-manager";
+import { HomepageVisualEditor } from "@/components/orbit/homepage-visual-editor";
 import { MediaManager } from "@/components/orbit/media-manager";
 import {
   OperationalManager,
 } from "@/components/orbit/operational-manager";
 import { PasskeySettings } from "@/components/orbit/passkey-settings";
 import { getDb } from "@/lib/db";
+import { getHomepageContent } from "@/lib/homepage-content";
+import {
+  HOMEPAGE_SECTIONS,
+  type HomepageSectionKey,
+} from "@/lib/homepage-schema";
 import { isNextNavigationError, orbitLog } from "@/lib/orbit/logger";
 import { moduleBySlug } from "@/lib/orbit/modules";
 import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-type PageProps = { params: Promise<{ module: string }> };
+type PageProps = {
+  params: Promise<{ module: string }>;
+  searchParams?: Promise<{ section?: string }>;
+};
 
 function ModuleUnavailable({ label }: { label: string }) {
   return (
@@ -31,9 +40,10 @@ function ModuleUnavailable({ label }: { label: string }) {
   );
 }
 
-export default async function OrbitModulePage({ params }: PageProps) {
+export default async function OrbitModulePage(props: PageProps) {
+  const { params } = props;
   try {
-    return await renderOrbitModulePage({ params });
+    return await renderOrbitModulePage(props);
   } catch (error) {
     if (isNextNavigationError(error)) throw error;
     const { module: slug } = await params;
@@ -46,12 +56,38 @@ export default async function OrbitModulePage({ params }: PageProps) {
   }
 }
 
-async function renderOrbitModulePage({ params }: PageProps) {
+async function renderOrbitModulePage({ params, searchParams }: PageProps) {
   const { module: slug } = await params;
   const moduleConfig = moduleBySlug.get(slug);
   if (!moduleConfig) notFound();
 
   const db = getDb();
+  if (slug === "homepage") {
+    const requested = (await searchParams)?.section;
+    const initialSection = HOMEPAGE_SECTIONS.some(
+      (item) => item.key === requested
+    )
+      ? (requested as HomepageSectionKey)
+      : "hero";
+    const initialPersisted = db
+      ? Boolean(
+          await db.contentEntry.findUnique({
+            where: {
+              module_key: { module: "homepage", key: "visual-editor" },
+            },
+            select: { id: true },
+          })
+        )
+      : true;
+    return (
+      <HomepageVisualEditor
+        initialContent={await getHomepageContent()}
+        initialSection={initialSection}
+        initialPersisted={initialPersisted}
+      />
+    );
+  }
+
   if (slug === "media-library") {
     const assets = db
       ? await db.mediaAsset.findMany({

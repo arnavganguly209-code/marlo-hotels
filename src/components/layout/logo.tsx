@@ -1,32 +1,64 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
+
+export type LogoDisplaySettings = {
+  desktopWidth: number;
+  tabletWidth: number;
+  mobileWidth: number;
+  leftMargin: number;
+  topMargin: number;
+  opacity: number;
+};
 
 type LogoProps = {
   tone?: "light" | "dark";
   className?: string;
   src?: string;
+  display?: LogoDisplaySettings;
 };
 
 export function LogoMark({
   className,
   src = "/images/brand/logo.png",
+  display,
 }: {
   className?: string;
   src?: string;
+  display?: LogoDisplaySettings;
 }) {
+  const style = display
+    ? ({
+        "--logo-desktop-width": `${display.desktopWidth}px`,
+        "--logo-tablet-width": `${display.tabletWidth}px`,
+        "--logo-mobile-width": `${display.mobileWidth}px`,
+        marginLeft: `${display.leftMargin}px`,
+        marginTop: `${display.topMargin}px`,
+        opacity: display.opacity / 100,
+      } as CSSProperties)
+    : undefined;
   return (
     <Image
       src={src}
       alt="Marlo Hotels"
       width={918}
       height={330}
-      className={cn("h-10 w-auto bg-transparent object-contain", className)}
+      quality={100}
+      unoptimized={src.startsWith("/media/")}
+      style={style}
+      className={cn(
+        "bg-transparent object-contain",
+        display
+          ? "h-auto w-[var(--logo-mobile-width)] md:w-[var(--logo-tablet-width)] lg:w-[var(--logo-desktop-width)]"
+          : "h-10 w-auto",
+        className
+      )}
     />
   );
 }
 
-export function Logo({ className, src }: LogoProps) {
+export function Logo({ className, src, display }: LogoProps) {
   return (
     <Link
       href="/"
@@ -35,7 +67,11 @@ export function Logo({ className, src }: LogoProps) {
     >
       <LogoMark
         src={src}
-        className="h-12 transition-transform duration-500 group-hover:scale-[1.02] md:h-14"
+        display={display}
+        className={cn(
+          "transition-transform duration-500 group-hover:scale-[1.02]",
+          display ? "" : "h-12 md:h-14"
+        )}
       />
     </Link>
   );

@@ -3,7 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Experience } from "@/types/content";
 
-export function ExperienceCard({ experience }: { experience: Experience }) {
+export function ExperienceCard({
+  experience,
+  actionLabel = "Discover",
+}: {
+  experience: Experience;
+  actionLabel?: string;
+}) {
   return (
     <article className="group img-hover-frame shadow-luxury-sm hover:shadow-luxury relative aspect-[3/4] overflow-hidden rounded-xl">
       <Image
@@ -11,6 +17,8 @@ export function ExperienceCard({ experience }: { experience: Experience }) {
         alt={experience.image.alt}
         fill
         sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+        quality={100}
+        unoptimized={experience.image.src.startsWith("/media/")}
         className="object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/95 via-charcoal-950/25 to-charcoal-950/10 transition-opacity duration-700" />
@@ -36,7 +44,7 @@ export function ExperienceCard({ experience }: { experience: Experience }) {
           {experience.shortDescription}
         </p>
         <span className="mt-4 inline-flex items-center gap-2 text-[10px] font-medium tracking-[0.3em] text-gold-400 uppercase">
-          Discover
+          {actionLabel}
           <ArrowRight className="size-3.5 transition-transform duration-500 group-hover:translate-x-1.5" />
         </span>
       </div>

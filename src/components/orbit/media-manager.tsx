@@ -78,6 +78,38 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("trash") === "1") setTrash(true);
+    const assetId = params.get("asset");
+    if (!assetId) return;
+    let active = true;
+    const open = (asset: Asset) => {
+      if (!active) return;
+      if (params.get("action") === "crop" && asset.kind === "IMAGE") {
+        setCropping(asset);
+      } else {
+        setEditing(asset);
+      }
+    };
+    const existing = initialAssets.find((asset) => asset.id === assetId);
+    if (existing) {
+      open(existing);
+      return () => {
+        active = false;
+      };
+    }
+    void fetch(`/api/orbit/media/${assetId}`)
+      .then((response) => response.json())
+      .then((result: { asset?: Asset }) => {
+        if (result.asset) open(result.asset);
+      })
+      .catch(() => push("Unable to open media asset", "error"));
+    return () => {
+      active = false;
+    };
+  }, [initialAssets, push]);
+
   const load = useCallback(async () => {
     const params = new URLSearchParams({
       page: String(page),

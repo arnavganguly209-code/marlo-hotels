@@ -10,6 +10,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CounterField } from "@/components/ui/counter-field";
+import type { HeroEditorContent } from "@/lib/homepage-content";
 import { siteConfig } from "@/lib/site";
 import { cn, toISODateString } from "@/lib/utils";
 
@@ -19,7 +20,13 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
-export function BookingWidget({ className }: { className?: string }) {
+export function BookingWidget({
+  className,
+  content,
+}: {
+  className?: string;
+  content: HeroEditorContent["booking"];
+}) {
   const router = useRouter();
   const today = new Date();
   const [checkIn, setCheckIn] = useState(toISODateString(addDays(today, 7)));
@@ -69,7 +76,7 @@ export function BookingWidget({ className }: { className?: string }) {
     >
       <div>
         <label htmlFor="widget-check-in" className={labelClass}>
-          <CalendarDays className="size-3.5" /> Check In
+          <CalendarDays className="size-3.5" /> {content.checkInLabel}
         </label>
         <input
           id="widget-check-in"
@@ -91,7 +98,7 @@ export function BookingWidget({ className }: { className?: string }) {
 
       <div>
         <label htmlFor="widget-check-out" className={labelClass}>
-          <CalendarDays className="size-3.5" /> Check Out
+          <CalendarDays className="size-3.5" /> {content.checkOutLabel}
         </label>
         <input
           id="widget-check-out"
@@ -106,7 +113,7 @@ export function BookingWidget({ className }: { className?: string }) {
 
       <div ref={guestsRef} className="relative">
         <span className={labelClass}>
-          <Users className="size-3.5" /> Guests & Rooms
+          <Users className="size-3.5" /> {content.guestsLabel}
         </span>
         <button
           type="button"
@@ -131,21 +138,21 @@ export function BookingWidget({ className }: { className?: string }) {
         {guestsOpen ? (
           <div className="glass-dark shadow-luxury absolute top-[calc(100%+0.75rem)] left-0 z-10 w-72 space-y-4 rounded-xl p-5">
             <CounterField
-              label="Adults"
+              label={content.adultsLabel}
               value={adults}
               min={1}
               max={siteConfig.booking.maxAdults}
               onChange={setAdults}
             />
             <CounterField
-              label="Children"
+              label={content.childrenLabel}
               value={children}
               min={0}
               max={siteConfig.booking.maxChildren}
               onChange={setChildren}
             />
             <CounterField
-              label="Rooms"
+              label={content.roomsLabel}
               value={rooms}
               min={1}
               max={siteConfig.booking.maxRooms}
@@ -157,12 +164,12 @@ export function BookingWidget({ className }: { className?: string }) {
 
       <div>
         <label htmlFor="widget-promo" className={labelClass}>
-          <Sparkles className="size-3.5" /> Promo Code
+          <Sparkles className="size-3.5" /> {content.promoLabel}
         </label>
         <input
           id="widget-promo"
           type="text"
-          placeholder="Optional"
+          placeholder={content.promoPlaceholder}
           value={promo}
           onChange={(event) => setPromo(event.target.value)}
           className="mt-2.5 w-full border-b border-ivory/25 bg-transparent pb-2 text-sm font-light tracking-widest text-ivory uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:text-cream-200/35 focus:border-gold-400"
@@ -174,7 +181,7 @@ export function BookingWidget({ className }: { className?: string }) {
         className="shadow-gold col-span-2 flex h-13 items-center justify-center gap-3 rounded-lg bg-gold-500 px-8 text-[11px] font-semibold tracking-[0.24em] text-charcoal-950 uppercase transition-all duration-500 hover:-translate-y-0.5 hover:bg-gold-400 lg:col-span-1"
       >
         <BedDouble className="size-4" />
-        Check Availability
+        {content.submitLabel}
       </button>
     </form>
   );

@@ -1,8 +1,15 @@
 import { Award as AwardIcon } from "lucide-react";
 import { Stagger, StaggerItem } from "@/components/ui/reveal";
-import { awards } from "@/content/gallery";
+import type { CollectionSection } from "@/lib/homepage-content";
+import type { Award } from "@/types/content";
 
-export function AwardsStrip() {
+export function AwardsStrip({
+  content,
+}: {
+  content: CollectionSection<Award>;
+}) {
+  if (!content.enabled) return null;
+
   return (
     <section
       aria-label="Awards and recognition"
@@ -13,7 +20,7 @@ export function AwardsStrip() {
           stagger={0.08}
           className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-5"
         >
-          {awards.map((award) => (
+          {content.items.map((award) => (
             <StaggerItem key={award.title} className="text-center">
               <div className="mx-auto grid size-12 place-items-center rounded-full border border-gold-500/40 text-gold-600">
                 <AwardIcon className="size-5" />

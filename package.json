@@ -13,7 +13,8 @@
     "db:studio": "prisma studio",
     "media:seed": "node --env-file=.env scripts/seed-media.mjs",
     "test:media": "node --env-file=.env scripts/test-media.mjs",
-    "test:media:offline": "node scripts/test-media-storage.mjs"
+    "test:media:offline": "node scripts/test-media-storage.mjs",
+    "test:homepage": "node --env-file=.env scripts/test-homepage-cms.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

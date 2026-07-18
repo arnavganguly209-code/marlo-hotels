@@ -4,23 +4,31 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
+import type { HomepageContent } from "@/lib/homepage-content";
 import { formatCurrency } from "@/lib/utils";
-import type { Room } from "@/types/content";
 
-export function FeaturedSuites({ suites }: { suites: Room[] }) {
+export function FeaturedSuites({
+  content,
+}: {
+  content: HomepageContent["featuredSuites"];
+}) {
+  if (!content.enabled) return null;
+  const suites = content.items.filter((suite) => suite.images[0]?.src);
+
   return (
     <section className="bg-forest-950 py-24 md:py-36">
       <div className="mx-auto max-w-7xl px-5 md:px-8">
         <SectionHeading
           tone="light"
-          eyebrow="Featured Suites"
-          title="The addresses guests return for"
-          description="Our signature suites pair residential scale with the craft of the valley — private terraces, carved timber and service that reads your mind."
+          eyebrow={content.eyebrow}
+          title={content.heading}
+          description={content.description}
         />
 
         <div className="mt-20 space-y-24 md:space-y-32">
           {suites.map((suite, index) => {
             const reversed = index % 2 === 1;
+            const imageSrc = suite.images[0].src;
             return (
               <div
                 key={suite.slug}
@@ -36,11 +44,13 @@ export function FeaturedSuites({ suites }: { suites: Room[] }) {
                 >
                   <div className="img-hover-frame shadow-luxury relative aspect-[16/11] overflow-hidden rounded-xl">
                     <Image
-                      src={suite.images[0].src}
+                      src={imageSrc}
                       alt={suite.images[0].alt}
                       fill
                       sizes="(max-width: 1024px) 100vw, 58vw"
                       className="object-cover"
+                      quality={100}
+                      unoptimized={imageSrc.startsWith("/media/")}
                     />
                   </div>
                 </Reveal>
@@ -80,19 +90,19 @@ export function FeaturedSuites({ suites }: { suites: Room[] }) {
                     <div className="mt-8 flex flex-wrap items-center justify-between gap-5 border-t border-ivory/10 pt-6">
                       <p>
                         <span className="block text-[9px] tracking-[0.3em] text-cream-200/60 uppercase">
-                          From
+                          {content.labels?.from ?? "From"}
                         </span>
                         <span className="font-display text-3xl font-medium text-gold-400">
                           {formatCurrency(suite.priceFrom)}
                           <span className="text-sm font-light text-cream-200/70">
                             {" "}
-                            / night
+                            {content.labels?.perNight ?? "/ night"}
                           </span>
                         </span>
                       </p>
                       <Button asChild variant="gold" size="sm">
                         <Link href={`/rooms/${suite.slug}`}>
-                          Explore Suite
+                          {content.labels?.explore ?? "Explore Suite"}
                           <ArrowRight />
                         </Link>
                       </Button>

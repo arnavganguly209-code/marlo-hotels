@@ -6,7 +6,12 @@ import { useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type ParallaxBannerProps = {
-  image: { src: string; alt: string };
+  image: {
+    src: string;
+    alt: string;
+    focalX?: number;
+    focalY?: number;
+  };
   children: ReactNode;
   className?: string;
   overlayClassName?: string;
@@ -43,7 +48,12 @@ export function ParallaxBanner({
           alt={image.alt}
           fill
           sizes="100vw"
+          quality={100}
+          unoptimized={image.src.startsWith("/media/")}
           className="object-cover"
+          style={{
+            objectPosition: `${image.focalX ?? 50}% ${image.focalY ?? 50}%`,
+          }}
         />
       </motion.div>
       <div

@@ -4,30 +4,39 @@ import { PostCard } from "@/components/cards/post-card";
 import { Button } from "@/components/ui/button";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
-import type { Post } from "@/types/content";
+import type { HomepageContent } from "@/lib/homepage-content";
 
-export function JournalPreview({ posts }: { posts: Post[] }) {
+export function JournalPreview({
+  content,
+}: {
+  content: HomepageContent["journal"];
+}) {
+  if (!content.enabled) return null;
+
   return (
     <section className="bg-cream-100 py-24 md:py-36">
       <div className="mx-auto max-w-7xl px-5 md:px-8">
         <SectionHeading
-          eyebrow="The Journal"
-          title="Latest from the valley"
-          description="Itineraries from our concierge desk, the craft behind the suites, and dispatches from Amaya's kitchen."
+          eyebrow={content.eyebrow}
+          title={content.heading}
+          description={content.description}
         />
 
         <Stagger className="mt-16 grid gap-10 md:grid-cols-2 xl:grid-cols-3">
-          {posts.slice(0, 3).map((post) => (
+          {content.items.map((post) => (
             <StaggerItem key={post.slug}>
-              <PostCard post={post} />
+              <PostCard
+                post={post}
+                actionLabel={content.labels?.readArticle}
+              />
             </StaggerItem>
           ))}
         </Stagger>
 
         <Reveal className="mt-14 text-center">
           <Button asChild variant="outline-dark" size="lg">
-            <Link href="/blog">
-              Read The Journal
+            <Link href={content.buttonLink ?? "/blog"}>
+              {content.buttonText ?? "Read The Journal"}
               <ArrowRight />
             </Link>
           </Button>
