@@ -68,14 +68,22 @@ export async function POST(request: Request) {
       );
     }
 
-    await createOrbitSession(ipHash, userAgent);
+    // Cookie mutation happens ONLY on the Route Handler response — never in RSC.
+    const sessionCookie = await createOrbitSession(ipHash, userAgent);
     await writeAuditLog({
       action: "LOGIN_SUCCEEDED",
       module: "security",
       summary: "Orbit administrator signed in",
     });
     orbitLog("info", "Orbit administrator signed in");
-    return NextResponse.json({ ok: true });
+
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(
+      sessionCookie.name,
+      sessionCookie.value,
+      sessionCookie.options
+    );
+    return response;
   } catch (error) {
     orbitLog("error", "Orbit login route failed", error);
     return NextResponse.json(

@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import { ArrowDownRight, ArrowUpRight, Minus, type LucideIcon } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 type MetricCardProps = {
@@ -10,7 +11,8 @@ type MetricCardProps = {
   prefix?: string;
   suffix?: string;
   change?: number;
-  icon: LucideIcon;
+  /** Pre-rendered icon element from the server — never pass a component function. */
+  icon: ReactNode;
 };
 
 export function MetricCard({
@@ -19,7 +21,7 @@ export function MetricCard({
   prefix = "",
   suffix = "",
   change,
-  icon: Icon,
+  icon,
 }: MetricCardProps) {
   const motionValue = useMotionValue(0);
   const spring = useSpring(motionValue, { stiffness: 70, damping: 20 });
@@ -48,7 +50,7 @@ export function MetricCard({
     >
       <div className="flex items-start justify-between">
         <span className="grid size-11 place-items-center rounded-xl bg-[#123429] text-[#d0a654] shadow-[0_12px_30px_-18px_#123429]">
-          <Icon className="size-5" />
+          {icon}
         </span>
         {change !== undefined ? (
           <span

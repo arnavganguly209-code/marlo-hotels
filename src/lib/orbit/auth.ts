@@ -28,6 +28,18 @@ export type OrbitSessionView = {
   userAgent: string | null;
 };
 
+export type OrbitSessionCookie = {
+  name: string;
+  value: string;
+  options: {
+    httpOnly: boolean;
+    secure: boolean;
+    sameSite: "lax" | "strict" | "none";
+    path: string;
+    maxAge: number;
+  };
+};
+
 type SignedPayload = {
   v: 1;
   id: string;
@@ -111,20 +123,25 @@ async function cookieSecure() {
   return process.env.NODE_ENV === "production";
 }
 
-async function writeSessionCookie(token: string, maxAgeSeconds: number) {
-  try {
-    const cookieStore = await cookies();
-    cookieStore.set(ORBIT_COOKIE, token, {
+/**
+ * Cookie options only — never mutates cookies.
+ * Callers in Route Handlers must apply these via `response.cookies.set()`.
+ */
+export async function buildOrbitSessionCookie(
+  value: string,
+  maxAgeSeconds: number
+): Promise<OrbitSessionCookie> {
+  return {
+    name: ORBIT_COOKIE,
+    value,
+    options: {
       httpOnly: true,
       secure: await cookieSecure(),
       sameSite: "lax",
       path: "/",
       maxAge: maxAgeSeconds,
-    });
-  } catch (error) {
-    // Next.js forbids cookie mutation during RSC render — never crash the page.
-    orbitLog("warn", "Unable to write Orbit session cookie", error);
-  }
+    },
+  };
 }
 
 export function isOrbitAuthConfigured() {
@@ -218,11 +235,9 @@ export async function assertSameOrigin(request: Request) {
   if (!origin || !host) return false;
   try {
     const originHost = new URL(origin).host;
-    // Compare hostnames without port when proxy rewrites differ.
     const normalize = (value: string) => value.split(":")[0]?.toLowerCase();
     return (
-      originHost === host ||
-      normalize(originHost) === normalize(host)
+      originHost === host || normalize(originHost) === normalize(host)
     );
   } catch {
     return false;
@@ -293,10 +308,14 @@ export async function recordLoginAttempt(
   }
 }
 
+/**
+ * Creates a signed session token. Does NOT set cookies — the login Route
+ * Handler must attach the returned cookie to `NextResponse`.
+ */
 export async function createOrbitSession(
   ipHash: string,
   userAgent: string | null
-) {
+): Promise<OrbitSessionCookie> {
   if (!isOrbitAuthConfigured()) {
     throw new Error("Orbit authentication is not configured");
   }
@@ -313,6 +332,7 @@ export async function createOrbitSession(
     ua: userAgent,
   };
   const token = encodeSession(payload);
+  const maxAge = ORBIT_SESSION_HOURS * 60 * 60;
 
   const db = getDb();
   if (db) {
@@ -328,18 +348,16 @@ export async function createOrbitSession(
         },
       });
     } catch (error) {
-      // Cookie session still authenticates when the sessions table is unavailable.
       orbitLog("warn", "Failed to persist Orbit session row", error);
     }
   }
 
-  await writeSessionCookie(token, ORBIT_SESSION_HOURS * 60 * 60);
+  return buildOrbitSessionCookie(token, maxAge);
 }
 
 /**
  * Read-only session validation for Server Components.
- * Never mutates cookies here — Next.js throws if cookies are set during RSC render,
- * which previously caused the production "Application error" on /orbit/dashboard.
+ * Never mutates cookies.
  */
 export async function getOrbitSession(): Promise<OrbitSessionView | null> {
   try {
@@ -366,7 +384,11 @@ export async function getOrbitSession(): Promise<OrbitSessionView | null> {
         });
         if (stored?.revokedAt) return null;
       } catch (error) {
-        orbitLog("warn", "Orbit session DB check failed; trusting signed cookie", error);
+        orbitLog(
+          "warn",
+          "Orbit session DB check failed; trusting signed cookie",
+          error
+        );
       }
     }
 
@@ -391,10 +413,13 @@ export async function requireOrbitSession() {
   return session;
 }
 
-export async function revokeOrbitSession() {
+/**
+ * Revokes the session in the database (if available) and returns a clear-cookie
+ * descriptor. Does NOT mutate cookies — the logout Route Handler must apply it.
+ */
+export async function revokeOrbitSession(): Promise<OrbitSessionCookie> {
   const db = getDb();
-  const cookieStore = await cookies();
-  const token = cookieStore.get(ORBIT_COOKIE)?.value;
+  const token = (await cookies()).get(ORBIT_COOKIE)?.value;
   if (db && token) {
     try {
       const payload = decodeSession(token);
@@ -413,7 +438,7 @@ export async function revokeOrbitSession() {
       orbitLog("warn", "Failed to revoke Orbit session in database", error);
     }
   }
-  await writeSessionCookie("", 0);
+  return buildOrbitSessionCookie("", 0);
 }
 
 export async function writeAuditLog(input: {

@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { MetricCard } from "@/components/orbit/metric-card";
 import { getDb } from "@/lib/db";
 import { orbitLog } from "@/lib/orbit/logger";
@@ -233,24 +234,24 @@ export default async function OrbitDashboardPage() {
           value={revenueValue}
           prefix="$"
           change={percentageChange(revenueValue, previousRevenueValue)}
-          icon={DollarSign}
+          icon={<DollarSign className="size-5" />}
         />
         <MetricCard
           label="Website visitors"
           value={visitorValue}
           change={percentageChange(visitorValue, previousVisitorValue)}
-          icon={Users}
+          icon={<Users className="size-5" />}
         />
         <MetricCard
           label="Room occupancy"
           value={occupancy}
           suffix="%"
-          icon={BedDouble}
+          icon={<BedDouble className="size-5" />}
         />
         <MetricCard
           label="Recent bookings"
           value={recentBookings.length}
-          icon={CalendarDays}
+          icon={<CalendarDays className="size-5" />}
         />
       </div>
 
@@ -338,7 +339,7 @@ export default async function OrbitDashboardPage() {
         <ActivityPanel
           title="Latest messages"
           href="/orbit/contact-messages"
-          icon={MessageSquare}
+          icon={<MessageSquare className="size-4 text-[#a67a30]" />}
           items={recentMessages.map((item) => ({
             title: item.name,
             detail: item.subject,
@@ -348,7 +349,7 @@ export default async function OrbitDashboardPage() {
         <ActivityPanel
           title="Newsletter"
           href="/orbit/newsletter"
-          icon={Mail}
+          icon={<Mail className="size-4 text-[#a67a30]" />}
           items={recentSubscribers.map((item) => ({
             title: item.email,
             detail: "New subscriber",
@@ -358,7 +359,7 @@ export default async function OrbitDashboardPage() {
         <ActivityPanel
           title="Latest reviews"
           href="/orbit/reviews"
-          icon={Star}
+          icon={<Star className="size-4 text-[#a67a30]" />}
           items={recentReviews.map((item) => ({
             title: item.guestName,
             detail: `${item.rating}/5 · ${item.body.slice(0, 48)}`,
@@ -368,7 +369,7 @@ export default async function OrbitDashboardPage() {
         <ActivityPanel
           title="Latest blogs"
           href="/orbit/blog"
-          icon={Newspaper}
+          icon={<Newspaper className="size-4 text-[#a67a30]" />}
           items={recentPosts.map((item) => ({
             title: item.title,
             detail: item.published ? "Published" : "Draft",
@@ -383,19 +384,19 @@ export default async function OrbitDashboardPage() {
 function ActivityPanel({
   title,
   href,
-  icon: Icon,
+  icon,
   items,
 }: {
   title: string;
   href: string;
-  icon: typeof Mail;
+  icon: ReactNode;
   items: { title: string; detail: string; date: Date }[];
 }) {
   return (
     <section className="orbit-panel rounded-2xl p-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Icon className="size-4 text-[#a67a30]" />
+          {icon}
           <h3 className="font-display text-lg font-semibold text-[#10251e]">{title}</h3>
         </div>
         <Link href={href} className="text-[9px] font-semibold tracking-[0.16em] text-[#a67a30] uppercase">
