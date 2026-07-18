@@ -1,0 +1,212 @@
+// Marlo Hotels — data model
+// Powers the admin-ready backend: rooms, bookings, content, offers,
+// menus, testimonials, SEO and settings can all be managed without
+// touching the frontend components.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoomCategory {
+  ROOM
+  SUITE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum OfferCategory {
+  SEASONAL
+  PACKAGE
+  GIFT_CARD
+}
+
+model Room {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  category    RoomCategory @default(ROOM)
+  tagline     String
+  description String
+  priceFrom   Decimal      @db.Decimal(10, 2)
+  size        String
+  occupancy   String
+  bed         String
+  view        String
+  featured    Boolean      @default(false)
+  published   Boolean      @default(true)
+  amenities   String[]
+  features    String[]
+  images      Image[]
+  bookings    Booking[]
+  seo         SeoMeta?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Booking {
+  id         String        @id @default(cuid())
+  reference  String        @unique
+  status     BookingStatus @default(PENDING)
+  checkIn    DateTime
+  checkOut   DateTime
+  adults     Int
+  children   Int           @default(0)
+  rooms      Int           @default(1)
+  promoCode  String?
+  guestName  String
+  guestEmail String
+  guestPhone String
+  notes      String?
+  room       Room          @relation(fields: [roomId], references: [id])
+  roomId     String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([status, checkIn])
+}
+
+model Restaurant {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  cuisine     String
+  tagline     String
+  description String
+  hours       String
+  dressCode   String
+  location    String
+  chefName    String
+  chefTitle   String
+  chefBio     String
+  published   Boolean    @default(true)
+  images      Image[]
+  menuItems   MenuItem[]
+  seo         SeoMeta?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model MenuItem {
+  id           String     @id @default(cuid())
+  section      String
+  name         String
+  description  String
+  price        String
+  sortOrder    Int        @default(0)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+
+  @@index([restaurantId, section])
+}
+
+model Offer {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  title     String
+  category  OfferCategory @default(SEASONAL)
+  tagline   String
+  description String
+  perks     String[]
+  validity  String
+  code      String        @unique
+  discount  String
+  imageUrl  String
+  published Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  category    String
+  content     Json
+  authorName  String
+  authorRole  String
+  readingTime String
+  tags        String[]
+  imageUrl    String
+  published   Boolean  @default(true)
+  publishedAt DateTime @default(now())
+  seo         SeoMeta?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, publishedAt])
+}
+
+model Image {
+  id           String      @id @default(cuid())
+  url          String
+  alt          String
+  category     String?
+  sortOrder    Int         @default(0)
+  inGallery    Boolean     @default(false)
+  room         Room?       @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  roomId       String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  restaurantId String?
+  createdAt    DateTime    @default(now())
+
+  @@index([inGallery, category])
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  origin    String
+  quote     String
+  rating    Int      @default(5)
+  stay      String
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model SeoMeta {
+  id           String      @id @default(cuid())
+  title        String
+  description  String
+  ogImageUrl   String?
+  canonicalUrl String?
+  room         Room?       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId       String?     @unique
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String?     @unique
+  post         Post?       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId       String?     @unique
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  handled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}

@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Marlo Hotels
+
+A world-class five-star luxury hotel website — built from scratch as a premium white-label project.
+
+**Stay Beyond Extraordinary.**
+
+## Technology
+
+| Layer     | Stack                                                        |
+| --------- | ------------------------------------------------------------ |
+| Framework | Next.js 15 (App Router, Server Components), TypeScript        |
+| Styling   | Tailwind CSS v4, custom luxury design system                  |
+| Motion    | Framer Motion (scroll & micro-interactions), GSAP (nav panel) |
+| Forms     | React Hook Form + Zod                                         |
+| Database  | PostgreSQL via Prisma 7 (`@prisma/adapter-pg`)                |
+| Icons     | Lucide                                                        |
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install          # also runs `prisma generate`
+cp .env.example .env # fill in values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The site runs fully without a database — API routes (newsletter, contact,
+booking requests) persist to PostgreSQL when `DATABASE_URL` is set and
+degrade gracefully when it is not.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Database
 
-## Learn More
+```bash
+npm run db:push      # sync schema to a dev database
+npm run db:migrate   # apply migrations (production)
+npm run db:studio    # browse data
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+  app/               # App Router pages, API routes, sitemap, robots
+  components/
+    layout/          # Header, glass nav panel, footer, logo
+    home/            # Homepage sections (hero, booking widget, …)
+    cards/           # Reusable content cards (room, offer, post, …)
+    booking/         # Booking engine + luxury calendar
+    forms/           # Contact & newsletter (RHF + Zod)
+    ui/              # Primitives (button, fields, reveal animations)
+  content/           # Typed content layer (async getters — swap for Prisma
+                     # queries to go fully dynamic without touching the UI)
+  lib/               # site config, SEO helpers, validators, db client
+  types/             # Shared content types
+prisma/              # PostgreSQL schema (rooms, bookings, posts, offers, …)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The `content/` getters are `async` by design: the admin backend can replace
+them with Prisma queries against the same schema without rewriting a single
+component.
 
-## Deploy on Vercel
+## Deployment — Hostinger VPS
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Pushes to `main` trigger `.github/workflows/deploy.yml`: lint + build on CI,
+then SSH into the VPS, pull, install, migrate, build and reload PM2.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+One-time VPS setup:
+
+```bash
+# as your deploy user
+sudo mkdir -p /var/www/marlo-hotels && sudo chown $USER /var/www/marlo-hotels
+git clone git@github.com:arnavganguly209-code/marlo-hotels.git /var/www/marlo-hotels
+cd /var/www/marlo-hotels
+cp .env.example .env   # set NEXT_PUBLIC_SITE_URL + DATABASE_URL
+npm ci && npm run build
+pm2 start npm --name marlo-hotels -- start && pm2 save
+```
+
+GitHub repository secrets required:
+
+| Secret         | Value                                  |
+| -------------- | -------------------------------------- |
+| `VPS_HOST`     | VPS IP or hostname                     |
+| `VPS_USERNAME` | SSH user                               |
+| `VPS_SSH_KEY`  | Private key with access to the VPS     |
+| `VPS_PORT`     | SSH port (optional, defaults to 22)    |
+
+Put Nginx (or Caddy) in front of `localhost:3000` with TLS.
+
+## SEO
+
+- Per-page metadata, OpenGraph & Twitter cards, canonical URLs
+- Dynamic `sitemap.xml` and `robots.txt`
+- Schema.org JSON-LD: `Hotel`, `HotelRoom`, `Restaurant`, `Article`, `BreadcrumbList`

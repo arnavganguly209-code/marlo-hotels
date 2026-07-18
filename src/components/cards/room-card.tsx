@@ -1,0 +1,74 @@
+import { ArrowRight, Expand, Eye, Users } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import type { Room } from "@/types/content";
+import { formatCurrency } from "@/lib/utils";
+
+export function RoomCard({ room }: { room: Room }) {
+  return (
+    <article className="group shadow-luxury-sm hover:shadow-luxury relative flex h-full flex-col overflow-hidden rounded-xl bg-white transition-shadow duration-700">
+      <div className="img-hover-frame relative aspect-[4/3]">
+        <Image
+          src={room.images[0].src}
+          alt={room.images[0].alt}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/45 to-transparent" />
+        <span className="glass-dark absolute top-4 left-4 rounded-full px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase">
+          {room.category === "suite" ? "Suite" : "Room"}
+        </span>
+        <span className="absolute right-4 bottom-4 text-right">
+          <span className="block text-[9px] tracking-[0.28em] text-cream-200/80 uppercase">
+            From
+          </span>
+          <span className="font-display text-2xl font-medium text-ivory">
+            {formatCurrency(room.priceFrom)}
+            <span className="text-sm font-light text-cream-200/80">
+              {" "}
+              / night
+            </span>
+          </span>
+        </span>
+      </div>
+
+      <div className="flex flex-1 flex-col p-7">
+        <h3 className="font-display text-2xl font-medium text-forest-950">
+          <Link
+            href={`/rooms/${room.slug}`}
+            className="after:absolute after:inset-0 focus-visible:outline-none"
+          >
+            {room.name}
+          </Link>
+        </h3>
+        <p className="mt-3 line-clamp-2 text-sm leading-relaxed font-light text-charcoal-900/60">
+          {room.shortDescription}
+        </p>
+
+        <dl className="mt-6 flex flex-wrap gap-x-6 gap-y-2 border-t border-forest-800/10 pt-5 text-xs font-light text-charcoal-900/70">
+          <div className="flex items-center gap-2">
+            <Expand className="size-3.5 text-gold-600" />
+            <dt className="sr-only">Size</dt>
+            <dd>{room.size}</dd>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="size-3.5 text-gold-600" />
+            <dt className="sr-only">Occupancy</dt>
+            <dd>{room.occupancy}</dd>
+          </div>
+          <div className="flex items-center gap-2">
+            <Eye className="size-3.5 text-gold-600" />
+            <dt className="sr-only">View</dt>
+            <dd>{room.view}</dd>
+          </div>
+        </dl>
+
+        <span className="mt-6 inline-flex items-center gap-2 text-[10px] font-medium tracking-[0.3em] text-gold-600 uppercase transition-colors duration-300 group-hover:text-gold-500">
+          View Details
+          <ArrowRight className="size-3.5 transition-transform duration-500 group-hover:translate-x-1.5" />
+        </span>
+      </div>
+    </article>
+  );
+}

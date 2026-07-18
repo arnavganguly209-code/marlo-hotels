@@ -1,26 +1,205 @@
 @import "tailwindcss";
 
+@theme {
+  /* ── Marlo Hotels brand palette ─────────────────────────────── */
+  --color-forest-50: #f0f6f5;
+  --color-forest-100: #dcebe8;
+  --color-forest-200: #b9d6d1;
+  --color-forest-300: #8ab8b1;
+  --color-forest-400: #5d968e;
+  --color-forest-500: #3f7a72;
+  --color-forest-600: #33645e;
+  --color-forest-700: #2b524d;
+  --color-forest-800: #21403c;
+  --color-forest-900: #182f2c;
+  --color-forest-950: #0c1a18;
+
+  --color-gold-50: #fbf6ec;
+  --color-gold-100: #f5e9d0;
+  --color-gold-200: #ead09d;
+  --color-gold-300: #dfb66c;
+  --color-gold-400: #d5a04a;
+  --color-gold-500: #c9963f;
+  --color-gold-600: #a97a30;
+  --color-gold-700: #875e28;
+  --color-gold-800: #6e4c25;
+  --color-gold-900: #5c4023;
+
+  --color-cream-50: #fbf9f4;
+  --color-cream-100: #f5f0e6;
+  --color-cream-200: #eae2d0;
+  --color-cream-300: #dbcfb4;
+
+  --color-charcoal-800: #1d2321;
+  --color-charcoal-900: #141918;
+  --color-charcoal-950: #0b0f0e;
+
+  --color-ivory: #faf7f1;
+
+  /* ── Typography ─────────────────────────────────────────────── */
+  --font-display: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Shadows ────────────────────────────────────────────────── */
+  --shadow-luxury: 0 24px 60px -18px rgb(12 26 24 / 0.35);
+  --shadow-luxury-sm: 0 12px 32px -12px rgb(12 26 24 / 0.25);
+  --shadow-gold: 0 14px 40px -12px rgb(201 150 63 / 0.45);
+
+  /* ── Easing ─────────────────────────────────────────────────── */
+  --ease-luxury: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-ivory);
+  color: var(--color-charcoal-900);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: var(--color-gold-500);
+  color: var(--color-charcoal-950);
+}
+
+/* Elegant thin scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-cream-100);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-forest-700);
+  border-radius: 8px;
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+/* Small-caps golden eyebrow label */
+@utility eyebrow {
+  font-size: 0.6875rem;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--color-gold-500);
+}
+
+/* Frosted glass surfaces */
+@utility glass-dark {
+  background: rgb(12 26 24 / 0.55);
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  border: 1px solid rgb(250 247 241 / 0.14);
+}
+
+@utility glass-light {
+  background: rgb(250 247 241 / 0.72);
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  border: 1px solid rgb(250 247 241 / 0.5);
+}
+
+/* Hairline gold rule with center diamond, used as a section ornament */
+.gold-rule {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.gold-rule::before,
+.gold-rule::after {
+  content: "";
+  height: 1px;
+  width: 2.5rem;
+  background: linear-gradient(90deg, transparent, var(--color-gold-500));
+}
+.gold-rule::after {
+  background: linear-gradient(90deg, var(--color-gold-500), transparent);
+}
+
+/* Cinematic slow zoom for hero imagery */
+@keyframes kenburns {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.animate-kenburns {
+  animation: kenburns 8s var(--ease-luxury) both;
+}
+
+/* Scroll indicator pulse */
+@keyframes scroll-dot {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+.animate-scroll-dot {
+  animation: scroll-dot 2.2s ease-in-out infinite;
+}
+
+/* Underline that draws in from the left on hover */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s var(--ease-luxury);
+}
+.link-underline:hover::after,
+.link-underline:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* Image zoom-on-hover frame */
+.img-hover-frame {
+  overflow: hidden;
+}
+.img-hover-frame img {
+  transition: transform 1.2s var(--ease-luxury);
+}
+.img-hover-frame:hover img {
+  transform: scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
