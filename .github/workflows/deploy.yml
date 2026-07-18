@@ -32,7 +32,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://marlohotels.com' }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://marlo.theglobalorbit.com' }}
 
   deploy:
     name: Deploy
@@ -40,6 +40,31 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Verify deploy secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USERNAME: ${{ secrets.VPS_USERNAME }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          missing=0
+          if [ -z "$VPS_HOST" ]; then
+            echo "::error::Missing secret VPS_HOST. Add it under Settings → Secrets and variables → Actions (or the production environment)."
+            missing=1
+          fi
+          if [ -z "$VPS_USERNAME" ]; then
+            echo "::error::Missing secret VPS_USERNAME."
+            missing=1
+          fi
+          if [ -z "$VPS_SSH_KEY" ]; then
+            echo "::error::Missing secret VPS_SSH_KEY (private key contents, including BEGIN/END lines)."
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::Configure VPS_HOST, VPS_USERNAME, and VPS_SSH_KEY, then re-run this workflow."
+            exit 1
+          fi
+          echo "Deploy secrets are present."
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -48,12 +73,29 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
           script_stop: true
+          command_timeout: 30m
           script: |
+            set -euo pipefail
             cd /var/www/marlo-hotels
+
+            echo "==> Pulling latest main"
             git fetch origin main
             git reset --hard origin/main
+
+            echo "==> Installing dependencies"
             npm ci
-            npx prisma migrate deploy
+
+            echo "==> Applying database schema"
+            if [ -n "${DATABASE_URL:-}" ] || grep -qE '^DATABASE_URL=.+' .env 2>/dev/null; then
+              npx prisma migrate deploy || npx prisma db push
+            else
+              echo "DATABASE_URL not set — skipping Prisma migrate (Orbit login still works)."
+            fi
+
+            echo "==> Building Next.js"
             npm run build
+
+            echo "==> Reloading PM2"
             pm2 reload marlo-hotels --update-env || pm2 start npm --name marlo-hotels -- start
             pm2 save
+            pm2 status marlo-hotels

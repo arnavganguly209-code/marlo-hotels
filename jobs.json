@@ -1,0 +1,154 @@
+﻿[
+    {
+        "id":  88095146639,
+        "run_id":  29650203909,
+        "workflow_name":  "Deploy to Hostinger VPS",
+        "head_branch":  "main",
+        "run_url":  "https://api.github.com/repos/arnavganguly209-code/marlo-hotels/actions/runs/29650203909",
+        "run_attempt":  1,
+        "node_id":  "CR_kwDOTcX1e88AAAAUguFCjw",
+        "head_sha":  "c49ca240694833f58a7f3a1d4de955384afb2cba",
+        "url":  "https://api.github.com/repos/arnavganguly209-code/marlo-hotels/actions/jobs/88095146639",
+        "html_url":  "https://github.com/arnavganguly209-code/marlo-hotels/actions/runs/29650203909/job/88095146639",
+        "status":  "completed",
+        "conclusion":  "success",
+        "created_at":  "2026-07-18T15:32:57Z",
+        "started_at":  "2026-07-18T15:33:00Z",
+        "completed_at":  "2026-07-18T15:34:05Z",
+        "name":  "Lint \u0026 Build",
+        "steps":  [
+                      {
+                          "name":  "Set up job",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  1,
+                          "started_at":  "2026-07-18T15:33:01Z",
+                          "completed_at":  "2026-07-18T15:33:02Z"
+                      },
+                      {
+                          "name":  "Checkout",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  2,
+                          "started_at":  "2026-07-18T15:33:02Z",
+                          "completed_at":  "2026-07-18T15:33:03Z"
+                      },
+                      {
+                          "name":  "Setup Node.js",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  3,
+                          "started_at":  "2026-07-18T15:33:03Z",
+                          "completed_at":  "2026-07-18T15:33:05Z"
+                      },
+                      {
+                          "name":  "Install dependencies",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  4,
+                          "started_at":  "2026-07-18T15:33:05Z",
+                          "completed_at":  "2026-07-18T15:33:22Z"
+                      },
+                      {
+                          "name":  "Lint",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  5,
+                          "started_at":  "2026-07-18T15:33:22Z",
+                          "completed_at":  "2026-07-18T15:33:25Z"
+                      },
+                      {
+                          "name":  "Build",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  6,
+                          "started_at":  "2026-07-18T15:33:25Z",
+                          "completed_at":  "2026-07-18T15:34:03Z"
+                      },
+                      {
+                          "name":  "Post Setup Node.js",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  11,
+                          "started_at":  "2026-07-18T15:34:03Z",
+                          "completed_at":  "2026-07-18T15:34:03Z"
+                      },
+                      {
+                          "name":  "Post Checkout",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  12,
+                          "started_at":  "2026-07-18T15:34:03Z",
+                          "completed_at":  "2026-07-18T15:34:03Z"
+                      },
+                      {
+                          "name":  "Complete job",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  13,
+                          "started_at":  "2026-07-18T15:34:03Z",
+                          "completed_at":  "2026-07-18T15:34:03Z"
+                      }
+                  ],
+        "check_run_url":  "https://api.github.com/repos/arnavganguly209-code/marlo-hotels/check-runs/88095146639",
+        "labels":  [
+                       "ubuntu-latest"
+                   ],
+        "runner_id":  1000000052,
+        "runner_name":  "GitHub Actions 1000000052",
+        "runner_group_id":  0,
+        "runner_group_name":  "GitHub Actions"
+    },
+    {
+        "id":  88095244597,
+        "run_id":  29650203909,
+        "workflow_name":  "Deploy to Hostinger VPS",
+        "head_branch":  "main",
+        "run_url":  "https://api.github.com/repos/arnavganguly209-code/marlo-hotels/actions/runs/29650203909",
+        "run_attempt":  1,
+        "node_id":  "CR_kwDOTcX1e88AAAAUguLBNQ",
+        "head_sha":  "c49ca240694833f58a7f3a1d4de955384afb2cba",
+        "url":  "https://api.github.com/repos/arnavganguly209-code/marlo-hotels/actions/jobs/88095244597",
+        "html_url":  "https://github.com/arnavganguly209-code/marlo-hotels/actions/runs/29650203909/job/88095244597",
+        "status":  "completed",
+        "conclusion":  "failure",
+        "created_at":  "2026-07-18T15:34:05Z",
+        "started_at":  "2026-07-18T15:34:07Z",
+        "completed_at":  "2026-07-18T15:34:09Z",
+        "name":  "Deploy",
+        "steps":  [
+                      {
+                          "name":  "Set up job",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  1,
+                          "started_at":  "2026-07-18T15:34:08Z",
+                          "completed_at":  "2026-07-18T15:34:08Z"
+                      },
+                      {
+                          "name":  "Deploy over SSH",
+                          "status":  "completed",
+                          "conclusion":  "failure",
+                          "number":  2,
+                          "started_at":  "2026-07-18T15:34:08Z",
+                          "completed_at":  "2026-07-18T15:34:08Z"
+                      },
+                      {
+                          "name":  "Complete job",
+                          "status":  "completed",
+                          "conclusion":  "success",
+                          "number":  3,
+                          "started_at":  "2026-07-18T15:34:08Z",
+                          "completed_at":  "2026-07-18T15:34:08Z"
+                      }
+                  ],
+        "check_run_url":  "https://api.github.com/repos/arnavganguly209-code/marlo-hotels/check-runs/88095244597",
+        "labels":  [
+                       "ubuntu-latest"
+                   ],
+        "runner_id":  1000000053,
+        "runner_name":  "GitHub Actions 1000000053",
+        "runner_group_id":  0,
+        "runner_group_name":  "GitHub Actions"
+    }
+]

@@ -102,7 +102,8 @@ npm ci && npm run build
 pm2 start npm --name marlo-hotels -- start && pm2 save
 ```
 
-GitHub repository secrets required:
+GitHub repository secrets required (Settings → Secrets and variables → Actions,
+or the **production** environment used by the Deploy job):
 
 | Secret         | Value                                  |
 | -------------- | -------------------------------------- |
@@ -110,6 +111,9 @@ GitHub repository secrets required:
 | `VPS_USERNAME` | SSH user                               |
 | `VPS_SSH_KEY`  | Private key with access to the VPS     |
 | `VPS_PORT`     | SSH port (optional, defaults to 22)    |
+
+The CI **Lint & Build** job can pass while **Deploy** fails if these secrets
+are missing — that failure happens in ~2 seconds on the SSH step.
 
 Put Nginx (or Caddy) in front of `localhost:3000` with TLS.
 
