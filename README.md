@@ -87,23 +87,15 @@ media volume, and expose that directory at `/uploads`.
 
 ## Deployment — Hostinger VPS
 
-Pushes to `main` trigger `.github/workflows/deploy.yml`: lint + build on CI,
-then SSH into the VPS, pull, install, migrate, build and reload PM2.
+### Continuous integration (automatic)
 
-One-time VPS setup:
+Pushes to `main` run `.github/workflows/ci.yml` (lint + build only).
 
-```bash
-# as your deploy user
-sudo mkdir -p /var/www/marlo-hotels && sudo chown $USER /var/www/marlo-hotels
-git clone git@github.com:arnavganguly209-code/marlo-hotels.git /var/www/marlo-hotels
-cd /var/www/marlo-hotels
-cp .env.example .env   # set NEXT_PUBLIC_SITE_URL + DATABASE_URL
-npm ci && npm run build
-pm2 start npm --name marlo-hotels -- start && pm2 save
-```
+### Production deploy (manual)
 
-GitHub repository secrets required (Settings → Secrets and variables → Actions,
-or the **production** environment used by the Deploy job):
+Deploy is **manual** via Actions → **Deploy to Hostinger VPS** → **Run workflow**.
+It requires these GitHub secrets (Settings → Secrets and variables → Actions,
+or the **production** environment):
 
 | Secret         | Value                                  |
 | -------------- | -------------------------------------- |
@@ -112,8 +104,27 @@ or the **production** environment used by the Deploy job):
 | `VPS_SSH_KEY`  | Private key with access to the VPS     |
 | `VPS_PORT`     | SSH port (optional, defaults to 22)    |
 
-The CI **Lint & Build** job can pass while **Deploy** fails if these secrets
-are missing — that failure happens in ~2 seconds on the SSH step.
+Until those secrets exist, do not run the Deploy workflow — it will fail on
+purpose with a clear missing-secret message. You can still deploy on the VPS:
+
+```bash
+cd /var/www/marlo-hotels
+git pull origin main
+npm ci && npm run build
+pm2 reload marlo-hotels --update-env
+```
+
+One-time VPS setup:
+
+```bash
+# as your deploy user
+sudo mkdir -p /var/www/marlo-hotels && sudo chown $USER /var/www/marlo-hotels
+git clone git@github.com:arnavganguly209-code/marlo-hotels.git /var/www/marlo-hotels
+cd /var/www/marlo-hotels
+cp .env.example .env   # set NEXT_PUBLIC_SITE_URL + DATABASE_URL + Orbit secrets
+npm ci && npm run build
+pm2 start npm --name marlo-hotels -- start && pm2 save
+```
 
 Put Nginx (or Caddy) in front of `localhost:3000` with TLS.
 

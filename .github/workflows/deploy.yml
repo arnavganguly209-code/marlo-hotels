@@ -1,8 +1,9 @@
 name: Deploy to Hostinger VPS
 
+# Manual only — requires VPS_HOST, VPS_USERNAME, VPS_SSH_KEY secrets.
+# Automatic push deploys stay off until those secrets are configured
+# (Settings → Secrets and variables → Actions, or the production environment).
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -48,7 +49,7 @@ jobs:
         run: |
           missing=0
           if [ -z "$VPS_HOST" ]; then
-            echo "::error::Missing secret VPS_HOST. Add it under Settings → Secrets and variables → Actions (or the production environment)."
+            echo "::error::Missing secret VPS_HOST. Add it under Settings → Secrets and variables → Actions (or Environments → production)."
             missing=1
           fi
           if [ -z "$VPS_USERNAME" ]; then
@@ -56,11 +57,11 @@ jobs:
             missing=1
           fi
           if [ -z "$VPS_SSH_KEY" ]; then
-            echo "::error::Missing secret VPS_SSH_KEY (private key contents, including BEGIN/END lines)."
+            echo "::error::Missing secret VPS_SSH_KEY (full private key including BEGIN/END lines)."
             missing=1
           fi
           if [ "$missing" -ne 0 ]; then
-            echo "::error::Configure VPS_HOST, VPS_USERNAME, and VPS_SSH_KEY, then re-run this workflow."
+            echo "::error::Add VPS_HOST, VPS_USERNAME, and VPS_SSH_KEY, then run this workflow again from Actions → Deploy to Hostinger VPS → Run workflow."
             exit 1
           fi
           echo "Deploy secrets are present."
