@@ -27,7 +27,6 @@ import {
   MailPlus,
   type LucideIcon,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -61,20 +60,20 @@ const icons: Record<string, LucideIcon> = {
 };
 
 export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
 
   const content = (
     <div className="flex h-full flex-col">
       <div className="flex h-24 items-center justify-between border-b border-white/8 px-6">
         <Link href="/orbit/dashboard" onClick={() => setOpen(false)}>
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={logoUrl ?? "/images/brand/logo.png"}
             alt="Marlo Hotels"
             width={230}
             height={90}
-            priority
-            className="h-auto w-36 object-contain"
+            className="h-auto w-36 bg-transparent object-contain"
           />
         </Link>
         <button

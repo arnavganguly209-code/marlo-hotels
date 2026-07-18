@@ -13,7 +13,7 @@ export function SiteShell({
   logoUrl?: string;
   footerLogoUrl?: string;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const isOrbit = pathname.startsWith("/orbit");
 
   if (isOrbit) return <>{children}</>;

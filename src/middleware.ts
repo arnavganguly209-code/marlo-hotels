@@ -5,10 +5,14 @@ const ORBIT_COOKIE = "marlo_orbit_session";
 export function middleware(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl;
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-marlo-pathname", pathname);
 
     // Exact /orbit login page must remain publicly reachable.
     if (pathname === "/orbit" || pathname === "/orbit/") {
-      return NextResponse.next();
+      return NextResponse.next({
+        request: { headers: requestHeaders },
+      });
     }
 
     const isProtectedPage = pathname.startsWith("/orbit/");
@@ -30,7 +34,9 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(login);
     }
 
-    return NextResponse.next();
+    return NextResponse.next({
+      request: { headers: requestHeaders },
+    });
   } catch (error) {
     console.error("[orbit] middleware failure", error);
     return NextResponse.next();

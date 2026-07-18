@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
+import { headers } from "next/headers";
 import { SiteShell } from "@/components/layout/site-shell";
 import { JsonLd } from "@/components/shared/json-ld";
 import { hotelJsonLd } from "@/lib/seo";
@@ -21,8 +22,18 @@ const jost = Jost({
   display: "swap",
 });
 
+function safeSiteUrl() {
+  try {
+    return new URL(siteConfig.url).toString().replace(/\/$/, "");
+  } catch {
+    return "https://marlo.theglobalorbit.com";
+  }
+}
+
+const siteUrl = safeSiteUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
+  metadataBase: new URL(siteUrl),
   title: {
     default: `${siteConfig.name} — ${siteConfig.tagline}`,
     template: `%s | ${siteConfig.name}`,
@@ -37,17 +48,17 @@ export const metadata: Metadata = {
     "hotel spa Nepal",
   ],
   authors: [{ name: siteConfig.name }],
-  alternates: { canonical: siteConfig.url },
+  alternates: { canonical: siteUrl },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: siteConfig.url,
+    url: siteUrl,
     siteName: siteConfig.name,
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
     images: [
       {
-        url: `${siteConfig.url}/images/brand/hero-reference.png`,
+        url: `${siteUrl}/images/brand/hero-reference.png`,
         width: 1200,
         height: 630,
         alt: `${siteConfig.name} — ${siteConfig.tagline}`,
@@ -58,7 +69,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
-    images: [`${siteConfig.url}/images/brand/hero-reference.png`],
+    images: [`${siteUrl}/images/brand/hero-reference.png`],
   },
   robots: {
     index: true,
@@ -83,6 +94,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = (await headers()).get("x-marlo-pathname") ?? "";
+  const isOrbit = pathname.startsWith("/orbit");
+
+  // Orbit routes skip brand DB lookups and hotel JSON-LD to avoid any
+  // server-side exception path on the administration console.
+  if (isOrbit) {
+    return (
+      <html lang="en" className={`${cormorant.variable} ${jost.variable}`}>
+        <body className="antialiased">{children}</body>
+      </html>
+    );
+  }
+
   let brand = {
     logoUrl: "/images/brand/logo.png",
     footerLogoUrl: "/images/brand/logo.png",

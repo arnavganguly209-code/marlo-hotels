@@ -7,7 +7,7 @@ import { useState } from "react";
 import { moduleBySlug } from "@/lib/orbit/modules";
 
 export function OrbitHeader() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const slug = pathname.split("/")[2] ?? "dashboard";
