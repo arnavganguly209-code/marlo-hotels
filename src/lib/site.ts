@@ -4,7 +4,8 @@ export const siteConfig = {
   tagline: "Stay Beyond Extraordinary",
   description:
     "Marlo Hotels is a five-star luxury sanctuary in the heart of Kathmandu — an address of timeless elegance, celebrated dining, restorative wellness and Himalayan hospitality.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://marlohotels.com",
+  url:
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://marlo.theglobalorbit.com",
   currency: "USD",
   contact: {
     address: "Durbar Marg, Kathmandu 44600, Nepal",

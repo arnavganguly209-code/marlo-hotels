@@ -1,13 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { OrbitLoginForm } from "@/components/orbit/login-form";
-import { getOrbitSession } from "@/lib/orbit/auth";
-import { isNextNavigationError } from "@/lib/orbit/logger";
-import { getBrandSettings } from "@/lib/site-settings";
+import { OrbitSessionRedirect } from "@/components/orbit/session-redirect";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+const LOGO_SRC = "/images/brand/logo.png";
 
 const particles = [
   ["8%", "18%", "0s", "5px"],
@@ -21,19 +20,12 @@ const particles = [
   ["92%", "20%", "1.4s", "5px"],
 ] as const;
 
-export default async function OrbitLoginPage() {
-  try {
-    if (await getOrbitSession()) redirect("/orbit/dashboard");
-  } catch (error) {
-    if (isNextNavigationError(error)) throw error;
-  }
-
-  const brand = await getBrandSettings().catch(() => ({
-    logoUrl: "/images/brand/logo.png",
-    footerLogoUrl: "/images/brand/logo.png",
-    faviconUrl: "/images/brand/logo.png",
-  }));
-
+/**
+ * Orbit login must never throw a server-side exception.
+ * Session checks and redirects happen on the client so a bad cookie,
+ * missing secret, or Prisma failure cannot crash this route.
+ */
+export default function OrbitLoginPage() {
   return (
     <section className="orbit-login-bg relative grid min-h-svh place-items-center overflow-hidden px-5 py-12">
       <div className="orbit-aurora absolute inset-0" aria-hidden="true" />
@@ -57,13 +49,13 @@ export default async function OrbitLoginPage() {
       <div className="relative z-10 w-full max-w-[440px]">
         <div className="orbit-login-card rounded-[28px] border border-white/12 px-7 py-9 shadow-[0_35px_90px_-20px_rgba(0,0,0,.8)] backdrop-blur-2xl sm:px-10 sm:py-11">
           <div className="text-center">
-            <Image
-              src={brand.logoUrl}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={LOGO_SRC}
               alt="Marlo Hotels"
               width={380}
               height={150}
-              priority
-              className="mx-auto h-auto w-48 object-contain"
+              className="mx-auto h-auto w-48 bg-transparent object-contain"
             />
             <div className="mx-auto mt-7 h-px w-20 bg-gradient-to-r from-transparent via-[#d0a654] to-transparent" />
             <p className="mt-6 text-[10px] font-medium tracking-[0.38em] text-[#d0a654] uppercase">
@@ -94,6 +86,10 @@ export default async function OrbitLoginPage() {
           </Link>
         </p>
       </div>
+
+      <Suspense fallback={null}>
+        <OrbitSessionRedirect />
+      </Suspense>
     </section>
   );
 }

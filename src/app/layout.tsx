@@ -83,7 +83,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const brand = await getBrandSettings();
+  let brand = {
+    logoUrl: "/images/brand/logo.png",
+    footerLogoUrl: "/images/brand/logo.png",
+    faviconUrl: "/images/brand/logo.png",
+  };
+  try {
+    brand = await getBrandSettings();
+  } catch {
+    // Keep the public shell rendering even if brand settings fail.
+  }
 
   return (
     <html lang="en" className={`${cormorant.variable} ${jost.variable}`}>

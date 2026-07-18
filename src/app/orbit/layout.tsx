@@ -13,5 +13,7 @@ export default function OrbitLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <main className="min-h-svh bg-[#081310] text-[#f8f2e7]">{children}</main>;
+  return (
+    <div className="min-h-svh bg-[#081310] text-[#f8f2e7]">{children}</div>
+  );
 }
