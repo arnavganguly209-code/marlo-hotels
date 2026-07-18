@@ -1,3 +1,4 @@
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
@@ -79,5 +80,8 @@ export async function POST(request: Request) {
     entityId: entry.id,
     summary: `Created ${entry.title}`,
   });
+  revalidateTag("media");
+  revalidatePath("/");
+  revalidatePath(`/orbit/${parsed.data.module}`);
   return NextResponse.json({ entry }, { status: 201 });
 }

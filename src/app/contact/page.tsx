@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ContactForm } from "@/components/forms/contact-form";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
@@ -18,7 +19,13 @@ type PageProps = {
 };
 
 export default async function ContactPage({ searchParams }: PageProps) {
-  const { subject } = await searchParams;
+  const [{ subject }, hero] = await Promise.all([
+    searchParams,
+    resolveSiteImage("page.contact.hero", {
+      src: "https://images.unsplash.com/photo-1455587734955-081b22074882?q=80&w=2400&auto=format&fit=crop",
+      alt: "The warm lights of the Marlo lobby at evening",
+    }),
+  ]);
 
   const channels = [
     {
@@ -61,8 +68,9 @@ export default async function ContactPage({ searchParams }: PageProps) {
         title="We are at your service"
         description="Reservations, celebrations, dining or a question about the valley — the concierge desk answers around the clock."
         image={{
-          src: "https://images.unsplash.com/photo-1455587734955-081b22074882?q=80&w=2400&auto=format&fit=crop",
-          alt: "The warm lights of the Marlo lobby at evening",
+          src: hero.src,
+          alt: hero.alt,
+          objectPosition: hero.objectPosition,
         }}
         crumbs={[
           { label: "Home", href: "/" },

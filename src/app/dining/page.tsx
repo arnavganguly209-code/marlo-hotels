@@ -6,6 +6,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
 import { getRestaurants } from "@/content/dining";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -16,7 +17,13 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function DiningPage() {
-  const restaurants = await getRestaurants();
+  const [restaurants, hero] = await Promise.all([
+    getRestaurants(),
+    resolveSiteImage("page.dining.hero", {
+      src: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=2400&auto=format&fit=crop",
+      alt: "Amaya's candlelit dining room",
+    }),
+  ]);
 
   return (
     <>
@@ -25,8 +32,9 @@ export default async function DiningPage() {
         title="Tables worth travelling for"
         description="The Himalayan larder, treated with the world's finest technique — from seven-course tasting journeys to midnight cocktails on vinyl."
         image={{
-          src: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=2400&auto=format&fit=crop",
-          alt: "Amaya's candlelit dining room",
+          src: hero.src,
+          alt: hero.alt,
+          objectPosition: hero.objectPosition,
         }}
         crumbs={[
           { label: "Home", href: "/" },

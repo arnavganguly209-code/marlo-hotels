@@ -1,3 +1,4 @@
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
@@ -65,6 +66,9 @@ export async function PATCH(request: Request, { params }: Context) {
     entityId: entry.id,
     summary: `Updated ${entry.title}`,
   });
+  revalidateTag("media");
+  revalidatePath("/");
+  revalidatePath(`/orbit/${entry.module}`);
   return NextResponse.json({ entry });
 }
 

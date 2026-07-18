@@ -18,15 +18,18 @@ import { getRestaurants } from "@/content/dining";
 import { getExperiences } from "@/content/experiences";
 import { getFeaturedRooms, getRooms } from "@/content/rooms";
 import { getDb } from "@/lib/db";
+import { getPlacement } from "@/lib/orbit/media";
 
 export default async function HomePage() {
-  const [rooms, suites, restaurants, experiences, posts] = await Promise.all([
-    getRooms(),
-    getFeaturedRooms(),
-    getRestaurants(),
-    getExperiences(),
-    getPosts(),
-  ]);
+  const [rooms, suites, restaurants, experiences, posts, heroMedia] =
+    await Promise.all([
+      getRooms(),
+      getFeaturedRooms(),
+      getRestaurants(),
+      getExperiences(),
+      getPosts(),
+      getPlacement("home.hero"),
+    ]);
   const db = getDb();
   const heroEntry = db
     ? await db.contentEntry.findFirst({
@@ -40,9 +43,26 @@ export default async function HomePage() {
       })
     : null;
 
+  const entryData = (heroEntry?.data as HeroContent | undefined) ?? undefined;
+  const heroContent: HeroContent = {
+    ...entryData,
+    imageUrl: heroMedia.src || entryData?.imageUrl,
+    imageAlt: heroMedia.alt || entryData?.imageAlt,
+    mediaType: heroMedia.kind,
+    focalX: heroMedia.focalX,
+    focalY: heroMedia.focalY,
+    videoAutoplay: heroMedia.videoAutoplay,
+    videoLoop: heroMedia.videoLoop,
+    videoMuted: heroMedia.videoMuted,
+    posterUrl: heroMedia.posterUrl,
+  };
+
   return (
     <>
-      <Hero content={(heroEntry?.data as HeroContent | undefined) ?? undefined} />
+      {heroMedia.kind === "IMAGE" ? (
+        <link rel="preload" as="image" href={heroMedia.src} />
+      ) : null}
+      <Hero content={heroContent} />
       <AboutSection />
       <RoomsShowcase rooms={rooms.filter((room) => room.category === "room")} />
       <FeaturedSuites suites={suites} />

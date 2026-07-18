@@ -42,6 +42,7 @@ yarn-error.log*
 
 # Orbit media storage (persistent VPS volume)
 /public/uploads/
+/public/media/
 
 # vercel
 .vercel

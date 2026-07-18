@@ -11,7 +11,7 @@ type PageHeroProps = {
   eyebrow: string;
   title: string;
   description?: string;
-  image: { src: string; alt: string };
+  image: { src: string; alt: string; objectPosition?: string };
   crumbs: Crumb[];
 };
 
@@ -34,8 +34,11 @@ export function PageHero({
         alt={image.alt}
         fill
         priority
+        quality={100}
         sizes="100vw"
         className="animate-kenburns object-cover opacity-70"
+        style={{ objectPosition: image.objectPosition || "50% 50%" }}
+        unoptimized={image.src.startsWith("/media/")}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/90 via-charcoal-950/35 to-charcoal-950/45" />
 

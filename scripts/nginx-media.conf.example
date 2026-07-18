@@ -1,0 +1,22 @@
+# Example Nginx snippet for Orbit media on the VPS.
+# Include inside the server { } block for marlo.theglobalorbit.com
+
+client_max_body_size 220m;
+
+location /media/ {
+    alias /srv/marlo-media/;
+    access_log off;
+    expires 365d;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    try_files $uri @next_media;
+}
+
+# Fallback to the Next.js media route when the file is missing from disk
+location @next_media {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}

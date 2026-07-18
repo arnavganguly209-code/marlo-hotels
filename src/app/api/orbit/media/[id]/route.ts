@@ -1,6 +1,5 @@
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getDb } from "@/lib/db";
 import {
@@ -8,31 +7,72 @@ import {
   getOrbitSession,
   writeAuditLog,
 } from "@/lib/orbit/auth";
+import { removeMediaFile } from "@/lib/orbit/media-storage";
 
 const updateSchema = z.object({
   alt: z.string().max(500).optional(),
+  title: z.string().max(240).optional().nullable(),
   caption: z.string().max(1000).optional().nullable(),
+  seoTitle: z.string().max(240).optional().nullable(),
+  seoDescription: z.string().max(500).optional().nullable(),
   folder: z
     .string()
     .min(1)
     .max(80)
     .regex(/^[a-z0-9-]+$/)
     .optional(),
+  focalX: z.number().min(0).max(100).optional(),
+  focalY: z.number().min(0).max(100).optional(),
+  posterUrl: z.string().max(500).optional().nullable(),
+  restore: z.boolean().optional(),
 });
 
 type Context = { params: Promise<{ id: string }> };
 
-function diskPathFromUrl(url: string) {
-  const root = path.resolve(
-    process.env.ORBIT_UPLOAD_DIR || path.join(process.cwd(), "public", "uploads")
-  );
-  const resolved = path.resolve(root, url.replace(/^\/uploads\//, ""));
-  if (!resolved.startsWith(root)) throw new Error("Invalid media path");
-  return resolved;
-}
-
 async function authorized(request: Request) {
   return (await getOrbitSession()) && (await assertSameOrigin(request));
+}
+
+function invalidate() {
+  revalidateTag("media");
+  revalidatePath("/");
+  revalidatePath("/orbit/media-library");
+}
+
+export async function GET(_request: Request, { params }: Context) {
+  if (!(await getOrbitSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const db = getDb();
+  if (!db) {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
+  const { id } = await params;
+  const asset = await db.mediaAsset.findUnique({
+    where: { id },
+    include: {
+      versions: { orderBy: { version: "desc" } },
+      placements: { select: { key: true, label: true } },
+      _count: { select: { placements: true } },
+    },
+  });
+  if (!asset) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  return NextResponse.json({
+    asset: {
+      ...asset,
+      createdAt: asset.createdAt.toISOString(),
+      updatedAt: asset.updatedAt.toISOString(),
+      deletedAt: asset.deletedAt?.toISOString() ?? null,
+      usageCount: asset._count.placements,
+      usedOn: asset.placements.map((item) => item.label || item.key),
+      versions: asset.versions.map((version) => ({
+        ...version,
+        createdAt: version.createdAt.toISOString(),
+      })),
+    },
+  });
 }
 
 export async function PATCH(request: Request, { params }: Context) {
@@ -41,19 +81,83 @@ export async function PATCH(request: Request, { params }: Context) {
   }
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid media metadata" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Validation Error", code: "VALIDATION_ERROR" },
+      { status: 400 }
+    );
   }
   const db = getDb();
-  if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  if (!db) {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
   const { id } = await params;
-  const asset = await db.mediaAsset.update({ where: { id }, data: parsed.data });
+
+  if (parsed.data.restore) {
+    const asset = await db.mediaAsset.update({
+      where: { id },
+      data: { deletedAt: null },
+      include: {
+        _count: { select: { placements: true } },
+        placements: { select: { key: true, label: true } },
+      },
+    });
+    await writeAuditLog({
+      action: "RESTORE_MEDIA",
+      module: "media-library",
+      entityId: asset.id,
+      summary: `Restored ${asset.originalName}`,
+    });
+    invalidate();
+    return NextResponse.json({
+      asset: {
+        ...asset,
+        createdAt: asset.createdAt.toISOString(),
+        updatedAt: asset.updatedAt.toISOString(),
+        deletedAt: null,
+        usageCount: asset._count.placements,
+        usedOn: asset.placements.map((item) => item.label || item.key),
+      },
+      message: "Restored Successfully",
+    });
+  }
+
+  const data = {
+    alt: parsed.data.alt,
+    title: parsed.data.title,
+    caption: parsed.data.caption,
+    seoTitle: parsed.data.seoTitle,
+    seoDescription: parsed.data.seoDescription,
+    folder: parsed.data.folder,
+    focalX: parsed.data.focalX,
+    focalY: parsed.data.focalY,
+    posterUrl: parsed.data.posterUrl,
+  };
+  const asset = await db.mediaAsset.update({
+    where: { id },
+    data,
+    include: {
+      _count: { select: { placements: true } },
+      placements: { select: { key: true, label: true } },
+    },
+  });
   await writeAuditLog({
     action: "UPDATE_MEDIA",
     module: "media-library",
     entityId: asset.id,
     summary: `Updated metadata for ${asset.originalName}`,
   });
-  return NextResponse.json({ asset });
+  invalidate();
+  return NextResponse.json({
+    asset: {
+      ...asset,
+      createdAt: asset.createdAt.toISOString(),
+      updatedAt: asset.updatedAt.toISOString(),
+      deletedAt: asset.deletedAt?.toISOString() ?? null,
+      usageCount: asset._count.placements,
+      usedOn: asset.placements.map((item) => item.label || item.key),
+    },
+    message: "Changes Saved",
+  });
 }
 
 export async function DELETE(request: Request, { params }: Context) {
@@ -61,15 +165,53 @@ export async function DELETE(request: Request, { params }: Context) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const db = getDb();
-  if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  if (!db) {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
   const { id } = await params;
-  const asset = await db.mediaAsset.delete({ where: { id } });
-  await unlink(diskPathFromUrl(asset.url)).catch(() => undefined);
+  const hard = new URL(request.url).searchParams.get("hard") === "1";
+  const existing = await db.mediaAsset.findUnique({
+    where: { id },
+    include: { _count: { select: { placements: true } } },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (hard) {
+    if (existing._count.placements > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot permanently delete media that is still used. Reassign placements first.",
+          code: "IN_USE",
+        },
+        { status: 409 }
+      );
+    }
+    await db.mediaAsset.delete({ where: { id } });
+    await removeMediaFile(existing.url);
+    await writeAuditLog({
+      action: "DELETE_MEDIA_HARD",
+      module: "media-library",
+      entityId: id,
+      summary: `Permanently deleted ${existing.originalName}`,
+    });
+    invalidate();
+    return NextResponse.json({ ok: true, message: "Deleted Successfully" });
+  }
+
+  // Soft-delete keeps the original file on disk so Restore can reinstate it.
+  await db.mediaAsset.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
   await writeAuditLog({
     action: "DELETE_MEDIA",
     module: "media-library",
-    entityId: asset.id,
-    summary: `Deleted ${asset.originalName}`,
+    entityId: id,
+    summary: `Moved ${existing.originalName} to trash`,
   });
-  return NextResponse.json({ ok: true });
+  invalidate();
+  return NextResponse.json({ ok: true, message: "Deleted Successfully" });
 }

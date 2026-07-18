@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { packages, spaIntro, treatments } from "@/content/spa";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { buildMetadata } from "@/lib/seo";
 import { formatCurrency } from "@/lib/utils";
 import type { SpaTreatment } from "@/types/content";
@@ -25,7 +26,18 @@ const categories: SpaTreatment["category"][] = [
   "Body Ritual",
 ];
 
-export default function SpaPage() {
+export default async function SpaPage() {
+  const [hero, body] = await Promise.all([
+    resolveSiteImage("page.spa.hero", {
+      src: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=2400&auto=format&fit=crop",
+      alt: "A treatment underway at Marlo Spa",
+    }),
+    resolveSiteImage("page.spa.body", {
+      src: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1600&auto=format&fit=crop",
+      alt: "Spa ritual details — flowers, stone and warm light",
+    }),
+  ]);
+
   return (
     <>
       <PageHero
@@ -33,8 +45,9 @@ export default function SpaPage() {
         title="Stillness, drawn from the mountains"
         description="Himalayan traditions and contemporary therapy, woven into rituals you will carry home."
         image={{
-          src: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=2400&auto=format&fit=crop",
-          alt: "A treatment underway at Marlo Spa",
+          src: hero.src,
+          alt: hero.alt,
+          objectPosition: hero.objectPosition,
         }}
         crumbs={[
           { label: "Home", href: "/" },
@@ -48,11 +61,12 @@ export default function SpaPage() {
           <Reveal direction="right">
             <div className="img-hover-frame shadow-luxury relative aspect-[4/5] overflow-hidden rounded-xl">
               <Image
-                src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1600&auto=format&fit=crop"
-                alt="Spa ritual details — flowers, stone and warm light"
+                src={body.src}
+                alt={body.alt}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
+                style={{ objectPosition: body.objectPosition }}
               />
             </div>
           </Reveal>

@@ -4,12 +4,23 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
 import { treatments } from "@/content/spa";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { formatCurrency } from "@/lib/utils";
 
-export function WellnessSection() {
+export async function WellnessSection() {
   const highlights = treatments.filter(
     (treatment) => treatment.category === "Signature Journey"
   );
+  const [primary, secondary] = await Promise.all([
+    resolveSiteImage("home.wellness.primary", {
+      src: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1600&auto=format&fit=crop",
+      alt: "A Marlo Spa ritual with flowers and warm stone",
+    }),
+    resolveSiteImage("home.wellness.secondary", {
+      src: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200&auto=format&fit=crop",
+      alt: "Treatment suite at Marlo Spa",
+    }),
+  ]);
 
   return (
     <section className="overflow-hidden bg-cream-100 py-24 md:py-36">
@@ -65,11 +76,13 @@ export function WellnessSection() {
           <Reveal direction="left">
             <div className="img-hover-frame shadow-luxury relative aspect-[4/5] overflow-hidden rounded-xl">
               <Image
-                src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1600&auto=format&fit=crop"
-                alt="A Marlo Spa ritual with flowers and warm stone"
+                src={primary.src}
+                alt={primary.alt}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
+                style={{ objectPosition: primary.objectPosition }}
+                unoptimized={primary.src.startsWith("/media/")}
               />
             </div>
           </Reveal>
@@ -79,11 +92,13 @@ export function WellnessSection() {
           >
             <div className="img-hover-frame shadow-luxury relative aspect-[4/3] overflow-hidden rounded-xl border-6 border-cream-100">
               <Image
-                src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200&auto=format&fit=crop"
-                alt="Treatment suite at Marlo Spa"
+                src={secondary.src}
+                alt={secondary.alt}
                 fill
                 sizes="25vw"
                 className="object-cover"
+                style={{ objectPosition: secondary.objectPosition }}
+                unoptimized={secondary.src.startsWith("/media/")}
               />
             </div>
           </Reveal>

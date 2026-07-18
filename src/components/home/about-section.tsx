@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 
 const stats = [
   { value: "68", label: "Rooms & Suites" },
@@ -11,7 +12,18 @@ const stats = [
   { value: "24/7", label: "Concierge" },
 ];
 
-export function AboutSection() {
+export async function AboutSection() {
+  const [primary, secondary] = await Promise.all([
+    resolveSiteImage("home.about.primary", {
+      src: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=1600&auto=format&fit=crop",
+      alt: "Marlo Hotels architecture rising above the gardens",
+    }),
+    resolveSiteImage("home.about.secondary", {
+      src: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1200&auto=format&fit=crop",
+      alt: "The infinity pool at first light",
+    }),
+  ]);
+
   return (
     <section id="about" className="overflow-hidden bg-ivory py-24 md:py-36">
       <div className="mx-auto grid max-w-7xl items-center gap-16 px-5 md:px-8 lg:grid-cols-2 lg:gap-24">
@@ -20,11 +32,13 @@ export function AboutSection() {
           <Reveal direction="right">
             <div className="img-hover-frame shadow-luxury relative aspect-[4/5] overflow-hidden rounded-xl">
               <Image
-                src="https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=1600&auto=format&fit=crop"
-                alt="Marlo Hotels architecture rising above the gardens"
+                src={primary.src}
+                alt={primary.alt}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
+                style={{ objectPosition: primary.objectPosition }}
+                unoptimized={primary.src.startsWith("/media/")}
               />
             </div>
           </Reveal>
@@ -35,11 +49,13 @@ export function AboutSection() {
           >
             <div className="img-hover-frame shadow-luxury relative aspect-square overflow-hidden rounded-xl border-6 border-ivory">
               <Image
-                src="https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1200&auto=format&fit=crop"
-                alt="The infinity pool at first light"
+                src={secondary.src}
+                alt={secondary.alt}
                 fill
                 sizes="25vw"
                 className="object-cover"
+                style={{ objectPosition: secondary.objectPosition }}
+                unoptimized={secondary.src.startsWith("/media/")}
               />
             </div>
           </Reveal>

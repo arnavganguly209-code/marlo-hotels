@@ -4,6 +4,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getRooms } from "@/content/rooms";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -14,7 +15,13 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function RoomsPage() {
-  const allRooms = await getRooms();
+  const [allRooms, hero] = await Promise.all([
+    getRooms(),
+    resolveSiteImage("page.rooms.hero", {
+      src: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=2400&auto=format&fit=crop",
+      alt: "A Marlo guest room bathed in morning light",
+    }),
+  ]);
   const rooms = allRooms.filter((room) => room.category === "room");
   const suites = allRooms.filter((room) => room.category === "suite");
 
@@ -25,8 +32,9 @@ export default async function RoomsPage() {
         title="Quarters of quiet grandeur"
         description="Every room at Marlo is an argument for staying in — mountain light, hand-loomed textiles and beds you will write home about."
         image={{
-          src: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=2400&auto=format&fit=crop",
-          alt: "A Marlo guest room bathed in morning light",
+          src: hero.src,
+          alt: hero.alt,
+          objectPosition: hero.objectPosition,
         }}
         crumbs={[
           { label: "Home", href: "/" },

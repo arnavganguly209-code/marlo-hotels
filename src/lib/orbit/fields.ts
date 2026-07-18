@@ -9,16 +9,25 @@ export type OrbitField = {
     | "toggle"
     | "select"
     | "datetime"
-    | "richtext";
+    | "richtext"
+    | "media"
+    | "media-video";
   required?: boolean;
   options?: string[];
   help?: string;
 };
 
 const mediaFields: OrbitField[] = [
-  { key: "imageUrl", label: "Featured image URL", type: "url" },
+  {
+    key: "imageUrl",
+    label: "Featured image",
+    type: "media",
+    required: true,
+    help: "Select or upload from the Media Library. Original quality is preserved.",
+  },
   { key: "imageAlt", label: "Image alt text", type: "text", required: true },
   { key: "imageCaption", label: "Image caption", type: "text" },
+  { key: "mediaAssetId", label: "Media asset id", type: "text", help: "Set automatically when choosing media." },
 ];
 
 const seoFields: OrbitField[] = [
@@ -44,6 +53,18 @@ export const orbitFields: Record<string, OrbitField[]> = {
     { key: "backgroundOverlay", label: "Background overlay", type: "select", options: ["Light", "Balanced", "Dark", "Custom"] },
     { key: "animation", label: "Animation", type: "select", options: ["Reveal", "Fade", "Parallax", "None"] },
     ...mediaFields,
+    {
+      key: "heroVideoUrl",
+      label: "Hero video (optional)",
+      type: "media-video",
+      help: "When set for the Hero section, video replaces the still image.",
+    },
+    { key: "posterUrl", label: "Video poster image", type: "media" },
+    { key: "videoAutoplay", label: "Video autoplay", type: "toggle" },
+    { key: "videoLoop", label: "Video loop", type: "toggle" },
+    { key: "videoMuted", label: "Video muted", type: "toggle" },
+    { key: "focalX", label: "Focal point X (0-100)", type: "number" },
+    { key: "focalY", label: "Focal point Y (0-100)", type: "number" },
   ],
   rooms: [
     { key: "roomType", label: "Room type", type: "select", required: true, options: ["Room", "Suite", "Villa", "Residence"] },
@@ -115,9 +136,9 @@ export const orbitFields: Record<string, OrbitField[]> = {
   ],
   "site-settings": [
     { key: "settingGroup", label: "Settings group", type: "select", options: ["Brand", "Contact", "Location", "Social Media", "Booking", "Footer"] },
-    { key: "logoUrl", label: "Primary logo", type: "url" },
-    { key: "footerLogoUrl", label: "Footer logo", type: "url" },
-    { key: "faviconUrl", label: "Favicon", type: "url" },
+    { key: "logoUrl", label: "Primary logo", type: "media" },
+    { key: "footerLogoUrl", label: "Footer logo", type: "media" },
+    { key: "faviconUrl", label: "Favicon", type: "media" },
     { key: "email", label: "Email", type: "text" },
     { key: "phone", label: "Phone", type: "text" },
     { key: "address", label: "Address", type: "textarea" },

@@ -3,35 +3,41 @@ import Image from "next/image";
 import Link from "next/link";
 import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 
-const events = [
-  {
-    title: "Weddings Above the Valley",
-    eyebrow: "Weddings & Celebrations",
-    description:
-      "Terrace vows for eighty as the sun sets behind the hills, or three-day celebrations choreographed by our events atelier — every wedding begins with a long conversation about the two of you.",
-    image: {
+export async function EventsSection() {
+  const [weddingImage, meetingImage] = await Promise.all([
+    resolveSiteImage("home.events.primary", {
       src: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1920&auto=format&fit=crop",
       alt: "Wedding reception beneath chandeliers at Marlo Hotels",
-    },
-    href: "/contact",
-    cta: "Plan Your Wedding",
-  },
-  {
-    title: "Meetings With a View",
-    eyebrow: "Meetings & Boardrooms",
-    description:
-      "Daylit boardrooms, a garden ballroom for three hundred, and the kind of coffee breaks people write home about. Our team handles everything from staging to sunset cocktails.",
-    image: {
+    }),
+    resolveSiteImage("home.events.secondary", {
       src: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=1920&auto=format&fit=crop",
       alt: "Elegant conference space prepared for an event",
-    },
-    href: "/contact",
-    cta: "Enquire For Events",
-  },
-];
+    }),
+  ]);
 
-export function EventsSection() {
+  const events = [
+    {
+      title: "Weddings Above the Valley",
+      eyebrow: "Weddings & Celebrations",
+      description:
+        "Terrace vows for eighty as the sun sets behind the hills, or three-day celebrations choreographed by our events atelier — every wedding begins with a long conversation about the two of you.",
+      image: { src: weddingImage.src, alt: weddingImage.alt },
+      href: "/contact",
+      cta: "Plan Your Wedding",
+    },
+    {
+      title: "Meetings With a View",
+      eyebrow: "Meetings & Boardrooms",
+      description:
+        "Daylit boardrooms, a garden ballroom for three hundred, and the kind of coffee breaks people write home about. Our team handles everything from staging to sunset cocktails.",
+      image: { src: meetingImage.src, alt: meetingImage.alt },
+      href: "/contact",
+      cta: "Enquire For Events",
+    },
+  ];
+
   return (
     <section id="events" className="bg-ivory py-24 md:py-36">
       <div className="mx-auto max-w-7xl px-5 md:px-8">
@@ -52,6 +58,7 @@ export function EventsSection() {
                     fill
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-cover"
+                    unoptimized={event.image.src.startsWith("/media/")}
                   />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/95 via-charcoal-950/35 to-transparent" />

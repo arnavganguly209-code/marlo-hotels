@@ -6,6 +6,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
 import { getExperiences } from "@/content/experiences";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -16,7 +17,13 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function ExperiencesPage() {
-  const experiences = await getExperiences();
+  const [experiences, hero] = await Promise.all([
+    getExperiences(),
+    resolveSiteImage("page.experiences.hero", {
+      src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2400&auto=format&fit=crop",
+      alt: "The Himalayan range at sunrise",
+    }),
+  ]);
 
   return (
     <>
@@ -25,8 +32,9 @@ export default async function ExperiencesPage() {
         title="The valley, opened for you"
         description="Composed by our concierge and impossible to book anywhere else — culture, adventure, wellness and doors that open only for Marlo guests."
         image={{
-          src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2400&auto=format&fit=crop",
-          alt: "The Himalayan range at sunrise",
+          src: hero.src,
+          alt: hero.alt,
+          objectPosition: hero.objectPosition,
         }}
         crumbs={[
           { label: "Home", href: "/" },

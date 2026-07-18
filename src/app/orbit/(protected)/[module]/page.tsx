@@ -55,15 +55,42 @@ async function renderOrbitModulePage({ params }: PageProps) {
   if (slug === "media-library") {
     const assets = db
       ? await db.mediaAsset.findMany({
+          where: { deletedAt: null },
           orderBy: { createdAt: "desc" },
-          take: 250,
+          take: 48,
+          include: {
+            _count: { select: { placements: true } },
+            placements: { select: { key: true, label: true } },
+          },
         })
       : [];
     return (
       <MediaManager
         initialAssets={assets.map((asset) => ({
-          ...asset,
+          id: asset.id,
+          filename: asset.filename,
+          originalName: asset.originalName,
+          url: asset.url,
+          mimeType: asset.mimeType,
+          kind: asset.kind,
+          size: asset.size,
+          width: asset.width,
+          height: asset.height,
+          alt: asset.alt,
+          title: asset.title,
+          caption: asset.caption,
+          seoTitle: asset.seoTitle,
+          seoDescription: asset.seoDescription,
+          folder: asset.folder,
+          checksum: asset.checksum,
+          focalX: asset.focalX,
+          focalY: asset.focalY,
+          posterUrl: asset.posterUrl,
+          currentVersion: asset.currentVersion,
+          deletedAt: asset.deletedAt?.toISOString() ?? null,
           createdAt: asset.createdAt.toISOString(),
+          usageCount: asset._count.placements,
+          usedOn: asset.placements.map((item) => item.label || item.key),
         }))}
       />
     );

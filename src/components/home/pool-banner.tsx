@@ -3,13 +3,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ParallaxBanner } from "@/components/ui/parallax-banner";
 import { Reveal } from "@/components/ui/reveal";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 
-export function PoolBanner() {
+export async function PoolBanner() {
+  const image = await resolveSiteImage("home.pool", {
+    src: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=2400&auto=format&fit=crop",
+    alt: "The infinity pool pouring into the valley horizon",
+  });
   return (
     <ParallaxBanner
       image={{
-        src: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=2400&auto=format&fit=crop",
-        alt: "The infinity pool pouring into the valley horizon",
+        src: image.src,
+        alt: image.alt,
       }}
       className="min-h-[70vh] py-32"
       overlayClassName="bg-gradient-to-b from-charcoal-950/60 via-charcoal-950/35 to-charcoal-950/70"

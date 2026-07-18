@@ -1,4 +1,8 @@
+import { config as loadDotenv } from "dotenv";
 import { defineConfig } from "prisma/config";
+
+// Ensure Prisma CLI sees the same .env as Next.js / npm scripts.
+loadDotenv({ path: ".env", override: false });
 
 export default defineConfig({
   schema: "prisma/schema.prisma",

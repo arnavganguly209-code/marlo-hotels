@@ -187,25 +187,110 @@ model Image {
   @@index([inGallery, category])
 }
 
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+model MediaFolder {
+  id        String       @id @default(cuid())
+  name      String
+  slug      String       @unique
+  parentId  String?
+  parent    MediaFolder? @relation("MediaFolderTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  MediaFolder[] @relation("MediaFolderTree")
+  assets    MediaAsset[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([parentId, name])
+}
+
 model MediaAsset {
-  id           String   @id @default(cuid())
+  id             String          @id @default(cuid())
+  filename       String
+  originalName   String
+  url            String          @unique
+  mimeType       String
+  kind           MediaKind       @default(IMAGE)
+  size           Int
+  width          Int?
+  height         Int?
+  durationMs     Int?
+  alt            String          @default("")
+  title          String?
+  caption        String?
+  seoTitle       String?
+  seoDescription String?
+  folder         String          @default("general")
+  folderId       String?
+  mediaFolder    MediaFolder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  checksum       String
+  focalX         Float           @default(50)
+  focalY         Float           @default(50)
+  cropJson       Json?
+  posterUrl      String?
+  posterAssetId  String?
+  currentVersion Int             @default(1)
+  deletedAt      DateTime?
+  createdBy      String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  versions       MediaVersion[]
+  placements     MediaPlacement[]
+
+  @@index([folder, createdAt])
+  @@index([originalName])
+  @@index([kind, deletedAt, createdAt])
+  @@index([checksum])
+  @@index([folderId])
+}
+
+model MediaVersion {
+  id           String     @id @default(cuid())
+  assetId      String
+  asset        MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  version      Int
   filename     String
   originalName String
-  url          String   @unique
+  url          String     @unique
   mimeType     String
   size         Int
   width        Int?
   height       Int?
-  alt          String   @default("")
-  caption      String?
-  folder       String   @default("general")
+  durationMs   Int?
   checksum     String
+  isOriginal   Boolean    @default(true)
+  cropJson     Json?
   createdBy    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
 
-  @@index([folder, createdAt])
-  @@index([originalName])
+  @@unique([assetId, version])
+  @@index([assetId, createdAt])
+}
+
+model MediaPlacement {
+  id           String     @id @default(cuid())
+  key          String     @unique
+  label        String
+  assetId      String?
+  asset        MediaAsset? @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  mediaType    MediaKind  @default(IMAGE)
+  alt          String?
+  title        String?
+  caption      String?
+  focalX       Float      @default(50)
+  focalY       Float      @default(50)
+  videoAutoplay Boolean   @default(true)
+  videoLoop    Boolean    @default(true)
+  videoMuted   Boolean    @default(true)
+  posterUrl    String?
+  sortOrder    Int        @default(0)
+  metadata     Json?
+  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime   @default(now())
+
+  @@index([assetId])
 }
 
 model Testimonial {

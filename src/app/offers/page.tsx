@@ -4,6 +4,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getOffers } from "@/content/offers";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -14,7 +15,13 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function OffersPage() {
-  const offers = await getOffers();
+  const [offers, hero] = await Promise.all([
+    getOffers(),
+    resolveSiteImage("page.offers.hero", {
+      src: "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?q=80&w=2400&auto=format&fit=crop",
+      alt: "Resort pool in golden morning light",
+    }),
+  ]);
   const seasonal = offers.filter((offer) => offer.category === "Seasonal");
   const packages = offers.filter((offer) => offer.category === "Package");
   const giftCards = offers.filter((offer) => offer.category === "Gift Card");
@@ -26,8 +33,9 @@ export default async function OffersPage() {
         title="Considered ways to stay"
         description="Seasonal escapes, composed packages and gifts that unwrap into whole days — each with privileges reserved for direct bookings."
         image={{
-          src: "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?q=80&w=2400&auto=format&fit=crop",
-          alt: "Resort pool in golden morning light",
+          src: hero.src,
+          alt: hero.alt,
+          objectPosition: hero.objectPosition,
         }}
         crumbs={[
           { label: "Home", href: "/" },

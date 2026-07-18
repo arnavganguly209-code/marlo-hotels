@@ -10,7 +10,10 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "media:seed": "node --env-file=.env scripts/seed-media.mjs",
+    "test:media": "node --env-file=.env scripts/test-media.mjs",
+    "test:media:offline": "node scripts/test-media-storage.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -22,13 +25,16 @@
     "@tiptap/starter-kit": "^3.28.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
     "framer-motion": "^12.42.2",
     "gsap": "^3.15.0",
     "lucide-react": "^1.25.0",
     "next": "^15.5.20",
     "next-seo": "^7.2.0",
+    "pg": "^8.22.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-easy-crop": "^6.2.2",
     "react-hook-form": "^7.82.0",
     "server-only": "^0.0.1",
     "sharp": "^0.35.3",

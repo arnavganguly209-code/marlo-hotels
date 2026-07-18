@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getDb } from "@/lib/db";
+import { getPlacement } from "@/lib/orbit/media";
 
 export type BrandSettings = {
   logoUrl: string;
@@ -16,30 +17,50 @@ const defaults: BrandSettings = {
 
 export async function getBrandSettings(): Promise<BrandSettings> {
   const db = getDb();
-  if (!db) return defaults;
+  const [logo, footerLogo, favicon] = await Promise.all([
+    getPlacement("brand.logo", { src: defaults.logoUrl, alt: "Marlo Hotels" }),
+    getPlacement("brand.footerLogo", {
+      src: defaults.footerLogoUrl,
+      alt: "Marlo Hotels",
+    }),
+    getPlacement("brand.favicon", {
+      src: defaults.faviconUrl,
+      alt: "Marlo Hotels",
+    }),
+  ]);
+
+  const fromPlacements: BrandSettings = {
+    logoUrl: logo.src || defaults.logoUrl,
+    footerLogoUrl: footerLogo.src || defaults.footerLogoUrl,
+    faviconUrl: favicon.src || defaults.faviconUrl,
+  };
+
+  if (!db) return fromPlacements;
   try {
     const entry = await db.contentEntry.findFirst({
       where: { module: "site-settings", status: "PUBLISHED" },
       orderBy: { updatedAt: "desc" },
       select: { data: true },
     });
-    if (!entry || typeof entry.data !== "object" || !entry.data) return defaults;
+    if (!entry || typeof entry.data !== "object" || !entry.data) {
+      return fromPlacements;
+    }
     const data = entry.data as Record<string, unknown>;
     return {
       logoUrl:
         typeof data.logoUrl === "string" && data.logoUrl
           ? data.logoUrl
-          : defaults.logoUrl,
+          : fromPlacements.logoUrl,
       footerLogoUrl:
         typeof data.footerLogoUrl === "string" && data.footerLogoUrl
           ? data.footerLogoUrl
-          : defaults.footerLogoUrl,
+          : fromPlacements.footerLogoUrl,
       faviconUrl:
         typeof data.faviconUrl === "string" && data.faviconUrl
           ? data.faviconUrl
-          : defaults.faviconUrl,
+          : fromPlacements.faviconUrl,
     };
   } catch {
-    return defaults;
+    return fromPlacements;
   }
 }

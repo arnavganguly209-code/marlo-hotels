@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   compress: true,
   images: {
     formats: ["image/avif", "image/webp"],
+    // Quality 100 is allowed so Orbit can request original-faithful delivery
+    // for hero and above-the-fold imagery via next/image quality={100}.
+    qualities: [75, 85, 90, 95, 100],
     remotePatterns: [
       {
         protocol: "https",

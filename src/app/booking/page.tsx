@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BookingEngine } from "@/components/booking/booking-engine";
 import { PageHero } from "@/components/shared/page-hero";
 import { getRooms } from "@/content/rooms";
+import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -29,8 +30,14 @@ function toCount(value: string | undefined, fallback: number) {
 }
 
 export default async function BookingPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const rooms = await getRooms();
+  const [params, rooms, hero] = await Promise.all([
+    searchParams,
+    getRooms(),
+    resolveSiteImage("page.booking.hero", {
+      src: "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=2400&auto=format&fit=crop",
+      alt: "A Marlo room prepared for arrival",
+    }),
+  ]);
 
   return (
     <>
@@ -39,8 +46,9 @@ export default async function BookingPage({ searchParams }: PageProps) {
         title="Reserve your stay"
         description="Direct bookings enjoy our best available rate, room upgrade priority and a welcome ritual at the spa."
         image={{
-          src: "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=2400&auto=format&fit=crop",
-          alt: "A Marlo room prepared for arrival",
+          src: hero.src,
+          alt: hero.alt,
+          objectPosition: hero.objectPosition,
         }}
         crumbs={[
           { label: "Home", href: "/" },

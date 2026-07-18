@@ -1,42 +1,61 @@
-import { createHash, randomUUID } from "node:crypto";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { NextResponse } from "next/server";
-import sharp, { type Sharp } from "sharp";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
 import {
   assertSameOrigin,
   getOrbitSession,
   writeAuditLog,
 } from "@/lib/orbit/auth";
+import {
+  ensureMediaRoot,
+  IMAGE_MIME_TYPES,
+  kindForMime,
+  maxImageBytes,
+  maxVideoBytes,
+  removeMediaFile,
+  storeOriginalUpload,
+  VIDEO_MIME_TYPES,
+} from "@/lib/orbit/media-storage";
 
-const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
-const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/avif",
-]);
-
-function safeFolder(value: FormDataEntryValue | null) {
-  const folder = String(value || "general")
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return folder || "general";
-}
-
-function uploadRoot() {
-  return path.resolve(
-    process.env.ORBIT_UPLOAD_DIR || path.join(process.cwd(), "public", "uploads")
-  );
-}
-
-function diskPathFromUrl(url: string) {
-  const relative = url.replace(/^\/uploads\//, "");
-  const resolved = path.resolve(uploadRoot(), relative);
-  if (!resolved.startsWith(uploadRoot())) throw new Error("Invalid media path");
-  return resolved;
+function serializeAsset(asset: {
+  id: string;
+  filename: string;
+  originalName: string;
+  url: string;
+  mimeType: string;
+  kind: "IMAGE" | "VIDEO";
+  size: number;
+  width: number | null;
+  height: number | null;
+  durationMs: number | null;
+  alt: string;
+  title: string | null;
+  caption: string | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  folder: string;
+  checksum: string;
+  focalX: number;
+  focalY: number;
+  cropJson: Prisma.JsonValue | null;
+  posterUrl: string | null;
+  currentVersion: number;
+  deletedAt: Date | null;
+  createdBy: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  _count?: { placements: number };
+  placements?: { key: string; label: string }[];
+}) {
+  return {
+    ...asset,
+    createdAt: asset.createdAt.toISOString(),
+    updatedAt: asset.updatedAt.toISOString(),
+    deletedAt: asset.deletedAt?.toISOString() ?? null,
+    usageCount: asset._count?.placements ?? asset.placements?.length ?? 0,
+    usedOn: asset.placements?.map((item) => item.label || item.key) ?? [],
+  };
 }
 
 export async function GET(request: Request) {
@@ -44,34 +63,80 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const db = getDb();
-  if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  if (!db) {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
+
   const params = new URL(request.url).searchParams;
   const query = params.get("query")?.trim();
   const folder = params.get("folder")?.trim();
-  const assets = await db.mediaAsset.findMany({
-    where: {
-      ...(folder && folder !== "all" ? { folder } : {}),
-      ...(query
-        ? {
-            OR: [
-              { originalName: { contains: query, mode: "insensitive" } },
-              { alt: { contains: query, mode: "insensitive" } },
-              { caption: { contains: query, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    take: 250,
-  });
-  const folders = await db.mediaAsset.findMany({
-    distinct: ["folder"],
-    select: { folder: true },
-    orderBy: { folder: "asc" },
-  });
+  const kind = params.get("kind")?.trim();
+  const sort = params.get("sort") || "newest";
+  const unused = params.get("unused") === "1";
+  const trash = params.get("trash") === "1";
+  const page = Math.max(1, Number(params.get("page") || 1));
+  const pageSize = Math.min(100, Math.max(1, Number(params.get("pageSize") || 48)));
+
+  const where: Prisma.MediaAssetWhereInput = {
+    deletedAt: trash ? { not: null } : null,
+    ...(folder && folder !== "all" ? { folder } : {}),
+    ...(kind === "IMAGE" || kind === "VIDEO" ? { kind } : {}),
+    ...(query
+      ? {
+          OR: [
+            { originalName: { contains: query, mode: "insensitive" } },
+            { alt: { contains: query, mode: "insensitive" } },
+            { title: { contains: query, mode: "insensitive" } },
+            { caption: { contains: query, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+    ...(unused ? { placements: { none: {} } } : {}),
+  };
+
+  const orderBy: Prisma.MediaAssetOrderByWithRelationInput =
+    sort === "oldest"
+      ? { createdAt: "asc" }
+      : sort === "name"
+        ? { originalName: "asc" }
+        : sort === "size"
+          ? { size: "desc" }
+          : { createdAt: "desc" };
+
+  const [total, assets, folders, duplicates] = await Promise.all([
+    db.mediaAsset.count({ where }),
+    db.mediaAsset.findMany({
+      where,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        _count: { select: { placements: true } },
+        placements: { select: { key: true, label: true } },
+      },
+    }),
+    db.mediaAsset.findMany({
+      where: { deletedAt: null },
+      distinct: ["folder"],
+      select: { folder: true },
+      orderBy: { folder: "asc" },
+    }),
+    db.mediaAsset.groupBy({
+      by: ["checksum"],
+      where: { deletedAt: null },
+      having: { checksum: { _count: { gt: 1 } } },
+      _count: { checksum: true },
+    }),
+  ]);
+
   return NextResponse.json({
-    assets,
+    assets: assets.map(serializeAsset),
     folders: folders.map((item) => item.folder),
+    page,
+    pageSize,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    duplicateChecksums: duplicates.map((item) => item.checksum),
   });
 }
 
@@ -83,90 +148,233 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request origin" }, { status: 403 });
   }
   const db = getDb();
-  if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  if (!db) {
+    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  }
 
-  const form = await request.formData();
+  await ensureMediaRoot();
+
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return NextResponse.json(
+      { error: "Network Error", code: "NETWORK_ERROR" },
+      { status: 400 }
+    );
+  }
+
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Choose an image to upload." }, { status: 400 });
-  }
-  if (!ALLOWED_TYPES.has(file.type) || file.size > MAX_UPLOAD_BYTES) {
     return NextResponse.json(
-      { error: "Use JPG, PNG, WebP or AVIF images up to 15 MB." },
+      { error: "Choose a file to upload.", code: "VALIDATION_ERROR" },
+      { status: 400 }
+    );
+  }
+
+  const kind = kindForMime(file.type);
+  if (!kind) {
+    return NextResponse.json(
+      {
+        error: "Unsupported File. Use JPG, PNG, WebP, AVIF, MP4 or WebM.",
+        code: "UNSUPPORTED_FILE",
+      },
+      { status: 400 }
+    );
+  }
+
+  const max = kind === "IMAGE" ? maxImageBytes() : maxVideoBytes();
+  if (file.size > max) {
+    return NextResponse.json(
+      {
+        error: `Maximum Size Exceeded (${Math.round(max / 1024 / 1024)} MB).`,
+        code: "MAX_SIZE",
+      },
       { status: 400 }
     );
   }
 
   const input = Buffer.from(await file.arrayBuffer());
-  let image: Sharp;
+  let stored;
   try {
-    image = sharp(input, { failOn: "error", limitInputPixels: 60_000_000 });
-    await image.metadata();
-  } catch {
-    return NextResponse.json({ error: "The image file is invalid." }, { status: 400 });
+    stored = await storeOriginalUpload({
+      buffer: input,
+      mimeType: file.type,
+      originalName: file.name,
+      folder: String(form.get("folder") || "general"),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Upload Failed",
+        code: "SERVER_ERROR",
+      },
+      { status: 400 }
+    );
   }
 
-  const folder = safeFolder(form.get("folder"));
-  const filename = `${Date.now()}-${randomUUID().slice(0, 8)}.webp`;
-  const destinationDir = path.join(uploadRoot(), folder);
-  const destination = path.join(destinationDir, filename);
-  await mkdir(destinationDir, { recursive: true });
-
-  const crop = String(form.get("crop") || "original");
-  const cropSizes: Record<string, { width: number; height: number }> = {
-    "1:1": { width: 1600, height: 1600 },
-    "4:3": { width: 2000, height: 1500 },
-    "16:9": { width: 2400, height: 1350 },
-  };
-  const processor = image.rotate();
-  const optimized = await (cropSizes[crop]
-    ? processor.resize({ ...cropSizes[crop], fit: "cover", position: "centre" })
-    : processor.resize({
-        width: 2400,
-        height: 2400,
-        fit: "inside",
-        withoutEnlargement: true,
-      }))
-    .webp({ quality: 82, effort: 5 })
-    .toBuffer();
-  const metadata = await sharp(optimized).metadata();
-  await writeFile(destination, optimized, { flag: "wx" });
-
-  const url = `/uploads/${folder}/${filename}`;
-  const data = {
-    filename,
-    originalName: file.name.slice(0, 240),
-    url,
-    mimeType: "image/webp",
-    size: optimized.byteLength,
-    width: metadata.width,
-    height: metadata.height,
-    alt: String(form.get("alt") || "").slice(0, 500),
-    caption: String(form.get("caption") || "").slice(0, 1000) || null,
-    folder,
-    checksum: createHash("sha256").update(optimized).digest("hex"),
-  };
+  const duplicate = await db.mediaAsset.findFirst({
+    where: { checksum: stored.checksum, deletedAt: null },
+    select: { id: true, originalName: true, url: true },
+  });
 
   const replaceId = String(form.get("replaceId") || "");
-  let asset;
-  if (replaceId) {
-    const existing = await db.mediaAsset.findUnique({ where: { id: replaceId } });
-    if (!existing) {
-      await unlink(destination).catch(() => undefined);
-      return NextResponse.json({ error: "Asset to replace was not found." }, { status: 404 });
-    }
-    asset = await db.mediaAsset.update({ where: { id: replaceId }, data });
-    await unlink(diskPathFromUrl(existing.url)).catch(() => undefined);
-  } else {
-    asset = await db.mediaAsset.create({ data });
-  }
+  const alt = String(form.get("alt") || "").slice(0, 500);
+  const title = String(form.get("title") || "").slice(0, 240) || null;
+  const caption = String(form.get("caption") || "").slice(0, 1000) || null;
+  const focalX = Number(form.get("focalX") || 50);
+  const focalY = Number(form.get("focalY") || 50);
 
-  await writeAuditLog({
-    action: replaceId ? "REPLACE_MEDIA" : "UPLOAD_MEDIA",
-    module: "media-library",
-    entityId: asset.id,
-    summary: `${replaceId ? "Replaced" : "Uploaded"} ${file.name}`,
-    metadata: { size: optimized.byteLength, width: metadata.width, height: metadata.height },
-  });
-  return NextResponse.json({ asset }, { status: replaceId ? 200 : 201 });
+  try {
+    let asset;
+    if (replaceId) {
+      const existing = await db.mediaAsset.findUnique({
+        where: { id: replaceId },
+        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
+      });
+      if (!existing) {
+        await removeMediaFile(stored.url);
+        return NextResponse.json(
+          { error: "Asset to replace was not found." },
+          { status: 404 }
+        );
+      }
+      const nextVersion = (existing.currentVersion || 1) + 1;
+      asset = await db.$transaction(async (tx) => {
+        await tx.mediaVersion.create({
+          data: {
+            assetId: existing.id,
+            version: nextVersion,
+            filename: stored.filename,
+            originalName: stored.originalName,
+            url: stored.url,
+            mimeType: stored.mimeType,
+            size: stored.size,
+            width: stored.width,
+            height: stored.height,
+            durationMs: stored.durationMs,
+            checksum: stored.checksum,
+            isOriginal: true,
+          },
+        });
+        return tx.mediaAsset.update({
+          where: { id: replaceId },
+          data: {
+            filename: stored.filename,
+            originalName: stored.originalName,
+            url: stored.url,
+            mimeType: stored.mimeType,
+            kind: stored.kind,
+            size: stored.size,
+            width: stored.width,
+            height: stored.height,
+            durationMs: stored.durationMs,
+            alt: alt || existing.alt,
+            title: title ?? existing.title,
+            caption: caption ?? existing.caption,
+            folder: stored.url.split("/")[2] || existing.folder,
+            checksum: stored.checksum,
+            focalX: Number.isFinite(focalX) ? focalX : existing.focalX,
+            focalY: Number.isFinite(focalY) ? focalY : existing.focalY,
+            currentVersion: nextVersion,
+            deletedAt: null,
+          },
+          include: {
+            _count: { select: { placements: true } },
+            placements: { select: { key: true, label: true } },
+          },
+        });
+      });
+    } else {
+      asset = await db.$transaction(async (tx) => {
+        const created = await tx.mediaAsset.create({
+          data: {
+            filename: stored.filename,
+            originalName: stored.originalName,
+            url: stored.url,
+            mimeType: stored.mimeType,
+            kind: stored.kind,
+            size: stored.size,
+            width: stored.width,
+            height: stored.height,
+            durationMs: stored.durationMs,
+            alt,
+            title,
+            caption,
+            folder: stored.url.split("/")[2] || "general",
+            checksum: stored.checksum,
+            focalX: Number.isFinite(focalX) ? focalX : 50,
+            focalY: Number.isFinite(focalY) ? focalY : 50,
+            currentVersion: 1,
+          },
+        });
+        await tx.mediaVersion.create({
+          data: {
+            assetId: created.id,
+            version: 1,
+            filename: stored.filename,
+            originalName: stored.originalName,
+            url: stored.url,
+            mimeType: stored.mimeType,
+            size: stored.size,
+            width: stored.width,
+            height: stored.height,
+            durationMs: stored.durationMs,
+            checksum: stored.checksum,
+            isOriginal: true,
+          },
+        });
+        return tx.mediaAsset.findUniqueOrThrow({
+          where: { id: created.id },
+          include: {
+            _count: { select: { placements: true } },
+            placements: { select: { key: true, label: true } },
+          },
+        });
+      });
+    }
+
+    await writeAuditLog({
+      action: replaceId ? "REPLACE_MEDIA" : "UPLOAD_MEDIA",
+      module: "media-library",
+      entityId: asset.id,
+      summary: `${replaceId ? "Replaced" : "Uploaded"} ${file.name}`,
+      metadata: {
+        size: stored.size,
+        width: stored.width,
+        height: stored.height,
+        mimeType: stored.mimeType,
+        preservedOriginal: true,
+      },
+    });
+
+    revalidateTag("media");
+    revalidatePath("/");
+    revalidatePath("/orbit/media-library");
+
+    return NextResponse.json(
+      {
+        asset: serializeAsset(asset),
+        duplicate: duplicate && duplicate.id !== asset.id ? duplicate : null,
+        message: replaceId ? "Image Saved" : "Upload Successful",
+      },
+      { status: replaceId ? 200 : 201 }
+    );
+  } catch (error) {
+    await removeMediaFile(stored.url);
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Server Error",
+        code: "SERVER_ERROR",
+      },
+      { status: 500 }
+    );
+  }
 }
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+// Silence unused import warnings in some tooling versions
+void IMAGE_MIME_TYPES;
+void VIDEO_MIME_TYPES;

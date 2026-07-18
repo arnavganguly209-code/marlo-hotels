@@ -13,7 +13,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { MediaField } from "@/components/orbit/media-picker";
 import { RichTextEditor } from "@/components/orbit/rich-text-editor";
+import { useToast } from "@/components/orbit/toast";
 import { fieldsForModule, type OrbitField } from "@/lib/orbit/fields";
 import type { OrbitModule } from "@/lib/orbit/modules";
 import { cn } from "@/lib/utils";
@@ -56,12 +58,14 @@ export function ContentManager({
   initialEntries: Entry[];
 }) {
   const fields = fieldsForModule(module.slug);
+  const { push } = useToast();
   const [entries, setEntries] = useState(initialEntries);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("ALL");
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   const filtered = useMemo(
     () =>
@@ -83,12 +87,14 @@ export function ContentManager({
       scheduledAt: entry.scheduledAt?.slice(0, 16) ?? "",
       data: { ...entry.data },
     });
+    setDirty(false);
     setError(null);
   }
 
   async function save() {
     if (!form?.title.trim()) {
       setError("A title is required.");
+      push("Validation Error", "error");
       return;
     }
     setSaving(true);
@@ -104,6 +110,35 @@ export function ContentManager({
       data: form.data,
       seo: null,
     };
+
+    // Keep homepage hero placement in sync when saving a Hero section.
+    if (
+      module.slug === "homepage" &&
+      form.data.section === "Hero" &&
+      typeof form.data.mediaAssetId === "string"
+    ) {
+      await fetch("/api/orbit/media/placements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: "home.hero",
+          label: "Homepage Hero",
+          assetId: form.data.mediaAssetId,
+          mediaType:
+            form.data.mediaType === "VIDEO" || form.data.heroVideoUrl
+              ? "VIDEO"
+              : "IMAGE",
+          alt: form.data.imageAlt || null,
+          focalX: Number(form.data.focalX ?? 50),
+          focalY: Number(form.data.focalY ?? 45),
+          videoAutoplay: form.data.videoAutoplay !== false,
+          videoLoop: form.data.videoLoop !== false,
+          videoMuted: form.data.videoMuted !== false,
+          posterUrl: form.data.posterUrl || null,
+        }),
+      });
+    }
+
     const response = await fetch(
       form.id ? `/api/orbit/content/${form.id}` : "/api/orbit/content",
       {
@@ -116,6 +151,7 @@ export function ContentManager({
     setSaving(false);
     if (!response.ok || !result.entry) {
       setError(result.error ?? "The record could not be saved.");
+      push(result.error ?? "Server Error", "error");
       return;
     }
     setEntries((current) =>
@@ -125,7 +161,9 @@ export function ContentManager({
           )
         : [result.entry!, ...current]
     );
+    setDirty(false);
     setForm(null);
+    push("Changes Saved", "success");
   }
 
   async function remove(entry: Entry) {
@@ -281,11 +319,33 @@ export function ContentManager({
           module={module}
           fields={fields}
           form={form}
-          setForm={setForm}
+          setForm={(next) => {
+            setForm(next);
+            setDirty(true);
+          }}
           saving={saving}
           error={error}
+          dirty={dirty}
           onSave={save}
-          onClose={() => setForm(null)}
+          onClose={() => {
+            if (
+              dirty &&
+              !window.confirm("You have unsaved changes. Discard them?")
+            ) {
+              return;
+            }
+            setForm(null);
+            setDirty(false);
+          }}
+          onReset={() => {
+            if (form.id) {
+              const entry = entries.find((item) => item.id === form.id);
+              if (entry) edit(entry);
+            } else {
+              setForm({ ...emptyForm, data: {} });
+              setDirty(false);
+            }
+          }}
         />
       ) : null}
     </div>
@@ -299,8 +359,10 @@ function EditorDrawer({
   setForm,
   saving,
   error,
+  dirty,
   onSave,
   onClose,
+  onReset,
 }: {
   module: OrbitModule;
   fields: OrbitField[];
@@ -308,11 +370,15 @@ function EditorDrawer({
   setForm: (form: FormState | null) => void;
   saving: boolean;
   error: string | null;
+  dirty: boolean;
   onSave: () => void;
   onClose: () => void;
+  onReset: () => void;
 }) {
   const updateData = (key: string, value: unknown) =>
     setForm({ ...form, data: { ...form.data, [key]: value } });
+
+  const visibleFields = fields.filter((field) => field.key !== "mediaAssetId");
 
   return (
     <div className="fixed inset-0 z-[70] flex justify-end bg-[#06100c]/55 backdrop-blur-sm">
@@ -327,6 +393,7 @@ function EditorDrawer({
           <div>
             <p className="text-[9px] font-semibold tracking-[0.25em] text-[#a67a30] uppercase">
               {form.id ? "Edit" : "Create"} {module.singular}
+              {dirty ? " · Unsaved" : ""}
             </p>
             <h2 className="font-display mt-1 text-2xl font-semibold text-[#10251e]">
               {form.title || `New ${module.singular}`}
@@ -359,12 +426,28 @@ function EditorDrawer({
 
           <div className="h-px bg-[#17362b]/8" />
 
-          {fields.map((field) => (
+          {visibleFields.map((field) => (
             <FieldControl
               key={field.key}
               field={field}
               value={form.data[field.key]}
+              formData={form.data}
               onChange={(value) => updateData(field.key, value)}
+              onMediaSelect={(next) =>
+                setForm({
+                  ...form,
+                  data: {
+                    ...form.data,
+                    [field.key]: next.url,
+                    imageAlt:
+                      field.key === "imageUrl"
+                        ? next.alt
+                        : form.data.imageAlt,
+                    mediaAssetId: next.assetId,
+                    mediaType: next.kind,
+                  },
+                })
+              }
             />
           ))}
 
@@ -374,7 +457,10 @@ function EditorDrawer({
             </p>
           ) : null}
 
-          <div className="flex justify-end gap-3 border-t border-[#17362b]/8 pt-7">
+          <div className="flex flex-wrap justify-end gap-3 border-t border-[#17362b]/8 pt-7">
+            <button type="button" onClick={onReset} className="h-12 rounded-xl border border-[#17362b]/12 px-6 text-[10px] font-semibold tracking-[0.18em] text-[#4f645a] uppercase">
+              Reset
+            </button>
             <button type="button" onClick={onClose} className="h-12 rounded-xl border border-[#17362b]/12 px-6 text-[10px] font-semibold tracking-[0.18em] text-[#4f645a] uppercase">
               Cancel
             </button>
@@ -391,13 +477,48 @@ function EditorDrawer({
 function FieldControl({
   field,
   value,
+  formData,
   onChange,
+  onMediaSelect,
 }: {
   field: OrbitField;
   value: unknown;
+  formData: Record<string, unknown>;
   onChange: (value: unknown) => void;
+  onMediaSelect: (next: {
+    assetId: string;
+    url: string;
+    alt: string;
+    kind: "IMAGE" | "VIDEO";
+  }) => void;
 }) {
   const stringValue = typeof value === "string" ? value : "";
+  if (field.type === "media" || field.type === "media-video") {
+    return (
+      <MediaField
+        label={field.label}
+        required={field.required}
+        help={field.help}
+        kind={field.type === "media-video" ? "VIDEO" : "IMAGE"}
+        value={{
+          assetId:
+            typeof formData.mediaAssetId === "string"
+              ? formData.mediaAssetId
+              : null,
+          url: stringValue || null,
+          alt:
+            typeof formData.imageAlt === "string" ? formData.imageAlt : null,
+          kind:
+            formData.mediaType === "VIDEO"
+              ? "VIDEO"
+              : field.type === "media-video"
+                ? "VIDEO"
+                : "IMAGE",
+        }}
+        onChange={onMediaSelect}
+      />
+    );
+  }
   if (field.type === "richtext") {
     return (
       <label className="block">

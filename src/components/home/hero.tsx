@@ -14,11 +14,6 @@ import { Button } from "@/components/ui/button";
 import { BookingWidget } from "@/components/home/booking-widget";
 import { siteConfig } from "@/lib/site";
 
-const HERO_IMAGE = {
-  src: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2400&auto=format&fit=crop",
-  alt: "Marlo Hotels at dusk — the infinity pool glowing beneath the terraces",
-};
-
 export type HeroContent = {
   heading?: string;
   subheading?: string;
@@ -28,6 +23,13 @@ export type HeroContent = {
   imageAlt?: string;
   backgroundOverlay?: string;
   bookingWidget?: boolean;
+  mediaType?: "IMAGE" | "VIDEO";
+  focalX?: number;
+  focalY?: number;
+  videoAutoplay?: boolean;
+  videoLoop?: boolean;
+  videoMuted?: boolean;
+  posterUrl?: string | null;
 };
 
 export function Hero({ content }: { content?: HeroContent }) {
@@ -43,10 +45,16 @@ export function Hero({ content }: { content?: HeroContent }) {
   );
   const accentWord = headingWords.at(-1) ?? "Extraordinary";
   const leadWords = headingWords.slice(0, -1);
+  const focalX = content?.focalX ?? 50;
+  const focalY = content?.focalY ?? 45;
+  const objectPosition = `${focalX}% ${focalY}%`;
   const heroImage = {
-    src: content?.imageUrl || HERO_IMAGE.src,
-    alt: content?.imageAlt || HERO_IMAGE.alt,
+    src: content?.imageUrl || "/images/brand/hero-reception.png",
+    alt:
+      content?.imageAlt ||
+      "Marlo Hotels lobby and reception — Hotel Marlo",
   };
+  const isVideo = content?.mediaType === "VIDEO";
   const overlayOpacity =
     content?.backgroundOverlay === "Light"
       ? "from-charcoal-950/55"
@@ -67,24 +75,41 @@ export function Hero({ content }: { content?: HeroContent }) {
       onMouseMove={onMouseMove}
       className="relative flex min-h-svh flex-col justify-end overflow-hidden bg-forest-950"
     >
-      {/* Parallax backdrop */}
       <motion.div
         style={reduceMotion ? undefined : { x: imageX, y: imageY }}
         className="absolute -inset-6"
       >
-        <Image
-          src={heroImage.src}
-          alt={heroImage.alt}
-          fill
-          priority
-          sizes="100vw"
-          className="animate-kenburns object-cover"
-        />
+        {isVideo ? (
+          <video
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition }}
+            autoPlay={content?.videoAutoplay !== false}
+            loop={content?.videoLoop !== false}
+            muted={content?.videoMuted !== false}
+            playsInline
+            poster={content?.posterUrl || undefined}
+            preload="metadata"
+          >
+            <source src={heroImage.src} />
+          </video>
+        ) : (
+          <Image
+            src={heroImage.src}
+            alt={heroImage.alt}
+            fill
+            priority
+            quality={100}
+            sizes="100vw"
+            className="animate-kenburns object-cover"
+            style={{ objectPosition }}
+          />
+        )}
       </motion.div>
-      <div className={`absolute inset-0 bg-gradient-to-r ${overlayOpacity} via-charcoal-950/30 to-charcoal-950/20`} />
+      <div
+        className={`absolute inset-0 bg-gradient-to-r ${overlayOpacity} via-charcoal-950/30 to-charcoal-950/20`}
+      />
       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-charcoal-950/90 to-transparent" />
 
-      {/* Copy */}
       <div className="relative mx-auto w-full max-w-7xl flex-1 px-5 md:px-8">
         <div className="flex h-full max-w-2xl flex-col justify-center pt-36 pb-16">
           <motion.p
@@ -166,7 +191,6 @@ export function Hero({ content }: { content?: HeroContent }) {
         </div>
       </div>
 
-      {/* Scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -182,15 +206,16 @@ export function Hero({ content }: { content?: HeroContent }) {
         </span>
       </motion.div>
 
-      {/* Booking engine */}
-      {content?.bookingWidget !== false ? <motion.div
-        initial={{ opacity: 0, y: 60 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.1, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative mx-auto w-full max-w-7xl px-5 pb-8 md:px-8"
-      >
-        <BookingWidget />
-      </motion.div> : null}
+      {content?.bookingWidget !== false ? (
+        <motion.div
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.1, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mx-auto w-full max-w-7xl px-5 pb-8 md:px-8"
+        >
+          <BookingWidget />
+        </motion.div>
+      ) : null}
     </section>
   );
 }
