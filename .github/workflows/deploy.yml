@@ -4,6 +4,9 @@ name: Deploy to Hostinger VPS
 # Automatic push deploys stay off until those secrets are configured
 # (Settings → Secrets and variables → Actions, or the production environment).
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -100,3 +103,5 @@ jobs:
             pm2 reload marlo-hotels --update-env || pm2 start npm --name marlo-hotels -- start
             pm2 save
             pm2 status marlo-hotels
+
+
