@@ -13,6 +13,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
           className="object-cover"
+          unoptimized={offer.image.src.startsWith("/media/")}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/50 to-transparent" />
         <span className="glass-dark absolute top-4 left-4 rounded-full px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase">

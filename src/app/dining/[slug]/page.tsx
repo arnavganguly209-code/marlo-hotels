@@ -161,6 +161,7 @@ export default async function RestaurantPage({ params }: PageProps) {
                 fill
                 sizes="(max-width: 1024px) 100vw, 40vw"
                 className="object-cover"
+                unoptimized={restaurant.chef.image.src.startsWith("/media/")}
               />
             </div>
           </Reveal>

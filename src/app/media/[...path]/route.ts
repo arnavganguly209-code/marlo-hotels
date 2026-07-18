@@ -1,8 +1,8 @@
+import { NextResponse } from "next/server";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { NextResponse } from "next/server";
 import { diskPathFromUrl, mediaRoot } from "@/lib/orbit/media-storage";
 
 type Context = { params: Promise<{ path: string[] }> };
@@ -17,10 +17,24 @@ const MIME: Record<string, string> = {
   ".webm": "video/webm",
 };
 
+/**
+ * Never return JSON from this route. next/image fetches /media URLs and
+ * treats non-image bodies as "The requested resource isn't a valid image".
+ */
+function emptyStatus(status: number) {
+  return new NextResponse(null, {
+    status,
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "application/octet-stream",
+    },
+  });
+}
+
 export async function GET(_request: Request, { params }: Context) {
   const segments = (await params).path || [];
   if (!segments.length) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return emptyStatus(404);
   }
 
   const url = `/media/${segments.map(encodeURIComponent).join("/")}`;
@@ -28,17 +42,17 @@ export async function GET(_request: Request, { params }: Context) {
   try {
     absolute = diskPathFromUrl(decodeURIComponent(url));
   } catch {
-    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    return emptyStatus(400);
   }
 
   if (!absolute.startsWith(mediaRoot())) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return emptyStatus(403);
   }
 
   try {
     const info = await stat(absolute);
     if (!info.isFile()) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return emptyStatus(404);
     }
     const ext = path.extname(absolute).toLowerCase();
     const stream = createReadStream(absolute);
@@ -51,6 +65,6 @@ export async function GET(_request: Request, { params }: Context) {
       },
     });
   } catch {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return emptyStatus(404);
   }
 }

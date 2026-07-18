@@ -63,6 +63,7 @@ export default async function ExperiencesPage() {
                       fill
                       sizes="(max-width: 1024px) 100vw, 50vw"
                       className="object-cover"
+                      unoptimized={experience.image.src.startsWith("/media/")}
                     />
                     <span className="glass-dark absolute top-5 left-5 rounded-full px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase">
                       {experience.category}

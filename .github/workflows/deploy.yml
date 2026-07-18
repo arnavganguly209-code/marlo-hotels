@@ -1,7 +1,6 @@
 name: Deploy to Hostinger VPS
 
-# Manual only — requires VPS_HOST, VPS_USERNAME, VPS_SSH_KEY secrets.
-# Automatic push deploys stay off until those secrets are configured
+# Requires VPS_HOST, VPS_USERNAME, VPS_SSH_KEY secrets.
 # (Settings → Secrets and variables → Actions, or the production environment).
 on:
   push:
@@ -37,6 +36,11 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://marlo.theglobalorbit.com' }}
+
+      - name: Confirm production build artifact
+        run: |
+          test -f .next/BUILD_ID || { echo "::error::Build succeeded but .next/BUILD_ID is missing"; exit 1; }
+          echo "BUILD_ID=$(cat .next/BUILD_ID)"
 
   deploy:
     name: Deploy
@@ -96,12 +100,32 @@ jobs:
               echo "DATABASE_URL not set — skipping Prisma migrate (Orbit login still works)."
             fi
 
-            echo "==> Building Next.js"
+            echo "==> Removing stale build"
+            rm -rf .next
+
+            echo "==> Building Next.js production artifacts"
             npm run build
 
-            echo "==> Reloading PM2"
-            pm2 reload marlo-hotels --update-env || pm2 start npm --name marlo-hotels -- start
+            echo "==> Verifying production build exists before PM2"
+            if [ ! -f .next/BUILD_ID ]; then
+              echo "FATAL: .next/BUILD_ID missing after npm run build — refusing to restart PM2"
+              exit 1
+            fi
+            echo "BUILD_ID=$(cat .next/BUILD_ID)"
+
+            echo "==> Reloading PM2 with production build"
+            if pm2 describe marlo-hotels >/dev/null 2>&1; then
+              pm2 restart marlo-hotels --update-env
+            else
+              pm2 start npm --name marlo-hotels -- start
+            fi
             pm2 save
             pm2 status marlo-hotels
 
-
+            echo "==> Smoke check local Next.js"
+            sleep 3
+            curl -fsS -o /dev/null -w "local_status=%{http_code}\n" http://127.0.0.1:3000/ || {
+              echo "FATAL: local Next.js did not return HTTP 200 after PM2 restart"
+              pm2 logs marlo-hotels --lines 40 --nostream || true
+              exit 1
+            }

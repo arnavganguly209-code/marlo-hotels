@@ -62,6 +62,7 @@ export default async function DiningPage() {
                       fill
                       sizes="(max-width: 1024px) 100vw, 50vw"
                       className="object-cover"
+                      unoptimized={restaurant.images[0].src.startsWith("/media/")}
                     />
                   </div>
                 </Reveal>

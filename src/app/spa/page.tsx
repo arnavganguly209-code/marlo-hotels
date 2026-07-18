@@ -67,6 +67,7 @@ export default async function SpaPage() {
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
                 style={{ objectPosition: body.objectPosition }}
+                unoptimized={body.src.startsWith("/media/")}
               />
             </div>
           </Reveal>

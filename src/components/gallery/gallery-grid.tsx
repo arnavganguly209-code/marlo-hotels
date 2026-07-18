@@ -59,6 +59,7 @@ export function GalleryGrid() {
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="object-cover"
+                unoptimized={image.src.startsWith("/media/")}
               />
               <figcaption className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-charcoal-950/90 to-transparent p-5 pt-14 transition-transform duration-500 group-hover:translate-y-0">
                 <span className="text-[9px] font-medium tracking-[0.28em] text-gold-400 uppercase">

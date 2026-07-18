@@ -28,6 +28,7 @@ export function RoomGallery({ images }: { images: ImageAsset[] }) {
               priority={active === 0}
               sizes="(max-width: 1024px) 100vw, 66vw"
               className="object-cover"
+              unoptimized={images[active].src.startsWith("/media/")}
             />
           </motion.div>
         </AnimatePresence>
@@ -59,6 +60,7 @@ export function RoomGallery({ images }: { images: ImageAsset[] }) {
               fill
               sizes="22vw"
               className="object-cover"
+              unoptimized={image.src.startsWith("/media/")}
             />
           </button>
         ))}

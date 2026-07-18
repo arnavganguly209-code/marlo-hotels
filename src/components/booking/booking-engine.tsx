@@ -309,6 +309,7 @@ export function BookingEngine({ rooms, initial }: BookingEngineProps) {
                         fill
                         sizes="(max-width: 640px) 100vw, 220px"
                         className="object-cover"
+                        unoptimized={room.images[0].src.startsWith("/media/")}
                       />
                     </div>
                     <div className="px-6 py-5 sm:px-0">
