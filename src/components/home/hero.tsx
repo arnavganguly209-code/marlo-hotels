@@ -19,10 +19,18 @@ const HERO_IMAGE = {
   alt: "Marlo Hotels at dusk — the infinity pool glowing beneath the terraces",
 };
 
-const headline = ["Stay", "Beyond"];
-const headlineAccent = "Extraordinary";
+export type HeroContent = {
+  heading?: string;
+  subheading?: string;
+  buttonText?: string;
+  buttonLink?: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  backgroundOverlay?: string;
+  bookingWidget?: boolean;
+};
 
-export function Hero() {
+export function Hero({ content }: { content?: HeroContent }) {
   const reduceMotion = useReducedMotion();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -30,6 +38,21 @@ export function Hero() {
   const springY = useSpring(mouseY, { stiffness: 40, damping: 20 });
   const imageX = useTransform(springX, [-0.5, 0.5], [14, -14]);
   const imageY = useTransform(springY, [-0.5, 0.5], [10, -10]);
+  const headingWords = (content?.heading || "Stay Beyond Extraordinary").split(
+    /\s+/
+  );
+  const accentWord = headingWords.at(-1) ?? "Extraordinary";
+  const leadWords = headingWords.slice(0, -1);
+  const heroImage = {
+    src: content?.imageUrl || HERO_IMAGE.src,
+    alt: content?.imageAlt || HERO_IMAGE.alt,
+  };
+  const overlayOpacity =
+    content?.backgroundOverlay === "Light"
+      ? "from-charcoal-950/55"
+      : content?.backgroundOverlay === "Dark"
+        ? "from-charcoal-950/90"
+        : "from-charcoal-950/80";
 
   function onMouseMove(event: React.MouseEvent<HTMLElement>) {
     if (reduceMotion) return;
@@ -50,15 +73,15 @@ export function Hero() {
         className="absolute -inset-6"
       >
         <Image
-          src={HERO_IMAGE.src}
-          alt={HERO_IMAGE.alt}
+          src={heroImage.src}
+          alt={heroImage.alt}
           fill
           priority
           sizes="100vw"
           className="animate-kenburns object-cover"
         />
       </motion.div>
-      <div className="absolute inset-0 bg-gradient-to-r from-charcoal-950/80 via-charcoal-950/30 to-charcoal-950/20" />
+      <div className={`absolute inset-0 bg-gradient-to-r ${overlayOpacity} via-charcoal-950/30 to-charcoal-950/20`} />
       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-charcoal-950/90 to-transparent" />
 
       {/* Copy */}
@@ -75,7 +98,7 @@ export function Hero() {
 
           <h1 className="font-display mt-6 text-6xl leading-[1.02] font-medium text-ivory md:text-7xl lg:text-[5.6rem]">
             <span className="flex flex-wrap gap-x-5 overflow-hidden">
-              {headline.map((word, index) => (
+              {leadWords.map((word, index) => (
                 <motion.span
                   key={word}
                   initial={{ y: "110%" }}
@@ -102,7 +125,7 @@ export function Hero() {
                 }}
                 className="inline-block bg-gradient-to-r from-gold-300 via-gold-400 to-gold-600 bg-clip-text pb-2 text-transparent italic"
               >
-                {headlineAccent}
+                {accentWord}
               </motion.span>
             </span>
           </h1>
@@ -124,7 +147,7 @@ export function Hero() {
             transition={{ duration: 1, delay: 1.25, ease: [0.22, 1, 0.36, 1] }}
             className="mt-8 max-w-md text-[15px] leading-relaxed font-light tracking-wide text-cream-200/85"
           >
-            {siteConfig.description}
+            {content?.subheading || siteConfig.description}
           </motion.p>
 
           <motion.div
@@ -134,8 +157,8 @@ export function Hero() {
             className="mt-10 flex flex-wrap items-center gap-5"
           >
             <Button asChild variant="outline" size="lg">
-              <Link href="/rooms">
-                Discover More
+              <Link href={content?.buttonLink || "/rooms"}>
+                {content?.buttonText || "Discover More"}
                 <ArrowRight />
               </Link>
             </Button>
@@ -160,14 +183,14 @@ export function Hero() {
       </motion.div>
 
       {/* Booking engine */}
-      <motion.div
+      {content?.bookingWidget !== false ? <motion.div
         initial={{ opacity: 0, y: 60 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1.1, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
         className="relative mx-auto w-full max-w-7xl px-5 pb-8 md:px-8"
       >
         <BookingWidget />
-      </motion.div>
+      </motion.div> : null}
     </section>
   );
 }

@@ -17,7 +17,7 @@ const socials = [
   { label: "YouTube", href: siteConfig.social.youtube, Icon: YoutubeIcon },
 ];
 
-export function Footer() {
+export function Footer({ logoUrl }: { logoUrl?: string }) {
   return (
     <footer className="bg-forest-950 text-cream-200">
       {/* Newsletter band */}
@@ -40,7 +40,7 @@ export function Footer() {
       {/* Main columns */}
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 md:grid-cols-2 md:px-8 lg:grid-cols-4">
         <div>
-          <Logo tone="light" />
+          <Logo tone="light" src={logoUrl} />
           <p className="mt-6 max-w-xs text-sm leading-relaxed font-light text-cream-200/70">
             A five-star sanctuary in the heart of Kathmandu — timeless
             elegance, celebrated dining and Himalayan hospitality.
@@ -135,8 +135,16 @@ export function Footer() {
             © {new Date().getFullYear()} {siteConfig.legalName} All rights
             reserved.
           </p>
-          <p className="flex items-center gap-2">
-            <span className="text-gold-500">✦</span> {siteConfig.tagline}
+          <p>
+            Developed By{" "}
+            <a
+              href="https://theglobalorbit.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-gold-500 transition-colors hover:text-gold-300"
+            >
+              The Global Orbit
+            </a>
           </p>
         </div>
       </div>

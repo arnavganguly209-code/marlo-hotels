@@ -1,0 +1,322 @@
+import {
+  BedDouble,
+  CalendarDays,
+  DollarSign,
+  Edit3,
+  FilePlus2,
+  ImagePlus,
+  Mail,
+  MessageSquare,
+  Newspaper,
+  Plus,
+  Star,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { MetricCard } from "@/components/orbit/metric-card";
+import { getDb } from "@/lib/db";
+import { formatCurrency, formatDate } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
+
+export default async function OrbitDashboardPage() {
+  const db = getDb();
+  if (!db) {
+    return (
+      <div className="p-6 sm:p-10">
+        <div className="orbit-panel mx-auto max-w-2xl rounded-2xl p-10 text-center">
+          <h2 className="font-display text-3xl font-semibold text-[#10251e]">
+            Database configuration required
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-[#62716b]">
+            Set <code>DATABASE_URL</code>, apply the Prisma schema, then sign in
+            again. Orbit never presents fabricated dashboard values.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+  const [
+    revenue,
+    previousRevenue,
+    visitors,
+    previousVisitors,
+    totalRooms,
+    occupiedRooms,
+    recentBookings,
+    recentMessages,
+    recentSubscribers,
+    recentReviews,
+    recentPosts,
+  ] = await Promise.all([
+    db.booking.aggregate({
+      where: { paymentStatus: "PAID", createdAt: { gte: monthStart } },
+      _sum: { totalAmount: true },
+    }),
+    db.booking.aggregate({
+      where: {
+        paymentStatus: "PAID",
+        createdAt: { gte: previousMonthStart, lt: monthStart },
+      },
+      _sum: { totalAmount: true },
+    }),
+    db.websiteMetric.aggregate({
+      where: { date: { gte: monthStart } },
+      _sum: { visitors: true },
+    }),
+    db.websiteMetric.aggregate({
+      where: { date: { gte: previousMonthStart, lt: monthStart } },
+      _sum: { visitors: true },
+    }),
+    db.room.count({ where: { published: true } }),
+    db.booking.aggregate({
+      where: {
+        status: "CONFIRMED",
+        checkIn: { lte: now },
+        checkOut: { gt: now },
+      },
+      _sum: { rooms: true },
+    }),
+    db.booking.findMany({
+      take: 6,
+      orderBy: { createdAt: "desc" },
+      include: { room: { select: { name: true } } },
+    }),
+    db.contactMessage.findMany({ take: 5, orderBy: { createdAt: "desc" } }),
+    db.newsletterSubscriber.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+    }),
+    db.review.findMany({ take: 5, orderBy: { createdAt: "desc" } }),
+    db.post.findMany({ take: 5, orderBy: { updatedAt: "desc" } }),
+  ]);
+
+  const revenueValue = Number(revenue._sum.totalAmount ?? 0);
+  const previousRevenueValue = Number(previousRevenue._sum.totalAmount ?? 0);
+  const visitorValue = visitors._sum.visitors ?? 0;
+  const previousVisitorValue = previousVisitors._sum.visitors ?? 0;
+  const occupancy = totalRooms
+    ? Math.round(((occupiedRooms._sum.rooms ?? 0) / totalRooms) * 100)
+    : 0;
+  const percentageChange = (current: number, previous: number) =>
+    previous ? Math.round(((current - previous) / previous) * 100) : 0;
+
+  const quickActions = [
+    { label: "Add room", href: "/orbit/rooms?create=1", Icon: Plus },
+    { label: "Write article", href: "/orbit/blog?create=1", Icon: FilePlus2 },
+    { label: "Upload media", href: "/orbit/media-library?upload=1", Icon: ImagePlus },
+    { label: "Edit homepage", href: "/orbit/homepage", Icon: Edit3 },
+  ];
+
+  return (
+    <div className="p-5 sm:p-8 lg:p-10">
+      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-[10px] font-semibold tracking-[0.28em] text-[#a67a30] uppercase">
+            Operational overview
+          </p>
+          <h2 className="font-display mt-2 text-4xl font-semibold text-[#10251e]">
+            Good day, Administrator
+          </h2>
+          <p className="mt-2 text-sm text-[#62716b]">
+            Live business and content activity across Marlo Hotels.
+          </p>
+        </div>
+        <p className="text-xs font-medium text-[#62716b]">{formatDate(now)}</p>
+      </div>
+
+      <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Revenue this month"
+          value={revenueValue}
+          prefix="$"
+          change={percentageChange(revenueValue, previousRevenueValue)}
+          icon={DollarSign}
+        />
+        <MetricCard
+          label="Website visitors"
+          value={visitorValue}
+          change={percentageChange(visitorValue, previousVisitorValue)}
+          icon={Users}
+        />
+        <MetricCard
+          label="Room occupancy"
+          value={occupancy}
+          suffix="%"
+          icon={BedDouble}
+        />
+        <MetricCard
+          label="Recent bookings"
+          value={recentBookings.length}
+          icon={CalendarDays}
+        />
+      </div>
+
+      <div className="mt-7 grid gap-7 xl:grid-cols-[1.55fr_1fr]">
+        <section className="orbit-panel overflow-hidden rounded-2xl">
+          <div className="flex items-center justify-between border-b border-[#17362b]/8 px-6 py-5">
+            <div>
+              <h3 className="font-display text-xl font-semibold text-[#10251e]">
+                Recent bookings
+              </h3>
+              <p className="mt-1 text-xs text-[#738078]">Latest reservation activity</p>
+            </div>
+            <Link
+              href="/orbit/bookings"
+              className="text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase"
+            >
+              View all
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left">
+              <thead>
+                <tr className="bg-[#f3f3ee] text-[9px] tracking-[0.2em] text-[#738078] uppercase">
+                  <th className="px-6 py-3 font-semibold">Guest</th>
+                  <th className="px-5 py-3 font-semibold">Room</th>
+                  <th className="px-5 py-3 font-semibold">Arrival</th>
+                  <th className="px-5 py-3 font-semibold">Total</th>
+                  <th className="px-5 py-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#17362b]/7">
+                {recentBookings.length ? (
+                  recentBookings.map((booking) => (
+                    <tr key={booking.id} className="text-xs text-[#344b42]">
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-[#142820]">{booking.guestName}</p>
+                        <p className="mt-0.5 text-[11px] text-[#78847e]">{booking.reference}</p>
+                      </td>
+                      <td className="px-5 py-4">{booking.room.name}</td>
+                      <td className="px-5 py-4">{formatDate(booking.checkIn)}</td>
+                      <td className="px-5 py-4">
+                        {booking.totalAmount
+                          ? formatCurrency(Number(booking.totalAmount))
+                          : "—"}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="rounded-full bg-[#edf4ef] px-2.5 py-1 text-[9px] font-semibold tracking-[0.12em] text-[#286a52] uppercase">
+                          {booking.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-[#78847e]">
+                      No bookings have been received yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="orbit-panel rounded-2xl p-6">
+          <h3 className="font-display text-xl font-semibold text-[#10251e]">
+            Quick actions
+          </h3>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            {quickActions.map(({ label, href, Icon }) => (
+              <Link
+                key={label}
+                href={href}
+                className="group rounded-xl border border-[#17362b]/9 bg-[#fafaf7] p-4 transition hover:-translate-y-0.5 hover:border-[#c4943c]/40 hover:shadow-lg"
+              >
+                <Icon className="size-5 text-[#a67a30]" />
+                <p className="mt-3 text-xs font-semibold text-[#253c33]">{label}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <ActivityPanel
+          title="Latest messages"
+          href="/orbit/contact-messages"
+          icon={MessageSquare}
+          items={recentMessages.map((item) => ({
+            title: item.name,
+            detail: item.subject,
+            date: item.createdAt,
+          }))}
+        />
+        <ActivityPanel
+          title="Newsletter"
+          href="/orbit/newsletter"
+          icon={Mail}
+          items={recentSubscribers.map((item) => ({
+            title: item.email,
+            detail: "New subscriber",
+            date: item.createdAt,
+          }))}
+        />
+        <ActivityPanel
+          title="Latest reviews"
+          href="/orbit/reviews"
+          icon={Star}
+          items={recentReviews.map((item) => ({
+            title: item.guestName,
+            detail: `${item.rating}/5 · ${item.body.slice(0, 48)}`,
+            date: item.createdAt,
+          }))}
+        />
+        <ActivityPanel
+          title="Latest blogs"
+          href="/orbit/blog"
+          icon={Newspaper}
+          items={recentPosts.map((item) => ({
+            title: item.title,
+            detail: item.published ? "Published" : "Draft",
+            date: item.updatedAt,
+          }))}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ActivityPanel({
+  title,
+  href,
+  icon: Icon,
+  items,
+}: {
+  title: string;
+  href: string;
+  icon: typeof Mail;
+  items: { title: string; detail: string; date: Date }[];
+}) {
+  return (
+    <section className="orbit-panel rounded-2xl p-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <Icon className="size-4 text-[#a67a30]" />
+          <h3 className="font-display text-lg font-semibold text-[#10251e]">{title}</h3>
+        </div>
+        <Link href={href} className="text-[9px] font-semibold tracking-[0.16em] text-[#a67a30] uppercase">
+          Open
+        </Link>
+      </div>
+      <div className="mt-4 divide-y divide-[#17362b]/7">
+        {items.length ? (
+          items.slice(0, 4).map((item, index) => (
+            <div key={`${item.title}-${index}`} className="py-3 first:pt-0">
+              <p className="truncate text-xs font-semibold text-[#273f35]">{item.title}</p>
+              <p className="mt-1 truncate text-[11px] text-[#78847e]">{item.detail}</p>
+            </div>
+          ))
+        ) : (
+          <p className="py-8 text-center text-xs text-[#8a948f]">No activity yet</p>
+        )}
+      </div>
+    </section>
+  );
+}

@@ -30,6 +30,28 @@ enum OfferCategory {
   GIFT_CARD
 }
 
+enum ContentStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum MessageStatus {
+  UNREAD
+  READ
+  REPLIED
+  ARCHIVED
+}
+
 model Room {
   id          String       @id @default(cuid())
   slug        String       @unique
@@ -54,23 +76,25 @@ model Room {
 }
 
 model Booking {
-  id         String        @id @default(cuid())
-  reference  String        @unique
-  status     BookingStatus @default(PENDING)
-  checkIn    DateTime
-  checkOut   DateTime
-  adults     Int
-  children   Int           @default(0)
-  rooms      Int           @default(1)
-  promoCode  String?
-  guestName  String
-  guestEmail String
-  guestPhone String
-  notes      String?
-  room       Room          @relation(fields: [roomId], references: [id])
-  roomId     String
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  reference     String        @unique
+  status        BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  checkIn       DateTime
+  checkOut      DateTime
+  adults        Int
+  children      Int           @default(0)
+  rooms         Int           @default(1)
+  promoCode     String?
+  totalAmount   Decimal?      @db.Decimal(12, 2)
+  guestName     String
+  guestEmail    String
+  guestPhone    String
+  notes         String?
+  room          Room          @relation(fields: [roomId], references: [id])
+  roomId        String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([status, checkIn])
 }
@@ -110,20 +134,20 @@ model MenuItem {
 }
 
 model Offer {
-  id        String        @id @default(cuid())
-  slug      String        @unique
-  title     String
-  category  OfferCategory @default(SEASONAL)
-  tagline   String
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  category    OfferCategory @default(SEASONAL)
+  tagline     String
   description String
-  perks     String[]
-  validity  String
-  code      String        @unique
-  discount  String
-  imageUrl  String
-  published Boolean       @default(true)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  perks       String[]
+  validity    String
+  code        String        @unique
+  discount    String
+  imageUrl    String
+  published   Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model Post {
@@ -163,6 +187,27 @@ model Image {
   @@index([inGallery, category])
 }
 
+model MediaAsset {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  url          String   @unique
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  alt          String   @default("")
+  caption      String?
+  folder       String   @default("general")
+  checksum     String
+  createdBy    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([folder, createdAt])
+  @@index([originalName])
+}
+
 model Testimonial {
   id        String   @id @default(cuid())
   name      String
@@ -172,6 +217,24 @@ model Testimonial {
   stay      String
   published Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model Review {
+  id         String        @id @default(cuid())
+  guestName  String
+  guestEmail String?
+  origin     String?
+  title      String?
+  body       String
+  rating     Int
+  source     String?
+  stayDate   DateTime?
+  status     ContentStatus @default(DRAFT)
+  featured   Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([status, createdAt])
 }
 
 model SeoMeta {
@@ -195,18 +258,110 @@ model NewsletterSubscriber {
 }
 
 model ContactMessage {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   name      String
   email     String
   phone     String?
   subject   String
   message   String
-  handled   Boolean  @default(false)
-  createdAt DateTime @default(now())
+  handled   Boolean       @default(false)
+  status    MessageStatus @default(UNREAD)
+  repliedAt DateTime?
+  createdAt DateTime      @default(now())
 }
 
 model Setting {
   key       String   @id
   value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model ContentEntry {
+  id          String        @id @default(cuid())
+  module      String
+  key         String
+  title       String
+  slug        String?
+  status      ContentStatus @default(DRAFT)
+  data        Json
+  seo         Json?
+  publishedAt DateTime?
+  scheduledAt DateTime?
+  createdBy   String?
+  updatedBy   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([module, key])
+  @@index([module, status, updatedAt])
+  @@index([slug])
+}
+
+model OrbitUser {
+  id          String    @id @default(cuid())
+  name        String
+  email       String    @unique
+  role        String    @default("administrator")
+  active      Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model OrbitSession {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  ipHash     String?
+  userAgent  String?
+  expiresAt  DateTime
+  lastSeenAt DateTime  @default(now())
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([expiresAt, revokedAt])
+}
+
+model OrbitLoginAttempt {
+  id        String   @id @default(cuid())
+  ipHash    String
+  succeeded Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([ipHash, createdAt])
+}
+
+model OrbitAuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  module    String
+  entityId  String?
+  summary   String
+  metadata  Json?
+  ipHash    String?
+  createdAt DateTime @default(now())
+
+  @@index([module, createdAt])
+  @@index([action, createdAt])
+}
+
+model OrbitBackup {
+  id          String        @id @default(cuid())
+  filename    String
+  size        Int?
+  status      ContentStatus @default(DRAFT)
+  storagePath String?
+  checksum    String?
+  createdBy   String?
+  createdAt   DateTime      @default(now())
+}
+
+model WebsiteMetric {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  visitors  Int      @default(0)
+  pageViews Int      @default(0)
+  sessions  Int      @default(0)
+  revenue   Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

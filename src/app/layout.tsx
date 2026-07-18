@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
-import { Footer } from "@/components/layout/footer";
-import { Header } from "@/components/layout/header";
+import { SiteShell } from "@/components/layout/site-shell";
 import { JsonLd } from "@/components/shared/json-ld";
 import { hotelJsonLd } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
+import { getBrandSettings } from "@/lib/site-settings";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -78,24 +78,23 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const brand = await getBrandSettings();
+
   return (
     <html lang="en" className={`${cormorant.variable} ${jost.variable}`}>
       <body className="antialiased">
         <JsonLd data={hotelJsonLd()} />
-        <a
-          href="#main-content"
-          className="sr-only z-50 rounded-md bg-gold-500 px-5 py-3 text-sm font-medium text-charcoal-950 focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+        <SiteShell
+          logoUrl={brand.logoUrl}
+          footerLogoUrl={brand.footerLogoUrl}
         >
-          Skip to main content
-        </a>
-        <Header />
-        <main id="main-content">{children}</main>
-        <Footer />
+          {children}
+        </SiteShell>
       </body>
     </html>
   );

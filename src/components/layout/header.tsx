@@ -17,7 +17,7 @@ const primaryLinks = [
   { label: "Offers", href: "/offers" },
 ];
 
-export function Header() {
+export function Header({ logoUrl }: { logoUrl?: string }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -40,7 +40,7 @@ export function Header() {
         )}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 md:px-8">
-          <Logo tone="light" />
+          <Logo tone="light" src={logoUrl} />
 
           <nav aria-label="Primary" className="hidden items-center gap-9 xl:flex">
             {primaryLinks.map((link) => (

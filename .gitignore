@@ -40,6 +40,9 @@ yarn-error.log*
 # netlify
 .netlify
 
+# Orbit media storage (persistent VPS volume)
+/public/uploads/
+
 # vercel
 .vercel
 

@@ -1,4 +1,5 @@
 import type { Experience } from "@/types/content";
+import { getDb } from "@/lib/db";
 
 const experiences: Experience[] = [
   {
@@ -70,9 +71,48 @@ const experiences: Experience[] = [
 ];
 
 export async function getExperiences(): Promise<Experience[]> {
+  const db = getDb();
+  if (db) {
+    try {
+      const entries = await db.contentEntry.findMany({
+        where: { module: "experiences", status: "PUBLISHED" },
+        orderBy: { updatedAt: "desc" },
+      });
+      if (entries.length) {
+        return entries.map((entry) => {
+          const data = entry.data as Record<string, unknown>;
+          const text = (key: string, fallback = "") =>
+            typeof data[key] === "string" ? String(data[key]) : fallback;
+          const category = text("category", "Private") as Experience["category"];
+          const description = text("description")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          return {
+            slug: entry.slug ?? entry.key,
+            title: entry.title,
+            category,
+            duration: text("duration", "By arrangement"),
+            shortDescription: description.slice(0, 220),
+            description,
+            highlights: text("highlights")
+              .split("\n")
+              .map((item) => item.trim())
+              .filter(Boolean),
+            image: {
+              src: text("imageUrl", "/images/brand/hero-reference.png"),
+              alt: text("imageAlt", entry.title),
+            },
+          };
+        });
+      }
+    } catch {
+      // Static experiences bootstrap the site before CMS publication.
+    }
+  }
   return experiences;
 }
 
 export async function getExperienceBySlug(slug: string): Promise<Experience | undefined> {
-  return experiences.find((experience) => experience.slug === slug);
+  return (await getExperiences()).find((experience) => experience.slug === slug);
 }

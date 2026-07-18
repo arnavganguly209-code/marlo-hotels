@@ -203,3 +203,69 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── Orbit administration ───────────────────────────────────────── */
+.orbit-login-bg {
+  background:
+    radial-gradient(circle at 25% 15%, rgb(47 112 96 / 0.15), transparent 35%),
+    radial-gradient(circle at 75% 85%, rgb(208 166 84 / 0.1), transparent 38%),
+    linear-gradient(145deg, #050b09 0%, #0a1b16 52%, #07100d 100%);
+}
+
+.orbit-aurora {
+  opacity: 0.45;
+  background:
+    linear-gradient(115deg, transparent 25%, rgb(58 132 113 / 0.14) 45%, transparent 62%),
+    linear-gradient(310deg, transparent 30%, rgb(208 166 84 / 0.09) 49%, transparent 68%);
+  background-size: 180% 180%;
+  animation: orbit-aurora 14s ease-in-out infinite alternate;
+}
+
+.orbit-login-card {
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 0.085), rgb(255 255 255 / 0.025)),
+    rgb(6 19 15 / 0.72);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 40px 100px -25px rgb(0 0 0 / 0.9);
+}
+
+.orbit-gold-button {
+  color: #101612;
+  background: linear-gradient(110deg, #b98634, #e1bd71 48%, #c2933e);
+  box-shadow: 0 15px 40px -14px rgb(208 166 84 / 0.7);
+  transition: transform 300ms ease, box-shadow 300ms ease, filter 300ms ease;
+}
+
+.orbit-gold-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 20px 50px -14px rgb(208 166 84 / 0.85);
+}
+
+.orbit-particle {
+  animation: orbit-float 5.5s ease-in-out infinite alternate;
+}
+
+@keyframes orbit-aurora {
+  from { background-position: 0% 20%; transform: scale(1); }
+  to { background-position: 100% 80%; transform: scale(1.08); }
+}
+
+@keyframes orbit-float {
+  from { transform: translate3d(0, 0, 0); opacity: 0.25; }
+  to { transform: translate3d(14px, -24px, 0); opacity: 0.8; }
+}
+
+.orbit-panel {
+  border: 1px solid rgb(31 62 53 / 0.12);
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 18px 50px -30px rgb(8 28 22 / 0.25);
+}
+
+.orbit-grid {
+  background-image:
+    linear-gradient(rgb(18 66 52 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(18 66 52 / 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}

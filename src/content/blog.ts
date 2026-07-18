@@ -1,4 +1,5 @@
 import type { Post } from "@/types/content";
+import { getDb } from "@/lib/db";
 
 const posts: Post[] = [
   {
@@ -171,17 +172,68 @@ const posts: Post[] = [
 ];
 
 export async function getPosts(): Promise<Post[]> {
+  const db = getDb();
+  if (db) {
+    try {
+      const entries = await db.contentEntry.findMany({
+        where: { module: "blog", status: "PUBLISHED" },
+        orderBy: { publishedAt: "desc" },
+      });
+      if (entries.length) {
+        return entries.map((entry) => {
+          const data = entry.data as Record<string, unknown>;
+          const text = (key: string, fallback = "") =>
+            typeof data[key] === "string" ? String(data[key]) : fallback;
+          const html = text("content");
+          return {
+            slug: entry.slug ?? entry.key,
+            title: entry.title,
+            excerpt: text("excerpt", entry.title),
+            category: text("category", "Journal"),
+            date: (entry.publishedAt ?? entry.updatedAt)
+              .toISOString()
+              .slice(0, 10),
+            readingTime: text("readingTime", "5 min read"),
+            author: {
+              name: text("author", "Marlo Hotels"),
+              role: "Contributor",
+            },
+            image: {
+              src: text("imageUrl", "/images/brand/hero-reference.png"),
+              alt: text("imageAlt", entry.title),
+            },
+            content: [
+              {
+                paragraphs: [
+                  html
+                    .replace(/<\/(p|h2|li)>/gi, "\n")
+                    .replace(/<[^>]+>/g, "")
+                    .trim(),
+                ],
+              },
+            ],
+            tags: text("tags")
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter(Boolean),
+          };
+        });
+      }
+    } catch {
+      // Static editorial content bootstraps the site before CMS publication.
+    }
+  }
   return [...posts].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | undefined> {
-  return posts.find((post) => post.slug === slug);
+  return (await getPosts()).find((post) => post.slug === slug);
 }
 
 export async function getRelatedPosts(slug: string, limit = 3): Promise<Post[]> {
-  return posts.filter((post) => post.slug !== slug).slice(0, limit);
+  return (await getPosts()).filter((post) => post.slug !== slug).slice(0, limit);
 }
 
 export async function getPostCategories(): Promise<string[]> {
-  return [...new Set(posts.map((post) => post.category))];
+  return [...new Set((await getPosts()).map((post) => post.category))];
 }

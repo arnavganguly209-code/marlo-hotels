@@ -1,4 +1,5 @@
 import type { Room } from "@/types/content";
+import { getDb } from "@/lib/db";
 
 const rooms: Room[] = [
   {
@@ -162,17 +163,68 @@ export const roomPolicies = [
 ];
 
 export async function getRooms(): Promise<Room[]> {
+  const db = getDb();
+  if (db) {
+    try {
+      const entries = await db.contentEntry.findMany({
+        where: { module: "rooms", status: "PUBLISHED" },
+        orderBy: { updatedAt: "desc" },
+      });
+      if (entries.length) {
+        return entries.map((entry) => {
+          const data = entry.data as Record<string, unknown>;
+          const text = (key: string, fallback = "") =>
+            typeof data[key] === "string" ? String(data[key]) : fallback;
+          const number = (key: string, fallback = 0) =>
+            typeof data[key] === "number" ? Number(data[key]) : fallback;
+          const lines = (key: string) =>
+            text(key)
+              .split("\n")
+              .map((item) => item.trim())
+              .filter(Boolean);
+          const description = text("description")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+          const imageUrl = text(
+            "imageUrl",
+            "/images/brand/hero-reference.png"
+          );
+          return {
+            slug: entry.slug ?? entry.key,
+            name: entry.title,
+            category:
+              text("roomType").toLowerCase() === "room" ? "room" : "suite",
+            tagline: text("subheading", entry.title),
+            shortDescription: description.slice(0, 220),
+            description: description ? [description] : [entry.title],
+            priceFrom: number("price"),
+            size: text("floorSize", "Contact reservations"),
+            occupancy: `${number("maxGuests", 2)} guests`,
+            bed: text("beds", "King"),
+            view: text("view", "Hotel view"),
+            featured: data.featured === true,
+            images: [{ src: imageUrl, alt: text("imageAlt", entry.title) }],
+            amenities: lines("amenities"),
+            features: lines("policies"),
+          };
+        });
+      }
+    } catch {
+      // Static content remains the safe bootstrap until the first CMS publish.
+    }
+  }
   return rooms;
 }
 
 export async function getRoomBySlug(slug: string): Promise<Room | undefined> {
-  return rooms.find((room) => room.slug === slug);
+  return (await getRooms()).find((room) => room.slug === slug);
 }
 
 export async function getFeaturedRooms(): Promise<Room[]> {
-  return rooms.filter((room) => room.featured);
+  return (await getRooms()).filter((room) => room.featured);
 }
 
 export async function getRelatedRooms(slug: string, limit = 3): Promise<Room[]> {
-  return rooms.filter((room) => room.slug !== slug).slice(0, limit);
+  return (await getRooms()).filter((room) => room.slug !== slug).slice(0, limit);
 }

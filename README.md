@@ -60,6 +60,26 @@ The `content/` getters are `async` by design: the admin backend can replace
 them with Prisma queries against the same schema without rewriting a single
 component.
 
+## Orbit Administration
+
+Orbit is the isolated enterprise administration system at `/orbit`.
+
+1. Configure `DATABASE_URL`, `ORBIT_ADMIN_PASSKEY` and a random
+   `ORBIT_SESSION_SECRET` in the server `.env`.
+2. Apply the committed Prisma migration with `npm run db:migrate`.
+3. Open `/orbit` and enter the server-configured passkey.
+
+Authentication is validated only on the server. Orbit uses opaque,
+database-backed HttpOnly cookies, strict same-site policy, a 30-minute
+inactivity timeout, an eight-hour absolute expiry, persistent login
+throttling and an audit trail. No credential or session token is stored in
+browser storage.
+
+Uploaded media is validated, compressed and converted to WebP by Sharp.
+Files are written below `public/uploads` by default and metadata is held in
+PostgreSQL. Set `ORBIT_UPLOAD_DIR` when the VPS uses a dedicated persistent
+media volume, and expose that directory at `/uploads`.
+
 ## Deployment — Hostinger VPS
 
 Pushes to `main` trigger `.github/workflows/deploy.yml`: lint + build on CI,

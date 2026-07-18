@@ -1,4 +1,5 @@
 import type { Offer } from "@/types/content";
+import { getDb } from "@/lib/db";
 
 const offers: Offer[] = [
   {
@@ -113,9 +114,56 @@ const offers: Offer[] = [
 ];
 
 export async function getOffers(): Promise<Offer[]> {
+  const db = getDb();
+  if (db) {
+    try {
+      const entries = await db.contentEntry.findMany({
+        where: { module: "offers", status: "PUBLISHED" },
+        orderBy: { updatedAt: "desc" },
+      });
+      if (entries.length) {
+        return entries.map((entry) => {
+          const data = entry.data as Record<string, unknown>;
+          const text = (key: string, fallback = "") =>
+            typeof data[key] === "string" ? String(data[key]) : fallback;
+          const type = text("type").toLowerCase();
+          return {
+            slug: entry.slug ?? entry.key,
+            title: entry.title,
+            category:
+              type === "package"
+                ? "Package"
+                : type === "gift card"
+                  ? "Gift Card"
+                  : "Seasonal",
+            tagline: text("subheading", entry.title),
+            description: text("description")
+              .replace(/<[^>]+>/g, " ")
+              .replace(/\s+/g, " ")
+              .trim(),
+            perks: text("benefits")
+              .split("\n")
+              .map((item) => item.trim())
+              .filter(Boolean),
+            validity: [text("validFrom"), text("validUntil")]
+              .filter(Boolean)
+              .join(" – "),
+            code: text("code", "DIRECT"),
+            discount: text("discount", "Exclusive rate"),
+            image: {
+              src: text("imageUrl", "/images/brand/hero-reference.png"),
+              alt: text("imageAlt", entry.title),
+            },
+          };
+        });
+      }
+    } catch {
+      // Static offers bootstrap the site before CMS publication.
+    }
+  }
   return offers;
 }
 
 export async function getOfferBySlug(slug: string): Promise<Offer | undefined> {
-  return offers.find((offer) => offer.slug === slug);
+  return (await getOffers()).find((offer) => offer.slug === slug);
 }

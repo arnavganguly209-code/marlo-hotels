@@ -1,4 +1,5 @@
 import type { Restaurant } from "@/types/content";
+import { getDb } from "@/lib/db";
 
 const restaurants: Restaurant[] = [
   {
@@ -150,9 +151,65 @@ const restaurants: Restaurant[] = [
 ];
 
 export async function getRestaurants(): Promise<Restaurant[]> {
+  const db = getDb();
+  if (db) {
+    try {
+      const entries = await db.contentEntry.findMany({
+        where: { module: "dining", status: "PUBLISHED" },
+        orderBy: { updatedAt: "desc" },
+      });
+      if (entries.length) {
+        return entries.map((entry) => {
+          const data = entry.data as Record<string, unknown>;
+          const text = (key: string, fallback = "") =>
+            typeof data[key] === "string" ? String(data[key]) : fallback;
+          const plain = (key: string, fallback = "") =>
+            text(key, fallback).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+          const image = {
+            src: text("imageUrl", "/images/brand/hero-reference.png"),
+            alt: text("imageAlt", entry.title),
+          };
+          return {
+            slug: entry.slug ?? entry.key,
+            name: text("restaurant", entry.title),
+            cuisine: text("cuisine", "Marlo Cuisine"),
+            tagline: text("subheading", entry.title),
+            shortDescription: plain("description", entry.title).slice(0, 220),
+            description: [plain("description", entry.title)],
+            hours: text("hours", "Contact concierge"),
+            dressCode: text("dressCode", "Smart casual"),
+            location: text("location", "Marlo Hotels"),
+            images: [image],
+            chef: {
+              name: text("chefName", "Marlo Culinary Team"),
+              title: "Chef",
+              bio: plain("chefBio", "The Marlo Hotels culinary team."),
+              image,
+            },
+            menu: [
+              {
+                title: "Current Menu",
+                items: text("menu")
+                  ? [
+                      {
+                        name: "Menu",
+                        description: plain("menu"),
+                        price: "",
+                      },
+                    ]
+                  : [],
+              },
+            ],
+          };
+        });
+      }
+    } catch {
+      // Static venues bootstrap the site before CMS publication.
+    }
+  }
   return restaurants;
 }
 
 export async function getRestaurantBySlug(slug: string): Promise<Restaurant | undefined> {
-  return restaurants.find((restaurant) => restaurant.slug === slug);
+  return (await getRestaurants()).find((restaurant) => restaurant.slug === slug);
 }

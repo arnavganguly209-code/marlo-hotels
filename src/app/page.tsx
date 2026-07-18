@@ -6,7 +6,7 @@ import { EventsSection } from "@/components/home/events-section";
 import { ExperiencesSection } from "@/components/home/experiences-section";
 import { FeaturedSuites } from "@/components/home/featured-suites";
 import { GalleryPreview } from "@/components/home/gallery-preview";
-import { Hero } from "@/components/home/hero";
+import { Hero, type HeroContent } from "@/components/home/hero";
 import { InstagramStrip } from "@/components/home/instagram-strip";
 import { JournalPreview } from "@/components/home/journal-preview";
 import { PoolBanner } from "@/components/home/pool-banner";
@@ -17,6 +17,7 @@ import { getPosts } from "@/content/blog";
 import { getRestaurants } from "@/content/dining";
 import { getExperiences } from "@/content/experiences";
 import { getFeaturedRooms, getRooms } from "@/content/rooms";
+import { getDb } from "@/lib/db";
 
 export default async function HomePage() {
   const [rooms, suites, restaurants, experiences, posts] = await Promise.all([
@@ -26,10 +27,22 @@ export default async function HomePage() {
     getExperiences(),
     getPosts(),
   ]);
+  const db = getDb();
+  const heroEntry = db
+    ? await db.contentEntry.findFirst({
+        where: {
+          module: "homepage",
+          status: "PUBLISHED",
+          data: { path: ["section"], equals: "Hero" },
+        },
+        orderBy: { updatedAt: "desc" },
+        select: { data: true },
+      })
+    : null;
 
   return (
     <>
-      <Hero />
+      <Hero content={(heroEntry?.data as HeroContent | undefined) ?? undefined} />
       <AboutSection />
       <RoomsShowcase rooms={rooms.filter((room) => room.category === "room")} />
       <FeaturedSuites suites={suites} />
