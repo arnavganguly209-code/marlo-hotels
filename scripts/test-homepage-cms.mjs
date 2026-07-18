@@ -96,7 +96,7 @@ const visibleProbePaths = {
   wellness: "heading",
   pool: "heading",
   events: ["items", 0, "title"],
-  gallery: ["items", 0, "alt"],
+  gallery: "heading",
   experiences: ["items", 0, "title"],
   attractions: ["items", 0, "name"],
   testimonials: ["items", 0, "quote"],
@@ -150,9 +150,7 @@ try {
     if (!original[key]) throw new Error(`Missing section: ${key}`);
     const candidate = clone(original);
     const path = visibleProbePaths[key];
-    const current = getAt(candidate[key], path);
-    const marker = `${current} [ORBIT CMS TEST ${key}]`;
-    setAt(candidate[key], path, marker);
+    const pathKeys = Array.isArray(path) ? path : [path];
     const sectionImages = collectImages(candidate[key]);
     const imagePath = sectionImages[0]?.path;
     const currentImage = sectionImages[0]?.image;
@@ -160,8 +158,23 @@ try {
       ? availableImages.find((item) => item.src !== currentImage.src)
       : null;
     if (imagePath && replacementImage) {
-      setAt(candidate[key], imagePath, clone(replacementImage));
+      const nextImage = clone(replacementImage);
+      // Keep the probe text when it lives on the same image object we replace.
+      if (
+        pathKeys.length >= 2 &&
+        pathKeys.slice(0, -1).every((part, index) => imagePath[index] === part) &&
+        (pathKeys.at(-1) === "alt" || pathKeys.at(-1) === "title")
+      ) {
+        nextImage[pathKeys.at(-1)] = `${currentImage[pathKeys.at(-1)] || ""} [ORBIT CMS TEST ${key}]`;
+      }
+      setAt(candidate[key], imagePath, nextImage);
     }
+    const current = getAt(candidate[key], path);
+    const marker =
+      String(current).includes(`[ORBIT CMS TEST ${key}]`)
+        ? String(current)
+        : `${current} [ORBIT CMS TEST ${key}]`;
+    setAt(candidate[key], path, marker);
 
     const saved = await saveContent(candidate);
     if (getAt(saved[key], path) !== marker) {

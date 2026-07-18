@@ -14,7 +14,10 @@
     "media:seed": "node --env-file=.env scripts/seed-media.mjs",
     "test:media": "node --env-file=.env scripts/test-media.mjs",
     "test:media:offline": "node scripts/test-media-storage.mjs",
-    "test:homepage": "node --env-file=.env scripts/test-homepage-cms.mjs"
+    "test:homepage": "node --env-file=.env scripts/test-homepage-cms.mjs",
+    "test:orbit-content": "node --env-file=.env scripts/verify-orbit-content.mjs",
+    "test:orbit-ui": "node --env-file=.env scripts/verify-orbit-ui.mjs",
+    "test:media-uploads": "node --env-file=.env scripts/verify-media-uploads.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -50,6 +53,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.9",
+    "playwright": "^1.61.1",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "typescript": "^5"

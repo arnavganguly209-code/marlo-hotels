@@ -602,24 +602,28 @@ export async function getHomepageContent(): Promise<HomepageContent> {
     const document = entries.find((entry) => entry.key === "visual-editor");
     let merged = mergeCurrent(defaults, document?.data);
 
-    // Migrate legacy per-section entries into the visual editor view without
-    // writing during GET. This guarantees existing production content is shown.
-    for (const entry of entries) {
-      if (entry.key === "visual-editor") continue;
-      const data = entry.data as Record<string, unknown>;
-      const legacyName =
-        typeof data.section === "string" ? data.section.toLowerCase() : entry.key;
-      const key =
-        legacyName === "hero"
-          ? "hero"
-          : legacyName.includes("about")
-            ? "about"
-            : null;
-      if (key) {
-        merged = {
-          ...merged,
-          [key]: mergeCurrent(merged[key], data),
-        };
+    // Legacy per-section homepage entries (e.g. key "hero") only seed the
+    // visual editor when the dedicated document does not exist yet. Once
+    // visual-editor is published it is the single source of truth.
+    if (!document) {
+      for (const entry of entries) {
+        const data = entry.data as Record<string, unknown>;
+        const legacyName =
+          typeof data.section === "string"
+            ? data.section.toLowerCase()
+            : entry.key;
+        const key =
+          legacyName === "hero"
+            ? "hero"
+            : legacyName.includes("about")
+              ? "about"
+              : null;
+        if (key) {
+          merged = {
+            ...merged,
+            [key]: mergeCurrent(merged[key], data),
+          };
+        }
       }
     }
     if (
