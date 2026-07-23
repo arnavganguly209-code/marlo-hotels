@@ -1,7 +1,17 @@
 name: Deploy to Hostinger VPS
 
-# Requires VPS_HOST, VPS_USERNAME, VPS_SSH_KEY secrets.
-# (Settings → Secrets and variables → Actions, or the production environment).
+# Enterprise CI/CD for Marlo Hotels ONLY.
+# Push to main → verify build → SSH deploy to /var/www/marlo-hotels.
+# Never touches Hotel Thamel Park.
+#
+# Required secrets (Settings → Secrets and variables → Actions,
+# OR Environments → production):
+#   VPS_HOST       — VPS hostname or IP
+#   VPS_USERNAME   — SSH user
+#   VPS_SSH_KEY    — full private key (BEGIN/END lines included)
+# Optional:
+#   VPS_PORT       — SSH port (default 22)
+
 on:
   push:
     branches:
@@ -56,24 +66,28 @@ jobs:
         run: |
           missing=0
           if [ -z "$VPS_HOST" ]; then
-            echo "::error::Missing secret VPS_HOST. Add it under Settings → Secrets and variables → Actions (or Environments → production)."
+            echo "::error::Missing secret VPS_HOST"
             missing=1
           fi
           if [ -z "$VPS_USERNAME" ]; then
-            echo "::error::Missing secret VPS_USERNAME."
+            echo "::error::Missing secret VPS_USERNAME"
             missing=1
           fi
           if [ -z "$VPS_SSH_KEY" ]; then
-            echo "::error::Missing secret VPS_SSH_KEY (full private key including BEGIN/END lines)."
+            echo "::error::Missing secret VPS_SSH_KEY (full private key including BEGIN/END lines)"
             missing=1
           fi
           if [ "$missing" -ne 0 ]; then
-            echo "::error::Add VPS_HOST, VPS_USERNAME, and VPS_SSH_KEY, then run this workflow again from Actions → Deploy to Hostinger VPS → Run workflow."
+            echo "::error::Add these under Settings → Secrets and variables → Actions"
+            echo "::error::AND/OR Environments → production (this job uses environment: production)."
+            echo "::error::Required: VPS_HOST, VPS_USERNAME, VPS_SSH_KEY. Optional: VPS_PORT."
+            echo "::error::After adding secrets, re-run: Actions → Deploy to Hostinger VPS → Run workflow."
             exit 1
           fi
           echo "Deploy secrets are present."
+          echo "host_len=${#VPS_HOST} user_len=${#VPS_USERNAME} key_len=${#VPS_SSH_KEY}"
 
-      - name: Deploy over SSH
+      - name: Deploy Marlo over SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -84,50 +98,33 @@ jobs:
           command_timeout: 30m
           script: |
             set -euo pipefail
+            # Marlo Hotels ONLY — never cd into Hotel Thamel Park paths.
             cd /var/www/marlo-hotels
 
-            echo "==> Pulling latest main"
+            # Pull THIS commit first so scripts/deploy-vps.sh is the latest
+            # version, then run the enterprise deploy (build → PM2 → health).
             git fetch origin main
             git reset --hard origin/main
+            chmod +x scripts/deploy-vps.sh
+            bash scripts/deploy-vps.sh
 
-            echo "==> Installing dependencies"
-            npm ci
-
-            echo "==> Applying database schema"
-            if [ -n "${DATABASE_URL:-}" ] || grep -qE '^DATABASE_URL=.+' .env 2>/dev/null; then
-              npx prisma migrate deploy || npx prisma db push
-            else
-              echo "DATABASE_URL not set — skipping Prisma migrate (Orbit login still works)."
+      - name: Post-deploy public verification
+        run: |
+          set -euo pipefail
+          echo "==> Verifying live site from GitHub runner"
+          for i in 1 2 3 4 5; do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 https://marlo.theglobalorbit.com/ || true)"
+            echo "attempt=$i public_status=$code"
+            if [ "$code" = "200" ]; then
+              # Confirm Hero video asset from latest commit is present
+              html="$(curl -sS --max-time 30 https://marlo.theglobalorbit.com/ || true)"
+              if echo "$html" | grep -q 'hero-demo.mp4\|<video'; then
+                echo "Live site OK (HTTP 200 + Hero video markup)."
+                exit 0
+              fi
+              echo "HTTP 200 but Hero video markup not found yet — retrying..."
             fi
-
-            echo "==> Removing stale build"
-            rm -rf .next
-
-            echo "==> Building Next.js production artifacts"
-            npm run build
-
-            echo "==> Verifying production build exists before PM2"
-            if [ ! -f .next/BUILD_ID ]; then
-              echo "FATAL: .next/BUILD_ID missing after npm run build — refusing to restart PM2"
-              exit 1
-            fi
-            echo "BUILD_ID=$(cat .next/BUILD_ID)"
-
-            echo "==> (Re)starting ONLY the marlo-hotels PM2 app on port 3001"
-            # Recreate just the marlo-hotels process from its dedicated
-            # ecosystem file so PORT=3001 is always applied. This never
-            # references hotel-thamel-park, so that process is untouched.
-            if pm2 describe marlo-hotels >/dev/null 2>&1; then
-              pm2 delete marlo-hotels
-            fi
-            pm2 start ecosystem.config.js --update-env
-            pm2 save
-            pm2 status marlo-hotels
-
-            echo "==> Smoke check Marlo on port 3001"
-            sleep 3
-            curl -fsS -o /dev/null -w "marlo_local_status=%{http_code}\n" http://127.0.0.1:3001/ || {
-              echo "FATAL: Marlo did not return HTTP 200 on 127.0.0.1:3001 after PM2 restart"
-              pm2 logs marlo-hotels --lines 40 --nostream || true
-              exit 1
-            }
+            sleep 5
+          done
+          echo "::error::Live site did not return HTTP 200 with Hero video after deploy"
+          exit 1
