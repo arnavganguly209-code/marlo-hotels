@@ -106,10 +106,74 @@ export async function POST(request: Request) {
     // already gone
   }
 
+  let attachedHero: string | null = null;
+  const heroVideo = await db.mediaAsset.findFirst({
+    where: {
+      kind: "VIDEO",
+      deletedAt: null,
+      size: { gte: KEEP_VIDEO_MIN_BYTES },
+    },
+    orderBy: { size: "desc" },
+  });
+  if (heroVideo) {
+    await db.mediaPlacement.upsert({
+      where: { key: "home.hero" },
+      create: {
+        key: "home.hero",
+        label: "Homepage Hero",
+        assetId: heroVideo.id,
+        mediaType: "VIDEO",
+        alt: heroVideo.alt || "Marlo Hotels hero video",
+        videoAutoplay: true,
+        videoLoop: true,
+        videoMuted: true,
+        posterUrl: heroVideo.posterUrl,
+      },
+      update: {
+        assetId: heroVideo.id,
+        mediaType: "VIDEO",
+        alt: heroVideo.alt || "Marlo Hotels hero video",
+        videoAutoplay: true,
+        videoLoop: true,
+        videoMuted: true,
+        posterUrl: heroVideo.posterUrl,
+      },
+    });
+
+    const entry = await db.contentEntry.findUnique({
+      where: { module_key: { module: "homepage", key: "visual-editor" } },
+    });
+    if (entry?.data && typeof entry.data === "object") {
+      const data = structuredClone(entry.data) as Record<string, unknown>;
+      const hero = {
+        ...((data.hero as Record<string, unknown>) || {}),
+        mediaType: "VIDEO",
+        videoUrl: heroVideo.url,
+        videoAssetId: heroVideo.id,
+        videoAutoplay: true,
+        videoLoop: true,
+        videoMuted: true,
+        videoPlaysInline: true,
+      };
+      data.hero = hero;
+      await db.contentEntry.update({
+        where: { id: entry.id },
+        data: {
+          data: data as Prisma.InputJsonValue,
+          status: "PUBLISHED",
+          publishedAt: new Date(),
+        },
+      });
+    }
+    attachedHero = heroVideo.url;
+  }
+
   await writeAuditLog({
     action: "PURGE_DEMO_MEDIA",
     module: "media-library",
-    summary: `Purged ${deleted.length} demo media asset(s)`,
+    summary: `Purged ${deleted.length} demo media asset(s)${
+      attachedHero ? `; attached Hero ${attachedHero}` : ""
+    }`,
   });
 
   revalidateTag("homepage");
@@ -123,6 +187,9 @@ export async function POST(request: Request) {
     ok: true,
     deletedCount: deleted.length,
     deleted,
-    message: "Demo media purged. Large Hero video preserved.",
+    attachedHero,
+    message: attachedHero
+      ? `Demo media purged. Official Hero video attached: ${attachedHero}`
+      : "Demo media purged. Upload a Hero MP4 (>=80MB) then run Purge again to attach it.",
   });
 }

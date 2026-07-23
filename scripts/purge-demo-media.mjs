@@ -1,9 +1,11 @@
 /**
  * Permanently purge demo / placeholder Orbit media.
- * Preserves videos >= 80MB (the real Hero upload).
+ * Preserves videos >= 80MB (the real Hero upload) and attaches the largest
+ * remaining video as the official Homepage Hero.
  *
  * Usage: node --env-file=.env scripts/purge-demo-media.mjs
  */
+import { randomUUID } from "node:crypto";
 import { unlink } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,6 +23,10 @@ const connectionString = process.env.DATABASE_URL?.trim();
 if (!connectionString) {
   console.error("DATABASE_URL is required");
   process.exit(1);
+}
+
+function cuid() {
+  return `c${randomUUID().replace(/-/g, "").slice(0, 24)}`;
 }
 
 function isDemo(asset) {
@@ -50,6 +56,78 @@ async function removeFile(url) {
   }
 }
 
+async function attachOfficialHeroVideo(client, heroVideo) {
+  const now = new Date();
+  const existing = await client.query(
+    `SELECT id FROM "MediaPlacement" WHERE key = 'home.hero' LIMIT 1`
+  );
+  if (existing.rows[0]) {
+    await client.query(
+      `UPDATE "MediaPlacement"
+       SET "assetId"=$2, "mediaType"='VIDEO', "videoAutoplay"=true, "videoLoop"=true,
+           "videoMuted"=true, "updatedAt"=$3, alt=$4, "posterUrl"=COALESCE($5, "posterUrl")
+       WHERE id=$1`,
+      [
+        existing.rows[0].id,
+        heroVideo.id,
+        now,
+        heroVideo.alt || "Marlo Hotels hero video",
+        heroVideo.posterUrl || null,
+      ]
+    );
+  } else {
+    await client.query(
+      `INSERT INTO "MediaPlacement"
+        (id, key, label, "assetId", "mediaType", alt, "focalX", "focalY",
+         "videoAutoplay", "videoLoop", "videoMuted", "posterUrl", "createdAt", "updatedAt")
+       VALUES ($1,'home.hero','Homepage Hero',$2,'VIDEO',$3,50,45,true,true,true,$4,$5,$5)`,
+      [
+        cuid(),
+        heroVideo.id,
+        heroVideo.alt || "Marlo Hotels hero video",
+        heroVideo.posterUrl || null,
+        now,
+      ]
+    );
+  }
+
+  const homepage = await client.query(
+    `SELECT id, data FROM "ContentEntry" WHERE module='homepage' AND key='visual-editor' LIMIT 1`
+  );
+  if (homepage.rows[0]) {
+    const data =
+      typeof homepage.rows[0].data === "string"
+        ? JSON.parse(homepage.rows[0].data)
+        : structuredClone(homepage.rows[0].data);
+    data.hero = {
+      ...(data.hero || {}),
+      mediaType: "VIDEO",
+      videoUrl: heroVideo.url,
+      videoAssetId: heroVideo.id,
+      videoAutoplay: true,
+      videoLoop: true,
+      videoMuted: true,
+      videoPlaysInline: true,
+      poster: heroVideo.posterUrl
+        ? {
+            src: heroVideo.posterUrl,
+            alt: heroVideo.alt || "Hero video poster",
+          }
+        : data.hero?.poster,
+    };
+    await client.query(
+      `UPDATE "ContentEntry" SET data=$2::jsonb, status='PUBLISHED', "updatedAt"=NOW() WHERE id=$1`,
+      [homepage.rows[0].id, JSON.stringify(data)]
+    );
+  }
+
+  console.log(
+    "Attached official Hero video:",
+    heroVideo.url,
+    `(${(Number(heroVideo.size) / (1024 * 1024)).toFixed(1)} MB)`
+  );
+}
+
 async function main() {
   const client = new Client({ connectionString });
   await client.connect();
@@ -69,12 +147,14 @@ async function main() {
     console.log("Deleted", asset.url, `(${asset.size} bytes)`);
   }
 
-  // Scrub homepage visual-editor demo video URLs
   const homepage = await client.query(
     `SELECT id, data FROM "ContentEntry" WHERE module='homepage' AND key='visual-editor' LIMIT 1`
   );
   if (homepage.rows[0]) {
-    const data = homepage.rows[0].data;
+    const data =
+      typeof homepage.rows[0].data === "string"
+        ? JSON.parse(homepage.rows[0].data)
+        : structuredClone(homepage.rows[0].data);
     if (data?.hero && typeof data.hero.videoUrl === "string") {
       if (/hero-demo|demo\.mp4|sample|placeholder/i.test(data.hero.videoUrl)) {
         data.hero.videoUrl = "";
@@ -95,6 +175,21 @@ async function main() {
     console.log("Deleted public/videos/hero-demo.mp4");
   } catch {
     // absent
+  }
+
+  const largest = await client.query(
+    `SELECT * FROM "MediaAsset"
+     WHERE kind = 'VIDEO' AND "deletedAt" IS NULL AND size >= $1
+     ORDER BY size DESC
+     LIMIT 1`,
+    [KEEP_VIDEO_MIN_BYTES]
+  );
+  if (largest.rows[0]) {
+    await attachOfficialHeroVideo(client, largest.rows[0]);
+  } else {
+    console.warn(
+      "No video >= 80MB found — upload your Hero MP4 in Orbit, then re-run purge."
+    );
   }
 
   console.log(`Purge complete. Removed ${deleted} demo asset(s).`);
