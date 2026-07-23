@@ -29,17 +29,21 @@ export function PageHero({
           crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href }))
         )}
       />
-      <Image
-        src={image.src}
-        alt={image.alt}
-        fill
-        priority
-        quality={100}
-        sizes="100vw"
-        className="animate-kenburns object-cover opacity-70"
-        style={{ objectPosition: image.objectPosition || "50% 50%" }}
-        unoptimized={image.src.startsWith("/media/")}
-      />
+      {image.src ? (
+        <Image
+          src={image.src}
+          alt={image.alt}
+          fill
+          priority
+          quality={100}
+          sizes="100vw"
+          className="animate-kenburns object-cover opacity-70"
+          style={{ objectPosition: image.objectPosition || "50% 50%" }}
+          unoptimized={image.src.startsWith("/media/")}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-forest-950" />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/90 via-charcoal-950/35 to-charcoal-950/45" />
 
       <div className="relative mx-auto w-full max-w-7xl px-5 pt-44 pb-16 md:px-8 md:pb-20">

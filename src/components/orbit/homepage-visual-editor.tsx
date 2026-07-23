@@ -215,59 +215,10 @@ export function HomepageVisualEditor({
   }
 
   async function save() {
+    // Deleted media is allowed. Only block non-empty images that lack alt text.
     const invalidSection = HOMEPAGE_SECTIONS.find((section) => {
       const value = content[section.key] as unknown as JsonObject;
       if (value.enabled === false) return false;
-      if ("heading" in value && !String(value.heading || "").trim()) return true;
-      if (
-        section.key === "hero" &&
-        value.mediaType === "VIDEO" &&
-        !String(value.videoUrl || "").trim()
-      ) {
-        // Empty hero video is allowed — site shows solid background until upload.
-        return false;
-      }
-      if (
-        (section.key === "about" || section.key === "wellness") &&
-        (!Array.isArray(value.images) || value.images.length < 2)
-      ) {
-        return true;
-      }
-      if (
-        [
-          "rooms",
-          "featuredSuites",
-          "dining",
-          "events",
-          "experiences",
-          "attractions",
-          "journal",
-        ].includes(section.key) &&
-        Array.isArray(value.items) &&
-        (value.items as JsonObject[]).some(
-          (item) => {
-            const image = isImage(item.image)
-              ? item.image
-              : Array.isArray(item.images) && isImage(item.images[0])
-                ? item.images[0]
-                : null;
-            return !image?.src.trim() || !image.alt.trim();
-          }
-        )
-      ) {
-        return true;
-      }
-      if (
-        section.key === "journal" &&
-        Array.isArray(value.items) &&
-        (value.items as JsonObject[]).some(
-          (item) =>
-            typeof item.date !== "string" ||
-            Number.isNaN(Date.parse(item.date))
-        )
-      ) {
-        return true;
-      }
       if (
         section.key === "testimonials" &&
         Array.isArray(value.items) &&
@@ -281,13 +232,13 @@ export function HomepageVisualEditor({
         return true;
       }
       return collectClientImages(value).some(
-        (item) => !item.src.trim() || !item.alt.trim()
+        (item) => Boolean(item.src.trim()) && !item.alt.trim()
       );
     });
     if (invalidSection) {
       setActive(invalidSection.key);
       push(
-        `Validation Error: complete the heading, image and alt text in ${invalidSection.label}.`,
+        `Validation Error: add alt text for images still in use in ${invalidSection.label}.`,
         "error"
       );
       return;

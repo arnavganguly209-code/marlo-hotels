@@ -11,6 +11,9 @@ export type Room = {
   shortDescription: string;
   description: string[];
   priceFrom: number;
+  currency: string;
+  mealPlan: string;
+  inventory: number;
   size: string;
   occupancy: string;
   bed: string;

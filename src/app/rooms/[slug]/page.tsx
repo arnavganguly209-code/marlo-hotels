@@ -34,7 +34,7 @@ export async function generateMetadata({
     title: room.name,
     description: room.shortDescription,
     path: `/rooms/${room.slug}`,
-    image: room.images[0].src,
+    image: room.images[0]?.src,
   });
 }
 
@@ -71,7 +71,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
         eyebrow={room.category === "suite" ? "The Suites" : "The Rooms"}
         title={room.name}
         description={room.tagline}
-        image={room.images[0]}
+        image={room.images[0] || { src: "", alt: room.name }}
         crumbs={[
           { label: "Home", href: "/" },
           { label: "Rooms & Suites", href: "/rooms" },
@@ -169,7 +169,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
                       {policy.title}
                     </dt>
                     <dd className="text-sm leading-relaxed font-light text-charcoal-900/70">
-                      {policy.detail}
+                      {policy.body}
                     </dd>
                   </div>
                 ))}

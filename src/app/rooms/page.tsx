@@ -18,8 +18,8 @@ export default async function RoomsPage() {
   const [allRooms, hero] = await Promise.all([
     getRooms(),
     resolveSiteImage("page.rooms.hero", {
-      src: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=2400&auto=format&fit=crop",
-      alt: "A Marlo guest room bathed in morning light",
+      src: "",
+      alt: "Marlo Hotels rooms",
     }),
   ]);
   const rooms = allRooms.filter((room) => room.category === "room");

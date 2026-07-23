@@ -11,33 +11,40 @@ export function RoomCard({
   room: Room;
   labels?: Record<string, string>;
 }) {
+  const cover = room.images[0];
+  const soldOut = room.inventory <= 0;
+
   return (
     <article className="group shadow-luxury-sm hover:shadow-luxury relative flex h-full flex-col overflow-hidden rounded-xl bg-white transition-shadow duration-700">
-      <div className="img-hover-frame relative aspect-[4/3]">
-        <Image
-          src={room.images[0].src}
-          alt={room.images[0].alt}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          quality={100}
-          unoptimized={room.images[0].src.startsWith("/media/")}
-          className="object-cover"
-        />
+      <div className="img-hover-frame relative aspect-[4/3] bg-forest-950">
+        {cover?.src ? (
+          <Image
+            src={cover.src}
+            alt={cover.alt || room.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            quality={100}
+            unoptimized={cover.src.startsWith("/media/")}
+            className="object-cover"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/45 to-transparent" />
         <span className="glass-dark absolute top-4 left-4 rounded-full px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase">
-          {room.category === "suite"
-            ? labels?.suite ?? "Suite"
-            : labels?.room ?? "Room"}
+          {soldOut
+            ? "Sold Out"
+            : room.category === "suite"
+              ? labels?.suite ?? "Suite"
+              : labels?.room ?? "Room"}
         </span>
         <span className="absolute right-4 bottom-4 text-right">
           <span className="block text-[9px] tracking-[0.28em] text-cream-200/80 uppercase">
             {labels?.from ?? "From"}
           </span>
           <span className="font-display text-2xl font-medium text-ivory">
-            {formatCurrency(room.priceFrom)}
+            {formatCurrency(room.priceFrom, room.currency)}
             <span className="text-sm font-light text-cream-200/80">
               {" "}
-              {labels?.perNight ?? "/ night"}
+              {room.mealPlan}
             </span>
           </span>
         </span>
@@ -54,6 +61,11 @@ export function RoomCard({
         </h3>
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed font-light text-charcoal-900/60">
           {room.shortDescription}
+        </p>
+        <p className="mt-3 text-[10px] font-medium tracking-[0.2em] text-gold-700 uppercase">
+          {soldOut
+            ? "No rooms available"
+            : `${room.inventory} available`}
         </p>
 
         <dl className="mt-6 flex flex-wrap gap-x-6 gap-y-2 border-t border-forest-800/10 pt-5 text-xs font-light text-charcoal-900/70">

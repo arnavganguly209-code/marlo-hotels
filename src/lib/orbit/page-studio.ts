@@ -10,22 +10,22 @@ export type PageSectionDef = {
 
 export const PAGE_STUDIO_SECTIONS: Record<string, PageSectionDef[]> = {
   rooms: [
-    { key: "hero", label: "Hero", description: "Rooms page hero media and headline." },
-    { key: "listing", label: "Room Listing", description: "Intro copy for the rooms inventory." },
+    { key: "hero", label: "Page Cover", description: "Rooms page cover image." },
+    { key: "listing", label: "Intro", description: "Rooms listing introduction." },
     { key: "amenities", label: "Amenities", description: "Shared amenities strip." },
     { key: "gallery", label: "Gallery", description: "Rooms page gallery." },
     { key: "cta", label: "CTA", description: "Bottom call to action." },
     { key: "seo", label: "SEO", description: "Title, description and Open Graph." },
   ],
   dining: [
-    { key: "hero", label: "Dining Hero", description: "Dining page hero." },
+    { key: "hero", label: "Page Cover", description: "Dining page cover." },
     { key: "restaurants", label: "Restaurants", description: "Venue listing introduction." },
     { key: "gallery", label: "Gallery", description: "Dining gallery." },
     { key: "cta", label: "CTA", description: "Reservations call to action." },
     { key: "seo", label: "SEO", description: "Page SEO metadata." },
   ],
   spa: [
-    { key: "hero", label: "Spa Hero", description: "Spa page hero." },
+    { key: "hero", label: "Page Cover", description: "Spa page cover." },
     { key: "treatments", label: "Treatments", description: "Treatments introduction." },
     { key: "packages", label: "Packages", description: "Packages introduction." },
     { key: "gallery", label: "Gallery", description: "Spa gallery." },

@@ -76,70 +76,12 @@ function validateHomepage(content: HomepageContent) {
   for (const [key, rawSection] of Object.entries(content)) {
     const section = rawSection as unknown as Record<string, unknown>;
     if (section.enabled === false) continue;
-    if (
-      "heading" in section &&
-      (typeof section.heading !== "string" || !section.heading.trim())
-    ) {
-      return `${key}: heading is required`;
-    }
-    if (
-      key === "hero" &&
-      section.mediaType === "VIDEO" &&
-      (typeof section.videoUrl !== "string" || !section.videoUrl.trim())
-    ) {
-      return "hero: select a video or switch Hero Media to IMAGE";
-    }
-    if (key === "hero") {
-      const hero = section as unknown as HomepageContent["hero"];
-      if (
-        [hero.logoDesktopWidth, hero.logoTabletWidth, hero.logoMobileWidth].some(
-          (value) => value < 40 || value > 600
-        ) ||
-        hero.logoOpacity < 0 ||
-        hero.logoOpacity > 100 ||
-        [hero.logoLeftMargin, hero.logoTopMargin].some(
-          (value) => value < -500 || value > 500
-        )
-      ) {
-        return "hero: logo size, margin or opacity is outside the allowed range";
-      }
-    }
-    if (
-      (key === "about" || key === "wellness") &&
-      (!Array.isArray(section.images) || section.images.length < 2)
-    ) {
-      return `${key}: two images are required`;
-    }
-    if (
-      [
-        "rooms",
-        "featuredSuites",
-        "dining",
-        "events",
-        "experiences",
-        "attractions",
-        "journal",
-      ].includes(key) &&
-      Array.isArray(section.items)
-    ) {
-      for (const rawItem of section.items) {
-        const item = rawItem as Record<string, unknown>;
-        const firstImage =
-          Array.isArray(item.images) && isEditableImage(item.images[0])
-            ? item.images[0]
-            : isEditableImage(item.image)
-              ? item.image
-              : null;
-        if (!firstImage?.src.trim() || !firstImage.alt.trim()) {
-          return `${key}: every card requires an image and alt text`;
-        }
-        if (
-          key === "journal" &&
-          (typeof item.date !== "string" || Number.isNaN(Date.parse(item.date)))
-        ) {
-          return "journal: every article requires a valid date";
-        }
-      }
+    // Empty / deleted media is allowed. Only reject non-empty images missing alt.
+    const invalidImage = collectImages(section).find(
+      (item) => item.image.src.trim() && !item.image.alt.trim()
+    );
+    if (invalidImage) {
+      return `${key}: images with a source require alt text`;
     }
     if (
       key === "testimonials" &&
@@ -150,12 +92,6 @@ function validateHomepage(content: HomepageContent) {
       })
     ) {
       return "testimonials: ratings must be between 1 and 5";
-    }
-    const invalidImage = collectImages(section).find(
-      (item) => !item.image.src.trim() || !item.image.alt.trim()
-    );
-    if (invalidImage) {
-      return `${key}: images require a source and alt text`;
     }
   }
   return null;

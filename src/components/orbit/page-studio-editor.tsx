@@ -205,7 +205,7 @@ export function PageStudioEditor({
             href={`/orbit/${moduleSlug}?inventory=1`}
             className="mt-3 block rounded-xl border border-dashed border-[var(--orbit-border)] px-3 py-3 text-center text-[10px] font-semibold tracking-[0.14em] text-[var(--orbit-gold-deep)] uppercase"
           >
-            Open inventory →
+            Open room inventory →
           </Link>
         </nav>
 

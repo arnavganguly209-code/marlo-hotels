@@ -28,8 +28,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unknown room" }, { status: 400 });
   }
 
+  if (room.inventory <= 0) {
+    return NextResponse.json(
+      { error: "Sold Out", message: "No Rooms Available" },
+      { status: 409 }
+    );
+  }
+
   const reference = generateReference();
   const db = getDb();
+  const checkIn = new Date(parsed.data.checkIn);
+  const checkOut = new Date(parsed.data.checkOut);
+  const roomsRequested = Math.max(1, parsed.data.rooms);
 
   if (db) {
     const roomRecord = await db.room.upsert({
@@ -49,17 +59,49 @@ export async function POST(request: Request) {
         amenities: [...room.amenities],
         features: [...room.features],
       },
-      update: {},
+      update: {
+        name: room.name,
+        priceFrom: room.priceFrom,
+        featured: room.featured,
+        amenities: [...room.amenities],
+        features: [...room.features],
+      },
     });
+
+    // Active bookings overlapping the requested stay consume inventory.
+    const overlapping = await db.booking.findMany({
+      where: {
+        roomId: roomRecord.id,
+        status: { in: ["PENDING", "CONFIRMED"] },
+        checkIn: { lt: checkOut },
+        checkOut: { gt: checkIn },
+      },
+      select: { rooms: true },
+    });
+    const bookedUnits = overlapping.reduce(
+      (sum, item) => sum + Math.max(1, item.rooms),
+      0
+    );
+    if (bookedUnits + roomsRequested > room.inventory) {
+      return NextResponse.json(
+        {
+          error: "Sold Out",
+          message: "No Rooms Available",
+          inventory: room.inventory,
+          booked: bookedUnits,
+        },
+        { status: 409 }
+      );
+    }
 
     await db.booking.create({
       data: {
         reference,
-        checkIn: new Date(parsed.data.checkIn),
-        checkOut: new Date(parsed.data.checkOut),
+        checkIn,
+        checkOut,
         adults: parsed.data.adults,
         children: parsed.data.children,
-        rooms: parsed.data.rooms,
+        rooms: roomsRequested,
         promoCode: parsed.data.promoCode,
         guestName: parsed.data.guestName,
         guestEmail: parsed.data.guestEmail,

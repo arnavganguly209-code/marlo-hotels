@@ -23,44 +23,50 @@ export default async function HomePage() {
   ]);
   const heroContent = {
     ...homepage.hero,
-    // A named media placement remains compatible with the Media Library's
-    // "Use as Hero" action. The visual editor document otherwise owns content.
-    image: heroMedia.id
-      ? {
-          ...homepage.hero.image,
-          assetId: heroMedia.id,
-          src: heroMedia.src,
-          alt: heroMedia.alt,
-          title: heroMedia.title || homepage.hero.image.title,
-          focalX: heroMedia.focalX,
-          focalY: heroMedia.focalY,
-        }
-      : homepage.hero.image,
-    mediaType: heroMedia.id ? heroMedia.kind : homepage.hero.mediaType,
+    // Prefer Orbit Homepage document. Placement only fills empty Hero media.
+    image:
+      homepage.hero.mediaType === "VIDEO"
+        ? { ...homepage.hero.image, src: "", alt: homepage.hero.image.alt || "" }
+        : homepage.hero.image?.src
+          ? homepage.hero.image
+          : heroMedia.id && heroMedia.kind === "IMAGE"
+            ? {
+                ...homepage.hero.image,
+                assetId: heroMedia.id,
+                src: heroMedia.src,
+                alt: heroMedia.alt,
+                title: heroMedia.title || homepage.hero.image.title,
+                focalX: heroMedia.focalX,
+                focalY: heroMedia.focalY,
+              }
+            : homepage.hero.image,
+    mediaType: homepage.hero.mediaType,
     videoUrl:
-      heroMedia.id && heroMedia.kind === "VIDEO"
-        ? heroMedia.src
-        : homepage.hero.videoUrl,
-    videoAutoplay: heroMedia.id
-      ? heroMedia.videoAutoplay !== false
-      : homepage.hero.videoAutoplay,
-    videoLoop: heroMedia.id
-      ? heroMedia.videoLoop !== false
-      : homepage.hero.videoLoop,
-    videoMuted: heroMedia.id
-      ? heroMedia.videoMuted !== false
-      : homepage.hero.videoMuted,
-    poster: heroMedia.posterUrl
-      ? {
-          src: heroMedia.posterUrl,
-          alt: homepage.hero.poster?.alt || homepage.hero.image.alt,
-        }
-      : homepage.hero.poster,
+      homepage.hero.mediaType === "VIDEO"
+        ? homepage.hero.videoUrl ||
+          (heroMedia.id && heroMedia.kind === "VIDEO" ? heroMedia.src : "")
+        : "",
+    videoAssetId:
+      homepage.hero.mediaType === "VIDEO"
+        ? homepage.hero.videoAssetId ||
+          (heroMedia.id && heroMedia.kind === "VIDEO" ? heroMedia.id : null)
+        : null,
+    videoAutoplay: true,
+    videoLoop: true,
+    videoMuted: true,
+    poster: undefined,
   };
 
   return (
     <>
-      {heroContent.mediaType === "IMAGE" ? (
+      {heroContent.mediaType === "VIDEO" && heroContent.videoUrl ? (
+        <link
+          rel="preload"
+          as="video"
+          href={heroContent.videoUrl.split("?")[0]}
+          type="video/mp4"
+        />
+      ) : heroContent.mediaType === "IMAGE" && heroContent.image?.src ? (
         <link rel="preload" as="image" href={heroContent.image.src} />
       ) : null}
       <Hero content={heroContent} />
