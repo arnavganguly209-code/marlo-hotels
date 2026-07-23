@@ -164,6 +164,94 @@ export async function POST(request: Request) {
     );
   }
 
+  const duplicateId = String(form.get("duplicateId") || "");
+  if (duplicateId) {
+    const source = await db.mediaAsset.findUnique({ where: { id: duplicateId } });
+    if (!source || source.deletedAt) {
+      return NextResponse.json({ error: "Source asset not found" }, { status: 404 });
+    }
+    try {
+      const { readFile } = await import("node:fs/promises");
+      const { diskPathFromUrl } = await import("@/lib/orbit/media-storage");
+      const buffer = await readFile(diskPathFromUrl(source.url));
+      const stored = await storeOriginalUpload({
+        buffer,
+        mimeType: source.mimeType,
+        originalName: `copy-${source.originalName}`,
+        folder: source.folder,
+      });
+      const asset = await db.$transaction(async (tx) => {
+        const created = await tx.mediaAsset.create({
+          data: {
+            filename: stored.filename,
+            originalName: stored.originalName,
+            url: stored.url,
+            mimeType: stored.mimeType,
+            kind: stored.kind,
+            size: stored.size,
+            width: stored.width,
+            height: stored.height,
+            durationMs: source.durationMs,
+            alt: source.alt,
+            title: source.title,
+            caption: source.caption,
+            seoTitle: source.seoTitle,
+            seoDescription: source.seoDescription,
+            folder: source.folder,
+            checksum: stored.checksum,
+            focalX: source.focalX,
+            focalY: source.focalY,
+            posterUrl: source.posterUrl,
+            currentVersion: 1,
+          },
+        });
+        await tx.mediaVersion.create({
+          data: {
+            assetId: created.id,
+            version: 1,
+            filename: stored.filename,
+            originalName: stored.originalName,
+            url: stored.url,
+            mimeType: stored.mimeType,
+            size: stored.size,
+            width: stored.width,
+            height: stored.height,
+            durationMs: source.durationMs,
+            checksum: stored.checksum,
+            isOriginal: true,
+          },
+        });
+        return tx.mediaAsset.findUniqueOrThrow({
+          where: { id: created.id },
+          include: {
+            _count: { select: { placements: true } },
+            placements: { select: { key: true, label: true } },
+          },
+        });
+      });
+      await writeAuditLog({
+        action: "DUPLICATE_MEDIA",
+        module: "media-library",
+        entityId: asset.id,
+        summary: `Duplicated ${source.originalName}`,
+      });
+      revalidateTag("media");
+      revalidatePath("/orbit/media-library");
+      return NextResponse.json({
+        asset: serializeAsset(asset),
+        message: "Duplicated Successfully",
+      });
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error: error instanceof Error ? error.message : "Duplicate Failed",
+          code: "SERVER_ERROR",
+        },
+        { status: 500 }
+      );
+    }
+  }
+
   const file = form.get("file");
   if (!(file instanceof File)) {
     return NextResponse.json(

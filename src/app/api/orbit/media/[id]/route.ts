@@ -8,6 +8,7 @@ import {
   writeAuditLog,
 } from "@/lib/orbit/auth";
 import { removeMediaFile } from "@/lib/orbit/media-storage";
+import { scrubDeletedMediaFromContent } from "@/lib/orbit/scrub-media-refs";
 
 const updateSchema = z.object({
   alt: z.string().max(500).optional(),
@@ -15,6 +16,7 @@ const updateSchema = z.object({
   caption: z.string().max(1000).optional().nullable(),
   seoTitle: z.string().max(240).optional().nullable(),
   seoDescription: z.string().max(500).optional().nullable(),
+  originalName: z.string().min(1).max(240).optional(),
   folder: z
     .string()
     .min(1)
@@ -127,6 +129,7 @@ export async function PATCH(request: Request, { params }: Context) {
     caption: parsed.data.caption,
     seoTitle: parsed.data.seoTitle,
     seoDescription: parsed.data.seoDescription,
+    originalName: parsed.data.originalName,
     folder: parsed.data.folder,
     focalX: parsed.data.focalX,
     focalY: parsed.data.focalY,
@@ -178,12 +181,17 @@ export async function DELETE(request: Request, { params }: Context) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Detach placements + scrub homepage JSON so deleted media never flashes.
+  await db.mediaPlacement.updateMany({
+    where: { assetId: id },
+    data: { assetId: null },
+  });
+  await scrubDeletedMediaFromContent({
+    assetId: id,
+    url: existing.url,
+  });
+
   if (hard) {
-    // Clear placements so deleted media can never reappear via overlays.
-    await db.mediaPlacement.updateMany({
-      where: { assetId: id },
-      data: { assetId: null },
-    });
     await db.mediaAsset.delete({ where: { id } });
     await removeMediaFile(existing.url);
     await writeAuditLog({
@@ -192,31 +200,23 @@ export async function DELETE(request: Request, { params }: Context) {
       entityId: id,
       summary: `Permanently deleted ${existing.originalName}`,
     });
-    invalidate();
-    revalidatePath("/");
-    revalidatePath("/", "layout");
-    revalidatePath("/orbit/homepage");
-    return NextResponse.json({ ok: true, message: "Deleted Successfully" });
+  } else {
+    await db.mediaAsset.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+    await writeAuditLog({
+      action: "DELETE_MEDIA",
+      module: "media-library",
+      entityId: id,
+      summary: `Moved ${existing.originalName} to trash`,
+    });
   }
 
-  // Soft-delete: detach placements immediately so public/CMS never show it.
-  await db.mediaPlacement.updateMany({
-    where: { assetId: id },
-    data: { assetId: null },
-  });
-  await db.mediaAsset.update({
-    where: { id },
-    data: { deletedAt: new Date() },
-  });
-  await writeAuditLog({
-    action: "DELETE_MEDIA",
-    module: "media-library",
-    entityId: id,
-    summary: `Moved ${existing.originalName} to trash`,
-  });
   invalidate();
   revalidatePath("/");
   revalidatePath("/", "layout");
   revalidatePath("/orbit/homepage");
+  revalidateTag("homepage");
   return NextResponse.json({ ok: true, message: "Deleted Successfully" });
 }

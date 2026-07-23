@@ -195,12 +195,26 @@ export async function storeCroppedDerivative(options: {
   );
   if (options.crop.flipX) pipeline = pipeline.flop();
   if (options.crop.flipY) pipeline = pipeline.flip();
-  pipeline = pipeline.extract({
-    left: Math.max(0, Math.round(options.crop.x)),
-    top: Math.max(0, Math.round(options.crop.y)),
-    width: Math.max(1, Math.round(options.crop.width)),
-    height: Math.max(1, Math.round(options.crop.height)),
-  });
+
+  // After rotate, dimensions can swap — clamp extract to the transformed canvas.
+  const transformed = await pipeline.toBuffer({ resolveWithObject: true });
+  const maxW = transformed.info.width;
+  const maxH = transformed.info.height;
+  const left = Math.max(0, Math.min(Math.round(options.crop.x), Math.max(0, maxW - 1)));
+  const top = Math.max(0, Math.min(Math.round(options.crop.y), Math.max(0, maxH - 1)));
+  const width = Math.max(
+    1,
+    Math.min(Math.round(options.crop.width), maxW - left)
+  );
+  const height = Math.max(
+    1,
+    Math.min(Math.round(options.crop.height), maxH - top)
+  );
+
+  pipeline = sharp(transformed.data, {
+    failOn: "error",
+    limitInputPixels: 100_000_000,
+  }).extract({ left, top, width, height });
 
   // Preserve original format when possible; fall back to PNG for lossless crop.
   const meta = await sharp(input).metadata();

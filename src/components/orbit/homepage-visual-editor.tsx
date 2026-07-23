@@ -21,8 +21,10 @@ import {
   useState,
 } from "react";
 import { MediaField } from "@/components/orbit/media-picker";
+import { ImageCropper } from "@/components/orbit/image-cropper";
 import { useToast } from "@/components/orbit/toast";
 import type { EditableImage, HomepageContent } from "@/lib/homepage-content";
+import { withMediaCacheBust } from "@/lib/media-cache";
 import {
   HOMEPAGE_SECTIONS,
   type HomepageSectionKey,
@@ -693,6 +695,73 @@ function HeroExtraFields({
   const mediaType = String(value.mediaType || "IMAGE") as "IMAGE" | "VIDEO";
   const videoUrl = String(value.videoUrl || "");
   const mobileVideoUrl = String(value.mobileVideoUrl || "");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [posterBusy, setPosterBusy] = useState(false);
+  const { push } = useToast();
+
+  async function generatePosterFromVideo(sourceUrl: string) {
+    if (!sourceUrl || posterBusy) return;
+    setPosterBusy(true);
+    try {
+      const video = document.createElement("video");
+      video.crossOrigin = "anonymous";
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = "auto";
+      video.src = sourceUrl.split("?")[0];
+      await new Promise<void>((resolve, reject) => {
+        video.onloadeddata = () => resolve();
+        video.onerror = () => reject(new Error("Unable to load video frame"));
+      });
+      video.currentTime = Math.min(0.35, (video.duration || 1) * 0.05);
+      await new Promise<void>((resolve) => {
+        video.onseeked = () => resolve();
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas unavailable");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.92)
+      );
+      if (!blob) throw new Error("Poster capture failed");
+      const body = new FormData();
+      body.set(
+        "file",
+        new File([blob], `hero-poster-${Date.now()}.jpg`, {
+          type: "image/jpeg",
+        })
+      );
+      body.set("folder", "hero");
+      body.set("alt", "Hero video poster");
+      const response = await fetch("/api/orbit/media", { method: "POST", body });
+      const result = (await response.json()) as {
+        asset?: { id: string; url: string; alt?: string };
+        error?: string;
+      };
+      if (!response.ok || !result.asset) {
+        throw new Error(result.error || "Poster upload failed");
+      }
+      set("poster", {
+        assetId: result.asset.id,
+        src: withMediaCacheBust(result.asset.url),
+        alt: result.asset.alt || "Hero video poster",
+        title: "Hero Video Poster",
+        focalX: 50,
+        focalY: 50,
+      });
+      push("Poster generated automatically", "success");
+    } catch (error) {
+      push(
+        error instanceof Error ? error.message : "Poster generation failed",
+        "error"
+      );
+    } finally {
+      setPosterBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -750,26 +819,30 @@ function HeroExtraFields({
                   kind: "VIDEO",
                 }}
                 onChange={(next) => {
-                  const busted = next.url.includes("?")
-                    ? next.url
-                    : `${next.url}?v=${Date.now()}`;
+                  const busted = withMediaCacheBust(next.url);
                   set("videoUrl", busted);
                   set("videoAssetId", next.assetId);
                   set("videoSizeBytes", next.size ?? null);
                   set("videoWidth", next.width ?? null);
                   set("videoHeight", next.height ?? null);
                   set("videoDurationMs", next.durationMs ?? null);
-                  if (!value.poster || !(value.poster as EditableImage).src) {
-                    // Poster will be filled when user uploads; keep image as fallback poster candidate
+                  const hasPoster =
+                    isImage(value.poster) && Boolean(value.poster.src);
+                  if (!hasPoster) {
                     if (isImage(value.image) && value.image.src) {
-                      set("poster", { ...value.image, title: "Hero Video Poster" });
+                      set("poster", {
+                        ...value.image,
+                        title: "Hero Video Poster",
+                      });
                     }
+                    void generatePosterFromVideo(busted);
                   }
                 }}
               />
               {videoUrl ? (
                 <div className="overflow-hidden rounded-xl border border-[#17362b]/10 bg-black">
                   <video
+                    ref={videoRef}
                     key={videoUrl}
                     src={videoUrl}
                     className="aspect-video h-auto w-full object-cover"
@@ -812,23 +885,35 @@ function HeroExtraFields({
                 onChange={(next) => {
                   set(
                     "mobileVideoUrl",
-                    next.url ? `${next.url.split("?")[0]}?v=${Date.now()}` : ""
+                    next.url ? withMediaCacheBust(next.url) : ""
                   );
                   set("mobileVideoAssetId", next.assetId);
                 }}
               />
-              <button
-                type="button"
-                onClick={() => {
-                  set("videoUrl", "");
-                  set("videoAssetId", null);
-                  set("mobileVideoUrl", "");
-                  set("mobileVideoAssetId", null);
-                }}
-                className="text-[10px] font-semibold tracking-[0.14em] text-red-700 uppercase"
-              >
-                Delete Video
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    set("videoUrl", "");
+                    set("videoAssetId", null);
+                    set("mobileVideoUrl", "");
+                    set("mobileVideoAssetId", null);
+                  }}
+                  className="text-[10px] font-semibold tracking-[0.14em] text-red-700 uppercase"
+                >
+                  Delete Video
+                </button>
+                {videoUrl ? (
+                  <button
+                    type="button"
+                    disabled={posterBusy}
+                    onClick={() => void generatePosterFromVideo(videoUrl)}
+                    className="text-[10px] font-semibold tracking-[0.14em] text-[#a67a30] uppercase disabled:opacity-50"
+                  >
+                    {posterBusy ? "Generating Poster…" : "Generate Poster"}
+                  </button>
+                ) : null}
+              </div>
               {isImage(value.poster) ? (
                 <ImageEditor
                   label="Poster Image"
@@ -842,7 +927,7 @@ function HeroExtraFields({
                   onChange={(next) =>
                     set("poster", {
                       assetId: next.assetId,
-                      src: `${next.url.split("?")[0]}?v=${Date.now()}`,
+                      src: withMediaCacheBust(next.url),
                       alt: next.alt || "Hero video poster",
                     })
                   }
@@ -873,9 +958,7 @@ function HeroExtraFields({
                   onChange={(next) =>
                     set("image", {
                       ...next,
-                      src: next.src
-                        ? `${next.src.split("?")[0]}?v=${Date.now()}`
-                        : next.src,
+                      src: next.src ? withMediaCacheBust(next.src) : next.src,
                     })
                   }
                 />
@@ -1122,6 +1205,7 @@ function ImageEditor({
 }) {
   const [dimensions, setDimensions] = useState("");
   const [fileSize, setFileSize] = useState("");
+  const [cropping, setCropping] = useState(false);
   useEffect(() => {
     if (!value.assetId) {
       setFileSize(value.src.startsWith("http") ? "Remote source" : "Original file");
@@ -1151,6 +1235,7 @@ function ImageEditor({
         <div className="relative aspect-video">
           {value.src ? (
             <Image
+              key={value.src}
               src={value.src}
               alt={value.alt}
               fill
@@ -1191,7 +1276,7 @@ function ImageEditor({
           onChange({
             ...value,
             assetId: next.assetId,
-            src: next.url,
+            src: withMediaCacheBust(next.url),
             alt: next.alt,
             title: next.url.split("/").at(-1),
           })
@@ -1238,16 +1323,14 @@ function ImageEditor({
         </label>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Link
-          href={
-            value.assetId
-              ? `/orbit/media-library?asset=${value.assetId}&action=crop`
-              : "/orbit/media-library"
-          }
-          className="rounded-lg border border-[#17362b]/10 bg-white px-3 py-2 text-[9px] font-semibold tracking-[0.12em] uppercase"
+        <button
+          type="button"
+          disabled={!value.assetId}
+          onClick={() => setCropping(true)}
+          className="rounded-lg border border-[#17362b]/10 bg-white px-3 py-2 text-[9px] font-semibold tracking-[0.12em] uppercase disabled:opacity-40"
         >
           Crop · Zoom · Rotate
-        </Link>
+        </button>
         <Link
           href={
             value.assetId
@@ -1275,6 +1358,27 @@ function ImageEditor({
           Reset focal point
         </button>
       </div>
+      {cropping && value.assetId && value.src ? (
+        <ImageCropper
+          assetId={value.assetId}
+          src={value.src}
+          onClose={() => setCropping(false)}
+          onSaved={() => {
+            setCropping(false);
+            void fetch(`/api/orbit/media/${value.assetId}`)
+              .then((response) => response.json())
+              .then((result: { asset?: { url?: string; id?: string } }) => {
+                if (!result.asset?.url) return;
+                onChange({
+                  ...value,
+                  assetId: result.asset.id || value.assetId,
+                  src: withMediaCacheBust(result.asset.url),
+                });
+              })
+              .catch(() => undefined);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

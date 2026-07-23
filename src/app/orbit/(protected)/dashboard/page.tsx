@@ -1,4 +1,5 @@
 import {
+  Activity,
   BedDouble,
   CalendarDays,
   DollarSign,
@@ -27,6 +28,19 @@ type DashboardData = {
   visitorValue: number;
   previousVisitorValue: number;
   occupancy: number;
+  mediaCount: number;
+  mediaStorageBytes: number;
+  roomCount: number;
+  diningCount: number;
+  pageCount: number;
+  pendingChanges: number;
+  lastPublish: Date | null;
+  homepageUpdatedAt: Date | null;
+  recentActivity: Array<{
+    summary: string;
+    module: string;
+    createdAt: Date;
+  }>;
   recentBookings: Array<{
     id: string;
     guestName: string;
@@ -79,6 +93,15 @@ async function loadDashboardData(): Promise<DashboardData | null> {
       recentSubscribers,
       recentReviews,
       recentPosts,
+      mediaCount,
+      mediaStorage,
+      roomCount,
+      diningCount,
+      pageCount,
+      pendingChanges,
+      homepageEntry,
+      lastPublished,
+      recentActivity,
     ] = await Promise.all([
       db.booking.aggregate({
         where: { paymentStatus: "PAID", createdAt: { gte: monthStart } },
@@ -120,6 +143,30 @@ async function loadDashboardData(): Promise<DashboardData | null> {
       }),
       db.review.findMany({ take: 5, orderBy: { createdAt: "desc" } }),
       db.post.findMany({ take: 5, orderBy: { updatedAt: "desc" } }),
+      db.mediaAsset.count({ where: { deletedAt: null } }),
+      db.mediaAsset.aggregate({
+        where: { deletedAt: null },
+        _sum: { size: true },
+      }),
+      db.room.count(),
+      db.restaurant.count(),
+      db.contentEntry.count({
+        where: { OR: [{ module: "seo" }, { module: "menus" }, { module: "pages" }] },
+      }),
+      db.contentEntry.count({ where: { status: { not: "PUBLISHED" } } }),
+      db.contentEntry.findUnique({
+        where: { module_key: { module: "homepage", key: "visual-editor" } },
+      }),
+      db.contentEntry.findFirst({
+        where: { publishedAt: { not: null } },
+        orderBy: { publishedAt: "desc" },
+        select: { publishedAt: true },
+      }),
+      db.orbitAuditLog.findMany({
+        take: 8,
+        orderBy: { createdAt: "desc" },
+        select: { summary: true, module: true, createdAt: true },
+      }),
     ]);
 
     const revenueValue = Number(revenue._sum.totalAmount ?? 0);
@@ -136,6 +183,15 @@ async function loadDashboardData(): Promise<DashboardData | null> {
       visitorValue,
       previousVisitorValue,
       occupancy,
+      mediaCount,
+      mediaStorageBytes: mediaStorage._sum.size ?? 0,
+      roomCount,
+      diningCount,
+      pageCount,
+      pendingChanges,
+      lastPublish: lastPublished?.publishedAt ?? homepageEntry?.publishedAt ?? null,
+      homepageUpdatedAt: homepageEntry?.updatedAt ?? null,
+      recentActivity,
       recentBookings,
       recentMessages,
       recentSubscribers,
@@ -204,12 +260,23 @@ export default async function OrbitDashboardPage() {
     visitorValue,
     previousVisitorValue,
     occupancy,
+    mediaCount,
+    mediaStorageBytes,
+    roomCount,
+    diningCount,
+    pageCount,
+    pendingChanges,
+    lastPublish,
+    homepageUpdatedAt,
+    recentActivity,
     recentBookings,
     recentMessages,
     recentSubscribers,
     recentReviews,
     recentPosts,
   } = data;
+
+  const storageMb = Math.round(mediaStorageBytes / (1024 * 1024));
 
   return (
     <div className="p-5 sm:p-8 lg:p-10">
@@ -237,7 +304,7 @@ export default async function OrbitDashboardPage() {
           icon={<DollarSign className="size-5" />}
         />
         <MetricCard
-          label="Website visitors"
+          label="Traffic"
           value={visitorValue}
           change={percentageChange(visitorValue, previousVisitorValue)}
           icon={<Users className="size-5" />}
@@ -249,13 +316,13 @@ export default async function OrbitDashboardPage() {
           icon={<BedDouble className="size-5" />}
         />
         <MetricCard
-          label="Recent bookings"
+          label="Bookings"
           value={recentBookings.length}
           icon={<CalendarDays className="size-5" />}
         />
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {[
           {
             label: "Website Status",
@@ -264,22 +331,60 @@ export default async function OrbitDashboardPage() {
             hint: "Public site online",
           },
           {
-            label: "Homepage Editor",
-            value: "Open",
+            label: "Homepage",
+            value: homepageUpdatedAt
+              ? formatDate(homepageUpdatedAt)
+              : "Open editor",
             href: "/orbit/homepage",
-            hint: "Hero, sections, media",
+            hint: "Last homepage update",
           },
           {
-            label: "Media Library",
-            value: "Manage",
+            label: "Media",
+            value: String(mediaCount),
             href: "/orbit/media-library",
-            hint: "Upload · crop · replace",
+            hint: `${storageMb} MB in library`,
+          },
+          {
+            label: "Pages",
+            value: String(pageCount || "—"),
+            href: "/orbit/seo",
+            hint: "SEO & page records",
+          },
+          {
+            label: "Rooms",
+            value: String(roomCount),
+            href: "/orbit/rooms",
+            hint: "Inventory & pricing",
+          },
+          {
+            label: "Dining",
+            value: String(diningCount),
+            href: "/orbit/dining",
+            hint: "Restaurants & menus",
           },
           {
             label: "Messages",
             value: String(recentMessages.length),
             href: "/orbit/contact-messages",
             hint: "Latest guest enquiries",
+          },
+          {
+            label: "Storage",
+            value: `${storageMb} MB`,
+            href: "/orbit/media-library",
+            hint: "Media library usage",
+          },
+          {
+            label: "Last Publish",
+            value: lastPublish ? formatDate(lastPublish) : "—",
+            href: "/orbit/homepage",
+            hint: "Most recent publish",
+          },
+          {
+            label: "Pending Changes",
+            value: String(pendingChanges),
+            href: "/orbit/homepage",
+            hint: "Draft / unpublished entries",
           },
         ].map((card) => (
           <Link
@@ -380,6 +485,16 @@ export default async function OrbitDashboardPage() {
 
       <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <ActivityPanel
+          title="Recent activity"
+          href="/orbit/system-logs"
+          icon={<Activity className="size-4 text-[#a67a30]" />}
+          items={recentActivity.map((item) => ({
+            title: item.summary,
+            detail: item.module,
+            date: item.createdAt,
+          }))}
+        />
+        <ActivityPanel
           title="Latest messages"
           href="/orbit/contact-messages"
           icon={<MessageSquare className="size-4 text-[#a67a30]" />}
@@ -409,6 +524,9 @@ export default async function OrbitDashboardPage() {
             date: item.createdAt,
           }))}
         />
+      </div>
+
+      <div className="mt-5">
         <ActivityPanel
           title="Latest blogs"
           href="/orbit/blog"

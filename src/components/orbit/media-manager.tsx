@@ -4,10 +4,14 @@ import {
   Check,
   Copy,
   Crop,
+  Files,
   Folder,
   ImagePlus,
+  LayoutGrid,
+  List,
   Pencil,
   RotateCcw,
+  RotateCw,
   Search,
   Trash2,
   UploadCloud,
@@ -18,6 +22,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ImageCropper } from "@/components/orbit/image-cropper";
 import { useToast } from "@/components/orbit/toast";
+import { withMediaCacheBust } from "@/lib/media-cache";
 import { cn } from "@/lib/utils";
 
 type Asset = {
@@ -43,6 +48,7 @@ type Asset = {
   currentVersion: number;
   deletedAt: string | null;
   createdAt: string;
+  updatedAt?: string;
   usageCount?: number;
   usedOn?: string[];
 };
@@ -76,6 +82,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
   const [heroOpen, setHeroOpen] = useState(false);
   const [jobs, setJobs] = useState<UploadJob[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -296,6 +303,50 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
     setAssets((current) => current.filter((asset) => asset.id !== id));
   }
 
+  async function duplicateAsset(asset: Asset) {
+    const body = new FormData();
+    body.set("duplicateId", asset.id);
+    const response = await fetch("/api/orbit/media", { method: "POST", body });
+    const result = (await response.json()) as {
+      asset?: Asset;
+      error?: string;
+      message?: string;
+    };
+    if (!response.ok || !result.asset) {
+      push(result.error || "Duplicate Failed", "error");
+      return;
+    }
+    setAssets((current) => [result.asset!, ...current]);
+    push(result.message || "Duplicated Successfully", "success");
+  }
+
+  async function rotateAsset(asset: Asset) {
+    if (asset.kind !== "IMAGE" || !asset.width || !asset.height) {
+      push("Rotate requires an image with known dimensions", "error");
+      return;
+    }
+    const response = await fetch("/api/orbit/media/crop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        assetId: asset.id,
+        x: 0,
+        y: 0,
+        width: asset.width,
+        height: asset.height,
+        rotate: 90,
+        replace: true,
+      }),
+    });
+    const result = (await response.json()) as { error?: string; message?: string };
+    if (!response.ok) {
+      push(result.error || "Rotate Failed", "error");
+      return;
+    }
+    push(result.message || "Rotated Successfully", "success");
+    void load();
+  }
+
   async function setAsHero(asset: Asset) {
     const response = await fetch("/api/orbit/media/placements", {
       method: "POST",
@@ -402,6 +453,32 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
+              className={cn(
+                "grid size-10 place-items-center rounded-lg border",
+                viewMode === "grid"
+                  ? "border-[#123429] bg-[#123429] text-[#e4c784]"
+                  : "border-[#17362b]/10 bg-white text-[#64736c]"
+              )}
+            >
+              <LayoutGrid className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              aria-label="List view"
+              className={cn(
+                "grid size-10 place-items-center rounded-lg border",
+                viewMode === "list"
+                  ? "border-[#123429] bg-[#123429] text-[#e4c784]"
+                  : "border-[#17362b]/10 bg-white text-[#64736c]"
+              )}
+            >
+              <List className="size-4" />
+            </button>
             <select
               value={kind}
               onChange={(event) => {
@@ -565,10 +642,128 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
         ) : null}
 
         {assets.length ? (
+          viewMode === "list" ? (
+            <div className="mt-6 overflow-x-auto rounded-xl border border-[#17362b]/9">
+              <table className="w-full min-w-[760px] text-left">
+                <thead>
+                  <tr className="bg-[#f3f3ee] text-[9px] tracking-[0.16em] text-[#738078] uppercase">
+                    <th className="px-4 py-3">Media</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Size</th>
+                    <th className="px-4 py-3">Usage</th>
+                    <th className="px-4 py-3">Folder</th>
+                    <th className="px-4 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#17362b]/7 bg-white">
+                  {assets.map((asset) => (
+                    <tr key={asset.id} className="text-xs text-[#344b42]">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative size-12 overflow-hidden rounded-lg bg-[#edf0ec]">
+                            {asset.kind === "VIDEO" ? (
+                              <video
+                                src={withMediaCacheBust(asset.url, asset.currentVersion)}
+                                className="h-full w-full object-cover"
+                                muted
+                              />
+                            ) : (
+                              <Image
+                                src={withMediaCacheBust(asset.url, asset.currentVersion)}
+                                alt={asset.alt || asset.originalName}
+                                fill
+                                className="object-cover"
+                                unoptimized={asset.url.startsWith("/media/")}
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-[#142820]">
+                              {asset.originalName}
+                            </p>
+                            <p className="mt-0.5 truncate text-[11px] text-[#78847e]">
+                              {asset.alt || "No alt text"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">{asset.mimeType}</td>
+                      <td className="px-4 py-3">
+                        {(asset.size / 1024).toFixed(0)} KB
+                      </td>
+                      <td className="px-4 py-3">
+                        {asset.usageCount ?? 0}
+                        {asset.usedOn?.length
+                          ? ` · ${asset.usedOn.slice(0, 2).join(", ")}`
+                          : ""}
+                      </td>
+                      <td className="px-4 py-3">{asset.folder}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {!trash ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setEditing(asset)}
+                                className="rounded-md bg-[#f2f3ef] px-2 py-1 text-[9px] font-semibold uppercase"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => duplicateAsset(asset)}
+                                className="rounded-md bg-[#f2f3ef] px-2 py-1 text-[9px] font-semibold uppercase"
+                              >
+                                Duplicate
+                              </button>
+                              {asset.kind === "IMAGE" ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => setCropping(asset)}
+                                    className="rounded-md bg-[#f2f3ef] px-2 py-1 text-[9px] font-semibold uppercase"
+                                  >
+                                    Crop
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => rotateAsset(asset)}
+                                    className="rounded-md bg-[#f2f3ef] px-2 py-1 text-[9px] font-semibold uppercase"
+                                  >
+                                    Rotate
+                                  </button>
+                                </>
+                              ) : null}
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => restore(asset.id)}
+                              className="rounded-md bg-[#f2f3ef] px-2 py-1 text-[9px] font-semibold uppercase"
+                            >
+                              Restore
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => remove([asset.id], trash)}
+                            className="rounded-md bg-red-50 px-2 py-1 text-[9px] font-semibold text-red-600 uppercase"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {assets.map((asset) => {
               const checked = selected.includes(asset.id);
               const isDuplicate = duplicateSet.has(asset.checksum);
+              const bustedUrl = withMediaCacheBust(asset.url, asset.currentVersion);
               return (
                 <article
                   key={asset.id}
@@ -582,7 +777,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
                   <div className="relative aspect-[4/3] overflow-hidden bg-[#edf0ec]">
                     {asset.kind === "VIDEO" ? (
                       <video
-                        src={asset.url}
+                        src={bustedUrl}
                         className="h-full w-full object-cover"
                         muted
                         playsInline
@@ -590,7 +785,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
                       />
                     ) : (
                       <Image
-                        src={asset.url}
+                        src={bustedUrl}
                         alt={asset.alt || asset.originalName}
                         fill
                         sizes="(max-width: 640px) 100vw, 25vw"
@@ -636,15 +831,35 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
                       >
                         <Copy className="size-3.5" />
                       </button>
-                      {asset.kind === "IMAGE" && !trash ? (
+                      {!trash ? (
                         <button
                           type="button"
-                          onClick={() => setCropping(asset)}
-                          aria-label="Crop image"
+                          onClick={() => duplicateAsset(asset)}
+                          aria-label="Duplicate media"
                           className="grid size-8 place-items-center rounded-lg bg-[#0a1813]/80 text-white backdrop-blur-md hover:text-[#e1bd71]"
                         >
-                          <Crop className="size-3.5" />
+                          <Files className="size-3.5" />
                         </button>
+                      ) : null}
+                      {asset.kind === "IMAGE" && !trash ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setCropping(asset)}
+                            aria-label="Crop image"
+                            className="grid size-8 place-items-center rounded-lg bg-[#0a1813]/80 text-white backdrop-blur-md hover:text-[#e1bd71]"
+                          >
+                            <Crop className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => rotateAsset(asset)}
+                            aria-label="Rotate image"
+                            className="grid size-8 place-items-center rounded-lg bg-[#0a1813]/80 text-white backdrop-blur-md hover:text-[#e1bd71]"
+                          >
+                            <RotateCw className="size-3.5" />
+                          </button>
+                        </>
                       ) : null}
                       {trash ? (
                         <button
@@ -692,6 +907,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
               );
             })}
           </div>
+          )
         ) : (
           <div className="py-24 text-center">
             <ImagePlus className="mx-auto size-10 text-[#a8b0ac]" />
@@ -837,6 +1053,7 @@ function MetadataDialog({
   const replaceRef = useRef<HTMLInputElement>(null);
   const [alt, setAlt] = useState(asset.alt);
   const [title, setTitle] = useState(asset.title ?? "");
+  const [originalName, setOriginalName] = useState(asset.originalName);
   const [caption, setCaption] = useState(asset.caption ?? "");
   const [seoTitle, setSeoTitle] = useState(asset.seoTitle ?? "");
   const [seoDescription, setSeoDescription] = useState(
@@ -871,6 +1088,7 @@ function MetadataDialog({
         body: JSON.stringify({
           alt,
           title: title || null,
+          originalName: originalName.trim() || asset.originalName,
           caption: caption || null,
           seoTitle: seoTitle || null,
           seoDescription: seoDescription || null,
@@ -960,6 +1178,14 @@ function MetadataDialog({
         />
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Field
+            label="File name"
+            value={originalName}
+            onChange={(value) => {
+              setOriginalName(value);
+              setDirty(true);
+            }}
+          />
+          <Field
             label="Alt text"
             value={alt}
             onChange={(value) => {
@@ -1038,6 +1264,9 @@ function MetadataDialog({
         </div>
         <div className="mt-4 rounded-xl bg-[#edf2ee] px-4 py-3 text-xs text-[#52665c]">
           <p>
+            <strong>Type:</strong> {asset.mimeType} · {asset.kind}
+          </p>
+          <p>
             <strong>File:</strong> {asset.filename}
           </p>
           <p>
@@ -1047,12 +1276,19 @@ function MetadataDialog({
             <strong>Size:</strong> {(asset.size / 1024).toFixed(1)} KB
           </p>
           <p>
-            <strong>Uploaded:</strong>{" "}
+            <strong>Created:</strong>{" "}
             {new Date(asset.createdAt).toLocaleString()}
           </p>
           <p>
+            <strong>Updated:</strong>{" "}
+            {asset.updatedAt
+              ? new Date(asset.updatedAt).toLocaleString()
+              : "—"}
+          </p>
+          <p>
             <strong>Used on:</strong>{" "}
-            {asset.usedOn?.length ? asset.usedOn.join(", ") : "Unused"}
+            {asset.usedOn?.length ? asset.usedOn.join(", ") : "Unused"} ·{" "}
+            {asset.usageCount ?? 0} uses
           </p>
           <p>
             <strong>Version:</strong> {asset.currentVersion}
