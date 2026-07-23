@@ -348,7 +348,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({
       content: await getHomepageContent(),
-      message: "Saved Successfully · Published",
+      message: "Saved",
     });
   } catch (error) {
     return NextResponse.json(

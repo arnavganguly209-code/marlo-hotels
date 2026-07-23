@@ -30,7 +30,6 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { orbitModules } from "@/lib/orbit/modules";
 import { cn } from "@/lib/utils";
 
 const icons: Record<string, LucideIcon> = {
@@ -59,13 +58,72 @@ const icons: Record<string, LucideIcon> = {
   "scroll-text": ScrollText,
 };
 
-const GROUP_ORDER = ["Website", "Operations", "Platform"] as const;
+/** Flat page list — no Website / Homepage nesting. */
+const PRIMARY_NAV: { slug: string; label: string; icon: string }[] = [
+  { slug: "homepage", label: "Homepage", icon: "layout-template" },
+  { slug: "rooms", label: "Rooms", icon: "bed-double" },
+  { slug: "dining", label: "Dining", icon: "utensils" },
+  { slug: "spa", label: "Spa", icon: "flower-2" },
+  { slug: "gallery", label: "Gallery", icon: "images" },
+  { slug: "offers", label: "Offers", icon: "badge-percent" },
+  { slug: "experiences", label: "Experiences", icon: "compass" },
+  { slug: "wedding", label: "Wedding", icon: "heart-handshake" },
+  { slug: "meetings", label: "Meetings", icon: "presentation" },
+  { slug: "blog", label: "Blog", icon: "notebook-pen" },
+  { slug: "contact", label: "Contact", icon: "messages-square" },
+  { slug: "footer", label: "Footer", icon: "menu-square" },
+  { slug: "media-library", label: "Media Library", icon: "folder-image" },
+  { slug: "seo", label: "SEO", icon: "search-check" },
+  { slug: "site-settings", label: "Settings", icon: "settings-2" },
+];
 
-const GROUP_LABEL: Record<(typeof GROUP_ORDER)[number], string> = {
-  Website: "Website",
-  Operations: "Operations",
-  Platform: "Platform",
-};
+const ADMIN_NAV: { slug: string; label: string; icon: string }[] = [
+  { slug: "testimonials", label: "Testimonials", icon: "quote" },
+  { slug: "bookings", label: "Bookings", icon: "calendar-check" },
+  { slug: "contact-messages", label: "Messages", icon: "messages-square" },
+  { slug: "newsletter", label: "Newsletter", icon: "mail-plus" },
+  { slug: "reviews", label: "Reviews", icon: "star" },
+  { slug: "users", label: "Users", icon: "users-round" },
+  { slug: "security", label: "Security", icon: "shield-check" },
+  { slug: "backup", label: "Backup", icon: "database-backup" },
+  { slug: "system-logs", label: "Logs", icon: "scroll-text" },
+];
+
+function NavLink({
+  href,
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  href: string;
+  label: string;
+  icon: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const Icon = icons[icon] ?? PanelsTopLeft;
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] transition",
+        active
+          ? "bg-white/8 text-[#e1bd71]"
+          : "text-white/52 hover:bg-white/4 hover:text-white/90"
+      )}
+    >
+      <Icon
+        className={cn(
+          "size-4 shrink-0 transition",
+          active ? "text-[#d0a654]" : "text-white/35 group-hover:text-[#d0a654]"
+        )}
+      />
+      <span>{label}</span>
+    </Link>
+  );
+}
 
 export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
   const pathname = usePathname() ?? "";
@@ -99,7 +157,7 @@ export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
           href="/orbit/dashboard"
           onClick={() => setOpen(false)}
           className={cn(
-            "mb-5 flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition",
+            "mb-4 flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition",
             pathname === "/orbit/dashboard"
               ? "bg-[#d0a654] text-[#101913] shadow-[0_12px_30px_-15px_#d0a654]"
               : "text-white/65 hover:bg-white/5 hover:text-white"
@@ -109,56 +167,53 @@ export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
           Dashboard
         </Link>
 
-        {GROUP_ORDER.map((group) => (
-          <div key={group} className="mb-6">
-            <p className="mb-2 px-4 text-[9px] font-semibold tracking-[0.3em] text-[#d0a654]/70 uppercase">
-              {GROUP_LABEL[group]}
-            </p>
-            <ul className="space-y-0.5">
-              {orbitModules
-                .filter((module) => module.group === group)
-                .map((module) => {
-                  const Icon = icons[module.icon] ?? PanelsTopLeft;
-                  const href = `/orbit/${module.slug}`;
-                  const active =
-                    pathname === href || pathname.startsWith(`${href}/`);
-                  return (
-                    <li key={module.slug}>
-                      <Link
-                        href={href}
-                        onClick={() => setOpen(false)}
-                        className={cn(
-                          "group flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] transition",
-                          active
-                            ? "bg-white/8 text-[#e1bd71]"
-                            : "text-white/52 hover:bg-white/4 hover:text-white/90"
-                        )}
-                      >
-                        <Icon
-                          className={cn(
-                            "size-4 shrink-0 transition",
-                            active
-                              ? "text-[#d0a654]"
-                              : "text-white/35 group-hover:text-[#d0a654]"
-                          )}
-                        />
-                        <span>{module.label}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-            </ul>
-          </div>
-        ))}
+        <ul className="space-y-0.5">
+          {PRIMARY_NAV.map((item) => {
+            const href = `/orbit/${item.slug}`;
+            const active =
+              pathname === href || pathname.startsWith(`${href}/`);
+            return (
+              <li key={item.slug}>
+                <NavLink
+                  href={href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={active}
+                  onClick={() => setOpen(false)}
+                />
+              </li>
+            );
+          })}
+        </ul>
+
+        <p className="mt-8 mb-2 px-4 text-[9px] font-semibold tracking-[0.3em] text-white/25 uppercase">
+          Admin
+        </p>
+        <ul className="space-y-0.5">
+          {ADMIN_NAV.map((item) => {
+            const href = `/orbit/${item.slug}`;
+            const active =
+              pathname === href || pathname.startsWith(`${href}/`);
+            return (
+              <li key={item.slug}>
+                <NavLink
+                  href={href}
+                  label={item.label}
+                  icon={item.icon}
+                  active={active}
+                  onClick={() => setOpen(false)}
+                />
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
       <div className="border-t border-white/8 px-6 py-5">
         <p className="text-[9px] tracking-[0.24em] text-white/25 uppercase">
-          Orbit Enterprise
+          Orbit CMS
         </p>
-        <p className="mt-1 text-xs text-white/45">
-          Page-based CMS · Marlo Hotels
-        </p>
+        <p className="mt-1 text-xs text-white/45">Marlo Hotels</p>
       </div>
     </div>
   );
@@ -183,7 +238,7 @@ export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
       ) : null}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[300px] border-r border-white/8 bg-[var(--orbit-sidebar)] shadow-2xl transition-transform duration-500 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-[280px] border-r border-white/8 bg-[var(--orbit-sidebar)] shadow-2xl transition-transform duration-500 lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >

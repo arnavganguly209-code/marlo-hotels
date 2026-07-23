@@ -688,9 +688,46 @@ export async function getHomepageContent(): Promise<HomepageContent> {
         },
       };
     }
-    return stripDemoHeroMedia(merged);
+    return await ensureOfficialHeroVideo(stripDemoHeroMedia(merged));
   } catch {
-    return stripDemoHeroMedia(defaults);
+    return await ensureOfficialHeroVideo(stripDemoHeroMedia(defaults));
+  }
+}
+
+/** Prefer the real large uploaded Hero MP4 when demo URLs are gone. */
+async function ensureOfficialHeroVideo(
+  content: HomepageContent
+): Promise<HomepageContent> {
+  if (content.hero.videoUrl?.trim()) return content;
+  const db = getDb();
+  if (!db) return content;
+  try {
+    const heroVideo = await db.mediaAsset.findFirst({
+      where: {
+        kind: "VIDEO",
+        deletedAt: null,
+        size: { gte: 80 * 1024 * 1024 },
+      },
+      orderBy: { size: "desc" },
+    });
+    if (!heroVideo) return content;
+    return {
+      ...content,
+      hero: {
+        ...content.hero,
+        mediaType: "VIDEO",
+        videoUrl: heroVideo.url,
+        videoAssetId: heroVideo.id,
+        videoAutoplay: true,
+        videoLoop: true,
+        videoMuted: true,
+        videoPlaysInline: true,
+        mobileVideoUrl: "",
+        mobileVideoAssetId: null,
+      },
+    };
+  } catch {
+    return content;
   }
 }
 

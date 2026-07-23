@@ -4,10 +4,8 @@ import {
   ArrowDown,
   ArrowUp,
   BedDouble,
-  Check,
   Compass,
   ExternalLink,
-  Eye,
   Flower2,
   GripVertical,
   HeartHandshake,
@@ -23,7 +21,6 @@ import {
   RotateCcw,
   Save,
   Sparkles,
-  Star,
   Trash2,
   Trophy,
   Utensils,
@@ -39,6 +36,7 @@ import {
 } from "react";
 import { MediaField } from "@/components/orbit/media-picker";
 import { ImageCropper } from "@/components/orbit/image-cropper";
+import { SimpleHeroVideoPanel } from "@/components/orbit/simple-hero-video-panel";
 import { useToast } from "@/components/orbit/toast";
 import type { EditableImage, HomepageContent } from "@/lib/homepage-content";
 import { withMediaCacheBust } from "@/lib/media-cache";
@@ -226,7 +224,8 @@ export function HomepageVisualEditor({
         value.mediaType === "VIDEO" &&
         !String(value.videoUrl || "").trim()
       ) {
-        return true;
+        // Empty hero video is allowed — site shows solid background until upload.
+        return false;
       }
       if (
         (section.key === "about" || section.key === "wellness") &&
@@ -350,27 +349,18 @@ export function HomepageVisualEditor({
 
   return (
     <div className="flex min-h-[calc(100svh-5rem)] w-full flex-col">
-      <div className="flex flex-col gap-4 border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between xl:px-8">
+      <div className="flex flex-col gap-4 border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] px-6 py-5 sm:flex-row sm:items-center sm:justify-between xl:px-10">
         <div>
-          <p className="text-[10px] font-semibold tracking-[0.28em] text-[var(--orbit-gold-deep)] uppercase">
-            Website · Homepage
-          </p>
-          <h1 className="font-display mt-1 text-3xl font-semibold text-[var(--orbit-ink)] xl:text-4xl">
+          <h1 className="font-display text-3xl font-semibold text-[var(--orbit-ink)] xl:text-4xl">
             Homepage
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--orbit-muted)]">
-            Homepage sections only — Hero, About, previews and CTAs. Other
-            website pages have their own editors in the sidebar.
+          <p className="mt-1 text-sm text-[var(--orbit-muted)]">
+            {dirty
+              ? "Unsaved changes"
+              : "Edit homepage sections — Save updates the live website."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setPreviewOpen((value) => !value)}
-            className="flex h-11 items-center gap-2 rounded-xl border border-[var(--orbit-border)] bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase xl:hidden"
-          >
-            <Eye className="size-4" /> {previewOpen ? "Hide" : "Show"} preview
-          </button>
           <Link
             href="/"
             target="_blank"
@@ -384,7 +374,7 @@ export function HomepageVisualEditor({
             disabled={!dirty || saving}
             className="h-11 rounded-xl border border-[var(--orbit-border)] bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase disabled:opacity-40"
           >
-            Cancel
+            Discard
           </button>
           <button
             type="button"
@@ -393,277 +383,95 @@ export function HomepageVisualEditor({
             className="orbit-gold-button flex h-11 items-center gap-2 rounded-xl px-5 text-[10px] font-semibold tracking-[0.14em] uppercase disabled:opacity-50"
           >
             <Save className="size-4" />
-            {saving ? "Saving…" : "Save & Publish"}
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </div>
 
-      {dirty ? (
-        <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:mx-6 xl:mx-8">
-          <span className="size-2 rounded-full bg-amber-500" />
-          Unsaved changes — the public website is unchanged until Save & Publish.
-        </div>
-      ) : (
-        <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800 sm:mx-6 xl:mx-8">
-          <Check className="size-4" />
-          Showing the content currently used by the website.
-        </div>
-      )}
-
-      <div
-        className={cn(
-          "mt-4 grid min-h-0 flex-1 gap-0 border-t border-[var(--orbit-border)]",
-          previewOpen
-            ? "xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(360px,420px)]"
-            : "xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
-          "grid-cols-1 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)]"
-        )}
-      >
-        <nav className="orbit-scrollbar max-h-[42vh] overflow-y-auto border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] p-4 lg:max-h-none lg:border-r lg:border-b-0">
-          <label className="relative mb-4 block">
-            <span className="sr-only">Search sections</span>
-            <input
-              value={sectionQuery}
-              onChange={(event) => setSectionQuery(event.target.value)}
-              placeholder="Search sections…"
-              className="h-11 w-full rounded-xl border border-[var(--orbit-border)] bg-white px-4 text-xs outline-none focus:border-[var(--orbit-gold)]/50"
-            />
-          </label>
-          <div className="space-y-3">
-            {filteredSections.map((section) => {
-              const enabled =
-                (content[section.key] as { enabled?: boolean }).enabled !==
-                false;
-              const thumb = sectionThumbnail(
-                content[section.key] as JsonObject
-              );
-              const Icon = SECTION_ICONS[section.key] || LayoutTemplate;
-              const isActive = active === section.key;
-              return (
-                <div
-                  key={section.key}
-                  data-active={isActive}
-                  className="orbit-section-card overflow-hidden rounded-2xl"
-                >
-                  <button
-                    type="button"
-                    onClick={() => selectSection(section.key)}
-                    className="flex w-full gap-3 p-3 text-left"
-                  >
-                    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-[#dfe5e0]">
-                      {thumb ? (
-                        <Image
-                          src={thumb}
-                          alt=""
-                          fill
-                          className="object-cover"
-                          unoptimized={thumb.startsWith("/media/")}
-                        />
-                      ) : (
-                        <div className="grid h-full place-items-center">
-                          <Icon className="size-5 opacity-60" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="truncate text-sm font-semibold">
-                          {section.label.replace(/ Section$/i, "")}
-                        </p>
-                        <span
-                          className={cn(
-                            "mt-1 size-2 shrink-0 rounded-full",
-                            enabled ? "bg-emerald-400" : "bg-[#a8b0ac]"
-                          )}
-                          title={enabled ? "Published" : "Hidden"}
-                        />
-                      </div>
-                      <p
-                        className={cn(
-                          "mt-1 line-clamp-2 text-[11px]",
-                          isActive ? "text-[#ead39f]/80" : "text-[#7a8781]"
-                        )}
-                      >
-                        {section.description}
-                      </p>
-                      <p
-                        className={cn(
-                          "mt-2 text-[9px] font-semibold tracking-[0.14em] uppercase",
-                          isActive ? "text-[#ead39f]" : "text-[var(--orbit-gold-deep)]"
-                        )}
-                      >
-                        {enabled ? "Live" : "Hidden"}
-                      </p>
-                    </div>
-                  </button>
-                  <div
-                    className={cn(
-                      "flex items-center justify-between border-t px-3 py-2",
-                      isActive ? "border-white/10" : "border-[var(--orbit-border)]"
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 text-[9px] tracking-[0.12em] uppercase",
-                        isActive ? "text-[#ead39f]/70" : "text-[#8a948f]"
-                      )}
-                    >
-                      <GripVertical className="size-3.5" /> Reorder
-                    </span>
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        aria-label="Move section up"
-                        onClick={() => moveSection(section.key, -1)}
-                        className={cn(
-                          "grid size-7 place-items-center rounded-lg",
-                          isActive
-                            ? "hover:bg-white/10"
-                            : "hover:bg-[#eef1ed]"
-                        )}
-                      >
-                        <ArrowUp className="size-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Move section down"
-                        onClick={() => moveSection(section.key, 1)}
-                        className={cn(
-                          "grid size-7 place-items-center rounded-lg",
-                          isActive
-                            ? "hover:bg-white/10"
-                            : "hover:bg-[#eef1ed]"
-                        )}
-                      >
-                        <ArrowDown className="size-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {filteredSections.length === 0 ? (
-              <p className="px-2 py-10 text-center text-xs text-[#7a8781]">
-                No sections match “{sectionQuery}”
-              </p>
-            ) : null}
-            <Link
-              href="/orbit/seo"
-              className="orbit-section-card flex items-center gap-3 rounded-2xl p-4 text-sm font-semibold text-[var(--orbit-ink)]"
-            >
-              <Star className="size-4 text-[var(--orbit-gold-deep)]" />
-              Homepage SEO
-            </Link>
-          </div>
-        </nav>
-
-        <section className="min-w-0 bg-[var(--orbit-bg)] p-4 sm:p-6 xl:p-8">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-[9px] font-semibold tracking-[0.22em] text-[var(--orbit-gold-deep)] uppercase">
-                Section editor
-              </p>
-              <h2 className="font-display mt-1 text-3xl font-semibold text-[var(--orbit-ink)]">
-                {activeMeta.label}
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm text-[var(--orbit-muted)]">
-                {activeMeta.description}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={resetSection}
-              className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--orbit-border)] bg-white px-3 text-[9px] font-semibold tracking-[0.12em] text-[#52665c] uppercase"
-            >
-              <RotateCcw className="size-3.5" /> Reset
-            </button>
-          </div>
-
-          <div className="orbit-scrollbar mb-6 flex gap-1 overflow-x-auto border-b border-[var(--orbit-border)]">
-            {EDITOR_TABS.map((tab) => (
+      <div className="orbit-scrollbar border-b border-[var(--orbit-border)] bg-white px-4 xl:px-10">
+        <div className="flex gap-1 overflow-x-auto py-2">
+          {orderedSections.map((section) => {
+            const isActive = active === section.key;
+            return (
               <button
-                key={tab.id}
+                key={section.key}
                 type="button"
-                data-active={editorTab === tab.id}
-                onClick={() => setEditorTab(tab.id)}
-                className="orbit-tab shrink-0 px-4 py-3 text-[11px] tracking-[0.08em] uppercase"
+                onClick={() => selectSection(section.key)}
+                className={cn(
+                  "shrink-0 rounded-xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.1em] uppercase transition",
+                  isActive
+                    ? "bg-[#123429] text-[#f0d999]"
+                    : "text-[#5a6b63] hover:bg-[#f3f5f2]"
+                )}
               >
-                {tab.label}
+                {section.label}
               </button>
-            ))}
-          </div>
-
-          <div className="orbit-panel min-h-[60vh] rounded-2xl p-5 sm:p-7">
-            <SectionForm
-              sectionKey={active}
-              tab={editorTab}
-              value={content[active] as JsonObject}
-              onChange={(value) =>
-                updateSection(value as HomepageContent[HomepageSectionKey])
-              }
-            />
-          </div>
-        </section>
-
-        {previewOpen ? (
-          <aside className="border-t border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] lg:border-t-0 xl:border-l">
-            <div className="sticky top-20 p-4">
-              <div className="orbit-panel overflow-hidden rounded-2xl">
-                <div className="flex items-center justify-between border-b border-[var(--orbit-border)] px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Eye className="size-4 text-[var(--orbit-gold-deep)]" />
-                    <span className="text-[10px] font-semibold tracking-[0.16em] text-[#40554c] uppercase">
-                      Live Preview
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap rounded-lg bg-[#edf0ec] p-1">
-                    {(
-                      [
-                        "desktop",
-                        "tablet",
-                        "mobile",
-                        "landscape",
-                        "portrait",
-                      ] as const
-                    ).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setPreviewMode(mode)}
-                        className={cn(
-                          "rounded-md px-2 py-1 text-[8px] font-semibold uppercase",
-                          previewMode === mode
-                            ? "bg-white text-[var(--orbit-gold-deep)] shadow-sm"
-                            : "text-[#7a8781]"
-                        )}
-                      >
-                        {mode}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="overflow-x-auto bg-[#e9ece8] p-4">
-                  <div
-                    className={cn(
-                      "mx-auto overflow-hidden rounded-xl bg-white shadow-xl transition-all",
-                      previewMode === "desktop" && "w-full",
-                      previewMode === "tablet" && "w-[82%]",
-                      previewMode === "mobile" && "w-[48%] min-w-[260px]",
-                      previewMode === "landscape" && "w-full max-w-[640px]",
-                      previewMode === "portrait" && "w-[42%] min-w-[280px]"
-                    )}
-                  >
-                    <SectionPreview
-                      sectionKey={active}
-                      value={content[active] as JsonObject}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
-        ) : null}
+            );
+          })}
+        </div>
       </div>
+
+      <section className="min-w-0 flex-1 bg-[var(--orbit-bg)] px-4 py-8 sm:px-8 xl:px-12">
+        {active === "hero" ? (
+          <SimpleHeroVideoPanel
+            value={content.hero as unknown as JsonObject}
+            set={(key, next) =>
+              updateSection({
+                ...(content.hero as unknown as JsonObject),
+                [key]: next,
+              } as HomepageContent["hero"])
+            }
+            onSave={() => void save()}
+            saving={saving}
+            dirty={dirty}
+          />
+        ) : (
+          <div className="mx-auto w-full max-w-5xl">
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="font-display text-3xl font-semibold text-[var(--orbit-ink)]">
+                  {activeMeta.label}
+                </h2>
+                <p className="mt-1 text-sm text-[var(--orbit-muted)]">
+                  {activeMeta.description}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={resetSection}
+                className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--orbit-border)] bg-white px-3 text-[9px] font-semibold tracking-[0.12em] text-[#52665c] uppercase"
+              >
+                <RotateCcw className="size-3.5" /> Reset
+              </button>
+            </div>
+
+            <div className="orbit-scrollbar mb-6 flex gap-1 overflow-x-auto border-b border-[var(--orbit-border)]">
+              {EDITOR_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  data-active={editorTab === tab.id}
+                  onClick={() => setEditorTab(tab.id)}
+                  className="orbit-tab shrink-0 px-4 py-3 text-[11px] tracking-[0.08em] uppercase"
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="orbit-panel min-h-[55vh] rounded-2xl p-6 sm:p-8">
+              <SectionForm
+                sectionKey={active}
+                tab={editorTab}
+                value={content[active] as JsonObject}
+                onChange={(value) =>
+                  updateSection(value as HomepageContent[HomepageSectionKey])
+                }
+              />
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -743,7 +551,11 @@ function SectionForm({
   }
 
   if (sectionKey === "hero") {
-    return <HeroExtraFields value={value} set={set} tab={tab} />;
+    return (
+      <p className="text-sm text-[var(--orbit-muted)]">
+        Use the Hero tab for video upload.
+      </p>
+    );
   }
 
   if (tab === "layout" || tab === "advanced") {

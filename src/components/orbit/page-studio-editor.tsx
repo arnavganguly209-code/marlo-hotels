@@ -3,11 +3,9 @@
 import {
   Check,
   ExternalLink,
-  ImageIcon,
   RotateCcw,
   Save,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MediaField } from "@/components/orbit/media-picker";
@@ -132,7 +130,7 @@ export function PageStudioEditor({
       <div className="flex flex-col gap-4 border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 xl:px-8">
         <div>
           <p className="text-[10px] font-semibold tracking-[0.28em] text-[var(--orbit-gold-deep)] uppercase">
-            Website · Page Studio
+            Page editor
           </p>
           <h1 className="font-display mt-1 text-3xl font-semibold text-[var(--orbit-ink)]">
             {moduleLabel}
@@ -141,8 +139,8 @@ export function PageStudioEditor({
             {dirty
               ? "Unsaved changes"
               : lastSavedAt
-                ? `Published · Last updated ${lastSavedAt}`
-                : "Edit this page only — not mixed with Homepage."}
+                ? `Saved · Last updated ${lastSavedAt}`
+                : "Edit this page only."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -168,26 +166,24 @@ export function PageStudioEditor({
             className="orbit-gold-button flex h-11 items-center gap-2 rounded-xl px-5 text-[10px] font-semibold tracking-[0.14em] uppercase disabled:opacity-50"
           >
             <Save className="size-4" />
-            {saving ? "Saving…" : "Save & Publish"}
+            {saving ? "Saving…" : "Save"}
           </button>
         </div>
       </div>
 
       {dirty ? (
         <div className="mx-4 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:mx-6">
-          Unsaved Changes — live website updates only after Save & Publish.
+          Unsaved Changes — Save to update the live website.
         </div>
       ) : (
         <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800 sm:mx-6">
-          <Check className="size-4" /> Saved Successfully / showing published content
+          <Check className="size-4" /> Saved
         </div>
       )}
 
-      <div className="mt-4 grid min-h-0 flex-1 grid-cols-1 border-t border-[var(--orbit-border)] lg:grid-cols-[300px_minmax(0,1fr)]">
-        <nav className="orbit-scrollbar max-h-[40vh] space-y-2 overflow-y-auto border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] p-4 lg:max-h-none lg:border-r lg:border-b-0">
+      <div className="mt-4 grid min-h-0 flex-1 grid-cols-1 border-t border-[var(--orbit-border)] lg:grid-cols-[240px_minmax(0,1fr)]">
+        <nav className="orbit-scrollbar max-h-[36vh] space-y-1 overflow-y-auto border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] p-3 lg:max-h-none lg:border-r lg:border-b-0">
           {sections.map((section) => {
-            const thumb = doc[section.key]?.image?.src;
-            const enabled = doc[section.key]?.enabled !== false;
             const isActive = active === section.key;
             return (
               <button
@@ -195,45 +191,13 @@ export function PageStudioEditor({
                 type="button"
                 onClick={() => setActive(section.key)}
                 className={cn(
-                  "orbit-section-card flex w-full gap-3 rounded-2xl p-3 text-left",
-                  isActive && "ring-1 ring-[#c4943c]/40"
+                  "w-full rounded-xl px-4 py-3 text-left text-sm font-semibold transition",
+                  isActive
+                    ? "bg-[#123429] text-[#f0d999]"
+                    : "text-[#3d5248] hover:bg-white"
                 )}
-                data-active={isActive}
               >
-                <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-[#dfe5e0]">
-                  {thumb ? (
-                    <Image
-                      src={thumb}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      unoptimized={thumb.startsWith("/media/")}
-                    />
-                  ) : (
-                    <div className="grid h-full place-items-center">
-                      <ImageIcon className="size-4 opacity-50" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-semibold">{section.label}</p>
-                    <span
-                      className={cn(
-                        "size-2 rounded-full",
-                        enabled ? "bg-emerald-400" : "bg-[#a8b0ac]"
-                      )}
-                    />
-                  </div>
-                  <p
-                    className={cn(
-                      "mt-1 line-clamp-2 text-[11px]",
-                      isActive ? "text-[#ead39f]/75" : "text-[#7a8781]"
-                    )}
-                  >
-                    {section.description}
-                  </p>
-                </div>
+                {section.label}
               </button>
             );
           })}
@@ -241,7 +205,7 @@ export function PageStudioEditor({
             href={`/orbit/${moduleSlug}?inventory=1`}
             className="mt-3 block rounded-xl border border-dashed border-[var(--orbit-border)] px-3 py-3 text-center text-[10px] font-semibold tracking-[0.14em] text-[var(--orbit-gold-deep)] uppercase"
           >
-            Open {moduleLabel} inventory →
+            Open inventory →
           </Link>
         </nav>
 
