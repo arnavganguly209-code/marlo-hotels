@@ -61,7 +61,12 @@ type UploadJob = {
   error?: string;
   preview?: string;
   xhr?: XMLHttpRequest;
+  uploadId?: string;
+  abort?: AbortController;
 };
+
+const VIDEO_CHUNK_BYTES = 2 * 1024 * 1024;
+const MAX_VIDEO_UPLOAD_BYTES = 120 * 1024 * 1024;
 
 export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
   const { push } = useToast();
@@ -149,6 +154,184 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
     void load();
   }, [load]);
 
+  function updateJob(id: string, patch: Partial<UploadJob>) {
+    setJobs((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...patch } : item))
+    );
+  }
+
+  function failJob(id: string, error: string) {
+    updateJob(id, { status: "error", error });
+    push(error, "error");
+  }
+
+  function finishJob(id: string, asset: Asset, message?: string) {
+    updateJob(id, { progress: 100, status: "done" });
+    setAssets((current) => [asset, ...current]);
+    push(message || "Upload Successful", "success");
+  }
+
+  async function uploadVideoChunked(jobId: string, file: File, alt: string) {
+    const abort = new AbortController();
+    updateJob(jobId, { abort });
+
+    if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
+      failJob(
+        jobId,
+        `Maximum Size Exceeded (${Math.round(MAX_VIDEO_UPLOAD_BYTES / 1024 / 1024)} MB).`
+      );
+      return;
+    }
+
+    try {
+      const initBody = new FormData();
+      initBody.set("phase", "init");
+      initBody.set("originalName", file.name);
+      initBody.set("mimeType", file.type || "video/mp4");
+      initBody.set("totalSize", String(file.size));
+      initBody.set("folder", "video");
+      initBody.set("alt", alt);
+
+      const initResponse = await fetch("/api/orbit/media/chunk", {
+        method: "POST",
+        body: initBody,
+        signal: abort.signal,
+      });
+      const initResult = (await initResponse.json()) as {
+        uploadId?: string;
+        error?: string;
+      };
+      if (!initResponse.ok || !initResult.uploadId) {
+        failJob(jobId, initResult.error || "Upload Failed");
+        return;
+      }
+
+      const uploadId = initResult.uploadId;
+      updateJob(jobId, { uploadId });
+
+      let offset = 0;
+      while (offset < file.size) {
+        if (abort.signal.aborted) return;
+        const end = Math.min(offset + VIDEO_CHUNK_BYTES, file.size);
+        const chunk = file.slice(offset, end);
+        const appendBody = new FormData();
+        appendBody.set("phase", "append");
+        appendBody.set("uploadId", uploadId);
+        appendBody.set("chunk", chunk, `chunk-${offset}`);
+
+        const appendResponse = await fetch("/api/orbit/media/chunk", {
+          method: "POST",
+          body: appendBody,
+          signal: abort.signal,
+        });
+        const appendResult = (await appendResponse.json()) as {
+          progress?: number;
+          error?: string;
+        };
+        if (!appendResponse.ok) {
+          failJob(jobId, appendResult.error || "Upload Failed");
+          return;
+        }
+        offset = end;
+        updateJob(jobId, {
+          progress:
+            typeof appendResult.progress === "number"
+              ? appendResult.progress
+              : Math.round((offset / file.size) * 95),
+        });
+      }
+
+      if (abort.signal.aborted) return;
+
+      const completeBody = new FormData();
+      completeBody.set("phase", "complete");
+      completeBody.set("uploadId", uploadId);
+      const completeResponse = await fetch("/api/orbit/media/chunk", {
+        method: "POST",
+        body: completeBody,
+        signal: abort.signal,
+      });
+      const completeResult = (await completeResponse.json()) as {
+        asset?: Asset;
+        error?: string;
+        message?: string;
+      };
+      if (!completeResponse.ok || !completeResult.asset) {
+        failJob(jobId, completeResult.error || "Upload Failed");
+        return;
+      }
+      finishJob(jobId, completeResult.asset, completeResult.message);
+    } catch (error) {
+      if (abort.signal.aborted || (error instanceof DOMException && error.name === "AbortError")) {
+        return;
+      }
+      failJob(jobId, "Network Error");
+    }
+  }
+
+  function uploadViaXhr(jobId: string, file: File, alt: string) {
+    const body = new FormData();
+    body.set("file", file);
+    body.set("folder", file.type.startsWith("video/") ? "video" : "general");
+    body.set("alt", alt);
+    const xhr = new XMLHttpRequest();
+    updateJob(jobId, { xhr });
+    xhr.open("POST", "/api/orbit/media");
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      updateJob(jobId, {
+        progress: Math.round((event.loaded / event.total) * 100),
+      });
+    };
+    xhr.onload = () => {
+      try {
+        const result = JSON.parse(xhr.responseText) as {
+          asset?: Asset;
+          error?: string;
+          duplicate?: { originalName: string } | null;
+          message?: string;
+        };
+        if (xhr.status >= 200 && xhr.status < 300 && result.asset) {
+          finishJob(jobId, result.asset, result.message);
+          if (result.duplicate) {
+            push(
+              `Duplicate detection: similar to “${result.duplicate.originalName}”`,
+              "warning"
+            );
+          }
+        } else {
+          failJob(jobId, result.error || "Upload Failed");
+        }
+      } catch {
+        failJob(jobId, "Server Error");
+      }
+    };
+    xhr.onerror = () => failJob(jobId, "Network Error");
+    xhr.onabort = () => updateJob(jobId, { status: "cancelled" });
+    xhr.send(body);
+  }
+
+  function cancelUpload(jobId: string) {
+    setJobs((current) => {
+      const job = current.find((item) => item.id === jobId);
+      if (job) {
+        job.xhr?.abort();
+        job.abort?.abort();
+        if (job.uploadId) {
+          const body = new FormData();
+          body.set("phase", "cancel");
+          body.set("uploadId", job.uploadId);
+          void fetch("/api/orbit/media/chunk", { method: "POST", body }).catch(
+            () => undefined
+          );
+        }
+      }
+      return current.map((item) =>
+        item.id === jobId ? { ...item, status: "cancelled" as const } : item
+      );
+    });
+  }
+
   function enqueueFiles(fileList: FileList | File[]) {
     const files = Array.from(fileList);
     for (const file of files) {
@@ -165,85 +348,15 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
       };
       setJobs((current) => [job, ...current]);
       push("Uploading…", "info");
-      const body = new FormData();
-      body.set("file", file);
-      body.set("folder", file.type.startsWith("video/") ? "video" : "general");
-      body.set(
-        "alt",
-        file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").slice(0, 200)
-      );
-      const xhr = new XMLHttpRequest();
-      job.xhr = xhr;
-      xhr.open("POST", "/api/orbit/media");
-      xhr.upload.onprogress = (event) => {
-        if (!event.lengthComputable) return;
-        const progress = Math.round((event.loaded / event.total) * 100);
-        setJobs((current) =>
-          current.map((item) =>
-            item.id === id ? { ...item, progress } : item
-          )
-        );
-      };
-      xhr.onload = () => {
-        try {
-          const result = JSON.parse(xhr.responseText) as {
-            asset?: Asset;
-            error?: string;
-            duplicate?: { originalName: string } | null;
-            message?: string;
-          };
-          if (xhr.status >= 200 && xhr.status < 300 && result.asset) {
-            setJobs((current) =>
-              current.map((item) =>
-                item.id === id
-                  ? { ...item, progress: 100, status: "done" }
-                  : item
-              )
-            );
-            setAssets((current) => [result.asset!, ...current]);
-            push(result.message || "Upload Successful", "success");
-            if (result.duplicate) {
-              push(
-                `Duplicate detection: similar to “${result.duplicate.originalName}”`,
-                "warning"
-              );
-            }
-          } else {
-            setJobs((current) =>
-              current.map((item) =>
-                item.id === id
-                  ? {
-                      ...item,
-                      status: "error",
-                      error: result.error || "Upload Failed",
-                    }
-                  : item
-              )
-            );
-            push(result.error || "Upload Failed", "error");
-          }
-        } catch {
-          setJobs((current) =>
-            current.map((item) =>
-              item.id === id
-                ? { ...item, status: "error", error: "Server Error" }
-                : item
-            )
-          );
-          push("Server Error", "error");
-        }
-      };
-      xhr.onerror = () => {
-        setJobs((current) =>
-          current.map((item) =>
-            item.id === id
-              ? { ...item, status: "error", error: "Network Error" }
-              : item
-          )
-        );
-        push("Network Error", "error");
-      };
-      xhr.send(body);
+      const alt = file.name
+        .replace(/\.[^.]+$/, "")
+        .replace(/[-_]+/g, " ")
+        .slice(0, 200);
+      if (file.type.startsWith("video/")) {
+        void uploadVideoChunked(id, file, alt);
+      } else {
+        uploadViaXhr(id, file, alt);
+      }
     }
   }
 
@@ -612,16 +725,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
                 {job.status === "uploading" ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      job.xhr?.abort();
-                      setJobs((current) =>
-                        current.map((item) =>
-                          item.id === job.id
-                            ? { ...item, status: "cancelled" }
-                            : item
-                        )
-                      );
-                    }}
+                    onClick={() => cancelUpload(job.id)}
                     className="text-[10px] font-semibold tracking-[0.12em] text-[#7a8781] uppercase"
                   >
                     Cancel

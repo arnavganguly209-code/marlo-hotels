@@ -205,6 +205,80 @@ body {
 }
 
 /* ── Orbit administration ───────────────────────────────────────── */
+:root {
+  --orbit-bg: #f4f2ec;
+  --orbit-bg-elevated: #faf9f5;
+  --orbit-panel: rgb(255 255 255 / 0.94);
+  --orbit-ink: #10251e;
+  --orbit-muted: #62716b;
+  --orbit-gold: #c4943c;
+  --orbit-gold-deep: #a67a30;
+  --orbit-forest: #123429;
+  --orbit-forest-deep: #0a1813;
+  --orbit-border: rgb(31 62 53 / 0.12);
+  --orbit-sidebar: #091611;
+}
+
+.orbit-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(166 122 48 / 0.45) transparent;
+}
+.orbit-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.orbit-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(166 122 48 / 0.4);
+  border-radius: 999px;
+}
+.orbit-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.orbit-app-shell {
+  background: var(--orbit-bg);
+  color: var(--orbit-ink);
+}
+
+.orbit-studio {
+  display: grid;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  gap: 0;
+  min-height: calc(100svh - 5rem);
+}
+
+@media (min-width: 1280px) {
+  .orbit-studio {
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr) minmax(360px, 420px);
+  }
+}
+
+.orbit-section-card {
+  border: 1px solid var(--orbit-border);
+  background: var(--orbit-panel);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+.orbit-section-card:hover {
+  border-color: rgb(196 148 60 / 0.35);
+  box-shadow: 0 12px 32px -20px rgb(8 28 22 / 0.35);
+}
+.orbit-section-card[data-active="true"] {
+  border-color: rgb(196 148 60 / 0.55);
+  background: linear-gradient(145deg, #123429, #1a4034);
+  color: #f0d999;
+  box-shadow: 0 16px 40px -18px rgb(18 52 41 / 0.55);
+}
+
+.orbit-tab {
+  border-bottom: 2px solid transparent;
+  color: var(--orbit-muted);
+}
+.orbit-tab[data-active="true"] {
+  border-bottom-color: var(--orbit-gold);
+  color: var(--orbit-ink);
+  font-weight: 600;
+}
+
 .orbit-login-bg {
   background:
     radial-gradient(circle at 25% 15%, rgb(47 112 96 / 0.15), transparent 35%),
@@ -258,14 +332,14 @@ body {
 }
 
 .orbit-panel {
-  border: 1px solid rgb(31 62 53 / 0.12);
-  background: rgb(255 255 255 / 0.92);
+  border: 1px solid var(--orbit-border);
+  background: var(--orbit-panel);
   box-shadow: 0 18px 50px -30px rgb(8 28 22 / 0.25);
 }
 
 .orbit-grid {
   background-image:
-    linear-gradient(rgb(18 66 52 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(18 66 52 / 0.035) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgb(18 66 52 / 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(18 66 52 / 0.028) 1px, transparent 1px);
+  background-size: 40px 40px;
 }

@@ -375,10 +375,55 @@ function EditorDrawer({
   onClose: () => void;
   onReset: () => void;
 }) {
+  const [tab, setTab] = useState<EditorTab>("content");
   const updateData = (key: string, value: unknown) =>
     setForm({ ...form, data: { ...form.data, [key]: value } });
 
-  const visibleFields = fields.filter((field) => field.key !== "mediaAssetId");
+  const buckets = useMemo(
+    () =>
+      partitionEditorFields(
+        fields.filter((field) => field.key !== "mediaAssetId")
+      ),
+    [fields]
+  );
+
+  const activeFields =
+    tab === "content"
+      ? buckets.content
+      : tab === "media"
+        ? buckets.media
+        : tab === "seo"
+          ? buckets.seo
+          : tab === "layout"
+            ? buckets.layout
+            : tab === "visibility"
+              ? buckets.visibility
+              : buckets.advanced;
+
+  function renderField(field: OrbitField) {
+    return (
+      <FieldControl
+        key={field.key}
+        field={field}
+        value={form.data[field.key]}
+        formData={form.data}
+        onChange={(value) => updateData(field.key, value)}
+        onMediaSelect={(next) =>
+          setForm({
+            ...form,
+            data: {
+              ...form.data,
+              [field.key]: next.url,
+              imageAlt:
+                field.key === "imageUrl" ? next.alt : form.data.imageAlt,
+              mediaAssetId: next.assetId,
+              mediaType: next.kind,
+            },
+          })
+        }
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[70] flex justify-end bg-[#06100c]/55 backdrop-blur-sm">
@@ -389,82 +434,223 @@ function EditorDrawer({
         className="absolute inset-0"
       />
       <aside className="relative h-full w-full max-w-3xl overflow-y-auto bg-[#f8f7f2] shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#17362b]/9 bg-[#f8f7f2]/95 px-6 py-5 backdrop-blur-xl sm:px-8">
-          <div>
-            <p className="text-[9px] font-semibold tracking-[0.25em] text-[#a67a30] uppercase">
-              {form.id ? "Edit" : "Create"} {module.singular}
-              {dirty ? " · Unsaved" : ""}
-            </p>
-            <h2 className="font-display mt-1 text-2xl font-semibold text-[#10251e]">
-              {form.title || `New ${module.singular}`}
-            </h2>
+        <div className="sticky top-0 z-10 border-b border-[#17362b]/9 bg-[#f8f7f2]/95 backdrop-blur-xl">
+          <div className="flex items-center justify-between px-6 py-5 sm:px-8">
+            <div>
+              <p className="text-[9px] font-semibold tracking-[0.25em] text-[#a67a30] uppercase">
+                {form.id ? "Edit" : "Create"} {module.singular}
+                {dirty ? " · Unsaved" : ""}
+              </p>
+              <h2 className="font-display mt-1 text-2xl font-semibold text-[#10251e]">
+                {form.title || `New ${module.singular}`}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="grid size-10 place-items-center rounded-full border border-[#17362b]/10 text-[#53675e] hover:border-[#c4943c]/40 hover:text-[#a67a30]"
+            >
+              <X className="size-4" />
+            </button>
           </div>
-          <button type="button" onClick={onClose} className="grid size-10 place-items-center rounded-full border border-[#17362b]/10 text-[#53675e] hover:border-[#c4943c]/40 hover:text-[#a67a30]">
-            <X className="size-4" />
-          </button>
+          <div className="flex gap-1 overflow-x-auto px-6 pb-3 sm:px-8">
+            {EDITOR_TABS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id)}
+                className={cn(
+                  "shrink-0 rounded-lg px-3 py-2 text-[9px] font-semibold tracking-[0.14em] uppercase transition",
+                  tab === item.id
+                    ? "bg-[#123429] text-[#e4c784]"
+                    : "bg-[#f2f3ef] text-[#64736c] hover:text-[#a67a30]"
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-7 p-6 sm:p-8">
-          <div className="grid gap-5 sm:grid-cols-2">
-            <OrbitInput label="Internal title" required value={form.title} onChange={(value) => setForm({ ...form, title: value })} />
-            <OrbitInput label="Public slug" value={form.slug} onChange={(value) => setForm({ ...form, slug: value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") })} />
-            <label>
-              <span className="mb-2 block text-[9px] font-semibold tracking-[0.2em] text-[#4e6258] uppercase">
-                Status
-              </span>
-              <select value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value as Entry["status"] })} className="h-12 w-full rounded-xl border border-[#17362b]/12 bg-white px-4 text-sm text-[#203b30] outline-none focus:border-[#c4943c]/50">
-                <option value="DRAFT">Draft</option>
-                <option value="SCHEDULED">Scheduled</option>
-                <option value="PUBLISHED">Published</option>
-                <option value="ARCHIVED">Archived</option>
-              </select>
-            </label>
-            {form.status === "SCHEDULED" ? (
-              <OrbitInput label="Publish date" type="datetime-local" value={form.scheduledAt} onChange={(value) => setForm({ ...form, scheduledAt: value })} />
-            ) : null}
-          </div>
+          {tab === "content" ? (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <OrbitInput
+                  label="Internal title"
+                  required
+                  value={form.title}
+                  onChange={(value) => setForm({ ...form, title: value })}
+                />
+                <OrbitInput
+                  label="Public slug"
+                  value={form.slug}
+                  onChange={(value) =>
+                    setForm({
+                      ...form,
+                      slug: value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "-")
+                        .replace(/^-|-$/g, ""),
+                    })
+                  }
+                />
+                <label>
+                  <span className="mb-2 block text-[9px] font-semibold tracking-[0.2em] text-[#4e6258] uppercase">
+                    Status
+                  </span>
+                  <select
+                    value={form.status}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        status: event.target.value as Entry["status"],
+                      })
+                    }
+                    className="h-12 w-full rounded-xl border border-[#17362b]/12 bg-white px-4 text-sm text-[#203b30] outline-none focus:border-[#c4943c]/50"
+                  >
+                    <option value="DRAFT">Draft</option>
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="PUBLISHED">Published</option>
+                    <option value="ARCHIVED">Archived</option>
+                  </select>
+                </label>
+                {form.status === "SCHEDULED" ? (
+                  <OrbitInput
+                    label="Publish date"
+                    type="datetime-local"
+                    value={form.scheduledAt}
+                    onChange={(value) =>
+                      setForm({ ...form, scheduledAt: value })
+                    }
+                  />
+                ) : null}
+              </div>
+              <div className="h-px bg-[#17362b]/8" />
+              {activeFields.map(renderField)}
+            </>
+          ) : null}
 
-          <div className="h-px bg-[#17362b]/8" />
+          {tab === "media" ? (
+            activeFields.length ? (
+              activeFields.map(renderField)
+            ) : (
+              <p className="text-sm text-[#7a8781]">
+                No media fields for this module.
+              </p>
+            )
+          ) : null}
 
-          {visibleFields.map((field) => (
-            <FieldControl
-              key={field.key}
-              field={field}
-              value={form.data[field.key]}
-              formData={form.data}
-              onChange={(value) => updateData(field.key, value)}
-              onMediaSelect={(next) =>
-                setForm({
-                  ...form,
-                  data: {
-                    ...form.data,
-                    [field.key]: next.url,
-                    imageAlt:
-                      field.key === "imageUrl"
-                        ? next.alt
-                        : form.data.imageAlt,
-                    mediaAssetId: next.assetId,
-                    mediaType: next.kind,
-                  },
-                })
-              }
-            />
-          ))}
+          {tab === "seo" ? (
+            activeFields.length ? (
+              activeFields.map(renderField)
+            ) : (
+              <div className="rounded-xl border border-[#17362b]/10 bg-white px-5 py-6 text-sm text-[#52665c]">
+                <p>
+                  This module has no SEO fields in its form schema. Manage
+                  sitewide SEO from the SEO module.
+                </p>
+                <Link
+                  href="/orbit/seo"
+                  className="mt-4 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.16em] text-[#a67a30] uppercase"
+                >
+                  Open SEO module <ExternalLink className="size-3.5" />
+                </Link>
+              </div>
+            )
+          ) : null}
+
+          {tab === "layout" ? (
+            activeFields.length ? (
+              activeFields.map(renderField)
+            ) : (
+              <p className="text-sm text-[#7a8781]">
+                No layout or ordering fields for this module.
+              </p>
+            )
+          ) : null}
+
+          {tab === "visibility" ? (
+            <>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label>
+                  <span className="mb-2 block text-[9px] font-semibold tracking-[0.2em] text-[#4e6258] uppercase">
+                    Publish status
+                  </span>
+                  <select
+                    value={form.status}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        status: event.target.value as Entry["status"],
+                      })
+                    }
+                    className="h-12 w-full rounded-xl border border-[#17362b]/12 bg-white px-4 text-sm text-[#203b30] outline-none focus:border-[#c4943c]/50"
+                  >
+                    <option value="DRAFT">Draft</option>
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="PUBLISHED">Published</option>
+                    <option value="ARCHIVED">Archived</option>
+                  </select>
+                </label>
+                <OrbitInput
+                  label="Publish date"
+                  type="datetime-local"
+                  value={form.scheduledAt}
+                  onChange={(value) =>
+                    setForm({ ...form, scheduledAt: value })
+                  }
+                />
+              </div>
+              {activeFields.length ? (
+                <>
+                  <div className="h-px bg-[#17362b]/8" />
+                  {activeFields.map(renderField)}
+                </>
+              ) : null}
+            </>
+          ) : null}
+
+          {tab === "advanced" ? (
+            activeFields.length ? (
+              activeFields.map(renderField)
+            ) : (
+              <p className="text-sm text-[#7a8781]">
+                No additional advanced fields.
+              </p>
+            )
+          ) : null}
 
           {error ? (
-            <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p
+              role="alert"
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
               {error}
             </p>
           ) : null}
 
           <div className="flex flex-wrap justify-end gap-3 border-t border-[#17362b]/8 pt-7">
-            <button type="button" onClick={onReset} className="h-12 rounded-xl border border-[#17362b]/12 px-6 text-[10px] font-semibold tracking-[0.18em] text-[#4f645a] uppercase">
+            <button
+              type="button"
+              onClick={onReset}
+              className="h-12 rounded-xl border border-[#17362b]/12 px-6 text-[10px] font-semibold tracking-[0.18em] text-[#4f645a] uppercase"
+            >
               Reset
             </button>
-            <button type="button" onClick={onClose} className="h-12 rounded-xl border border-[#17362b]/12 px-6 text-[10px] font-semibold tracking-[0.18em] text-[#4f645a] uppercase">
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-12 rounded-xl border border-[#17362b]/12 px-6 text-[10px] font-semibold tracking-[0.18em] text-[#4f645a] uppercase"
+            >
               Cancel
             </button>
-            <button type="button" onClick={onSave} disabled={saving} className="orbit-gold-button h-12 rounded-xl px-7 text-[10px] font-semibold tracking-[0.18em] uppercase disabled:opacity-50">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="orbit-gold-button h-12 rounded-xl px-7 text-[10px] font-semibold tracking-[0.18em] uppercase disabled:opacity-50"
+            >
               {saving ? "Saving…" : "Save changes"}
             </button>
           </div>
@@ -472,6 +658,115 @@ function EditorDrawer({
       </aside>
     </div>
   );
+}
+
+type EditorTab =
+  | "content"
+  | "media"
+  | "seo"
+  | "layout"
+  | "visibility"
+  | "advanced";
+
+const EDITOR_TABS: { id: EditorTab; label: string }[] = [
+  { id: "content", label: "Content" },
+  { id: "media", label: "Media" },
+  { id: "seo", label: "SEO" },
+  { id: "layout", label: "Layout" },
+  { id: "visibility", label: "Visibility" },
+  { id: "advanced", label: "Advanced" },
+];
+
+const SEO_FIELD_KEYS = new Set([
+  "seoTitle",
+  "seoDescription",
+  "metaTitle",
+  "metaDescription",
+  "canonicalUrl",
+  "ogImageUrl",
+  "ogTitle",
+  "ogDescription",
+]);
+
+const LAYOUT_FIELD_KEYS = new Set([
+  "order",
+  "sortOrder",
+  "position",
+  "layout",
+  "columns",
+  "animation",
+  "backgroundOverlay",
+  "bookingWidget",
+  "focalX",
+  "focalY",
+]);
+
+const VISIBILITY_FIELD_KEYS = new Set([
+  "enabled",
+  "available",
+  "featured",
+  "visible",
+  "published",
+]);
+
+function isSeoField(field: OrbitField) {
+  if (SEO_FIELD_KEYS.has(field.key)) return true;
+  const key = field.key.toLowerCase();
+  return (
+    key.startsWith("seo") ||
+    key.startsWith("meta") ||
+    key.startsWith("og") ||
+    key.includes("canonical")
+  );
+}
+
+function isLayoutField(field: OrbitField) {
+  if (LAYOUT_FIELD_KEYS.has(field.key)) return true;
+  const key = field.key.toLowerCase();
+  return (
+    key.includes("order") ||
+    key.includes("layout") ||
+    key.includes("position") ||
+    key.includes("animation") ||
+    key.includes("overlay")
+  );
+}
+
+function isVisibilityField(field: OrbitField) {
+  if (VISIBILITY_FIELD_KEYS.has(field.key)) return true;
+  const key = field.key.toLowerCase();
+  return key.includes("visible") || key.includes("publish");
+}
+
+function isMediaTabField(field: OrbitField) {
+  if (field.type === "media" || field.type === "media-video") return true;
+  return (
+    field.key === "imageAlt" ||
+    field.key === "imageCaption" ||
+    field.key === "videoAutoplay" ||
+    field.key === "videoLoop" ||
+    field.key === "videoMuted"
+  );
+}
+
+function partitionEditorFields(fields: OrbitField[]) {
+  const media: OrbitField[] = [];
+  const seo: OrbitField[] = [];
+  const layout: OrbitField[] = [];
+  const visibility: OrbitField[] = [];
+  const content: OrbitField[] = [];
+  const advanced: OrbitField[] = [];
+
+  for (const field of fields) {
+    if (isMediaTabField(field)) media.push(field);
+    else if (isSeoField(field)) seo.push(field);
+    else if (isLayoutField(field)) layout.push(field);
+    else if (isVisibilityField(field)) visibility.push(field);
+    else content.push(field);
+  }
+
+  // Keep advanced empty unless we later carve leftovers; content holds the rest.
+  return { content, media, seo, layout, visibility, advanced };
 }
 
 function FieldControl({

@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BookingWidget } from "@/components/home/booking-widget";
@@ -51,6 +52,10 @@ export function Hero({ content }: { content: HeroEditorContent }) {
   const objectPosition = `${focalX}% ${focalY}%`;
   const isVideo = content.mediaType === "VIDEO";
   const videoSrc = isVideo ? resolveHeroVideoSrc(content) : "";
+  const [videoReady, setVideoReady] = useState(false);
+  useEffect(() => {
+    setVideoReady(false);
+  }, [videoSrc]);
   const description = content.subheading || content.description;
   const overlayStrength =
     typeof content.overlayOpacity === "number"
@@ -97,25 +102,50 @@ export function Hero({ content }: { content: HeroEditorContent }) {
         className="absolute -inset-6"
       >
         {isVideo ? (
-          <video
-            key={videoSrc}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition, aspectRatio: "16 / 9" }}
-            autoPlay={content.videoAutoplay !== false}
-            loop={content.videoLoop !== false}
-            muted={content.videoMuted !== false}
-            playsInline={content.videoPlaysInline !== false}
-            preload="auto"
-          >
-            {content.mobileVideoUrl ? (
-              <source
-                src={content.mobileVideoUrl}
-                type="video/mp4"
-                media="(max-width: 768px)"
+          <>
+            {content.poster?.src && !videoReady ? (
+              <Image
+                src={content.poster.src}
+                alt={content.poster.alt || content.image.alt}
+                fill
+                priority
+                sizes="100vw"
+                className="object-cover"
+                style={{ objectPosition }}
+                unoptimized={content.poster.src.startsWith("/media/")}
               />
             ) : null}
-            <source src={videoSrc} type="video/mp4" />
-          </video>
+            <video
+              key={videoSrc}
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{
+                objectPosition,
+                aspectRatio: "16 / 9",
+                opacity: videoReady || !content.poster?.src ? 1 : 0,
+              }}
+              autoPlay={content.videoAutoplay !== false}
+              loop={content.videoLoop !== false}
+              muted={content.videoMuted !== false}
+              playsInline={content.videoPlaysInline !== false}
+              preload="metadata"
+              poster={content.poster?.src}
+              onCanPlay={(event) => {
+                setVideoReady(true);
+                if (content.videoAutoplay !== false) {
+                  void event.currentTarget.play().catch(() => undefined);
+                }
+              }}
+            >
+              {content.mobileVideoUrl ? (
+                <source
+                  src={content.mobileVideoUrl}
+                  type="video/mp4"
+                  media="(max-width: 768px)"
+                />
+              ) : null}
+              <source src={videoSrc} type="video/mp4" />
+            </video>
+          </>
         ) : (
           <Image
             key={content.image.src}

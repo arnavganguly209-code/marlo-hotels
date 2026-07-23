@@ -279,23 +279,23 @@ export default async function OrbitDashboardPage() {
   const storageMb = Math.round(mediaStorageBytes / (1024 * 1024));
 
   return (
-    <div className="p-5 sm:p-8 lg:p-10">
+    <div className="w-full p-4 sm:p-6 lg:p-8 xl:px-10">
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-[10px] font-semibold tracking-[0.28em] text-[#a67a30] uppercase">
-            Operational overview
+          <p className="text-[10px] font-semibold tracking-[0.28em] text-[var(--orbit-gold-deep)] uppercase">
+            Command center
           </p>
-          <h2 className="font-display mt-2 text-4xl font-semibold text-[#10251e]">
+          <h2 className="font-display mt-2 text-4xl font-semibold text-[var(--orbit-ink)] xl:text-5xl">
             Good day, Administrator
           </h2>
-          <p className="mt-2 text-sm text-[#62716b]">
+          <p className="mt-2 text-sm text-[var(--orbit-muted)]">
             Live business and content activity across Marlo Hotels.
           </p>
         </div>
-        <p className="text-xs font-medium text-[#62716b]">{formatDate(now)}</p>
+        <p className="text-xs font-medium text-[var(--orbit-muted)]">{formatDate(now)}</p>
       </div>
 
-      <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4">
         <MetricCard
           label="Revenue this month"
           value={revenueValue}

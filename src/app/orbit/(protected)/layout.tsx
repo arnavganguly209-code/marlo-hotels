@@ -27,11 +27,13 @@ export default async function ProtectedOrbitLayout({
   // static logo so a Prisma/env failure cannot crash the dashboard chrome.
   return (
     <OrbitShell>
-      <div className="min-h-svh bg-[#f7f6f1] text-[#13251f]">
+      <div className="orbit-app-shell min-h-svh">
         <OrbitSidebar logoUrl={DEFAULT_LOGO} />
-        <div className="min-h-svh lg:pl-[286px]">
+        <div className="min-h-svh lg:pl-[300px]">
           <OrbitHeader />
-          <div className="orbit-grid min-h-[calc(100svh-5rem)]">{children}</div>
+          <div className="orbit-grid min-h-[calc(100svh-5rem)] w-full max-w-none">
+            {children}
+          </div>
         </div>
       </div>
     </OrbitShell>

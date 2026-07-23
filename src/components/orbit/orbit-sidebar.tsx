@@ -172,7 +172,7 @@ export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
       ) : null}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[286px] border-r border-white/8 bg-[#091611] shadow-2xl transition-transform duration-500 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-[300px] border-r border-white/8 bg-[var(--orbit-sidebar)] shadow-2xl transition-transform duration-500 lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >

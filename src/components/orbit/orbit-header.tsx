@@ -32,6 +32,12 @@ type RecentChange = {
   href: string;
 };
 
+type SearchHit = {
+  href: string;
+  label: string;
+  group: string;
+};
+
 const QUICK_ACTIONS = [
   { label: "Edit homepage", href: "/orbit/homepage" },
   { label: "Upload media", href: "/orbit/media-library?upload=1" },
@@ -53,6 +59,7 @@ export function OrbitHeader() {
   const [notifications, setNotifications] = useState<ActivityItem[]>([]);
   const [recentChanges, setRecentChanges] = useState<RecentChange[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mediaHits, setMediaHits] = useState<SearchHit[]>([]);
   const [profile, setProfile] = useState({
     name: "Administrator",
     role: "Orbit Admin",
@@ -86,6 +93,54 @@ export function OrbitHeader() {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setMediaHits([]);
+      return;
+    }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void fetch(
+        `/api/orbit/media?query=${encodeURIComponent(q)}&pageSize=5`
+      )
+        .then((response) => (response.ok ? response.json() : null))
+        .then(
+          (data: {
+            assets?: {
+              id: string;
+              originalName: string;
+              alt?: string;
+              title?: string | null;
+            }[];
+          } | null) => {
+            if (!active || !data?.assets) {
+              if (active) setMediaHits([]);
+              return;
+            }
+            setMediaHits(
+              data.assets.map((asset) => ({
+                href: `/orbit/media-library?asset=${asset.id}`,
+                label:
+                  asset.title ||
+                  asset.alt ||
+                  asset.originalName ||
+                  "Untitled media",
+                group: "Media",
+              }))
+            );
+          }
+        )
+        .catch(() => {
+          if (active) setMediaHits([]);
+        });
+    }, 200);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [query]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
@@ -117,8 +172,11 @@ export function OrbitHeader() {
       label: action.label,
       group: "Actions",
     }));
-    return [...moduleHits, ...sectionHits, ...actionHits].slice(0, 12);
-  }, [query]);
+    return [...moduleHits, ...sectionHits, ...actionHits, ...mediaHits].slice(
+      0,
+      12
+    );
+  }, [query, mediaHits]);
 
   async function logout() {
     setLoggingOut(true);

@@ -3,15 +3,31 @@
 import {
   ArrowDown,
   ArrowUp,
+  BedDouble,
   Check,
+  Compass,
   ExternalLink,
   Eye,
+  Flower2,
   GripVertical,
+  HeartHandshake,
   ImageIcon,
+  Images,
+  Camera,
+  LayoutTemplate,
+  Newspaper,
+  PanelBottom,
   Plus,
+  Presentation,
+  Quote,
   RotateCcw,
   Save,
+  Sparkles,
+  Star,
   Trash2,
+  Trophy,
+  Utensils,
+  Waves,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -19,6 +35,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type ComponentType,
 } from "react";
 import { MediaField } from "@/components/orbit/media-picker";
 import { ImageCropper } from "@/components/orbit/image-cropper";
@@ -32,6 +49,42 @@ import {
 import { cn } from "@/lib/utils";
 
 type JsonObject = Record<string, unknown>;
+type EditorTab =
+  | "content"
+  | "media"
+  | "seo"
+  | "layout"
+  | "visibility"
+  | "advanced";
+
+const SECTION_ICONS: Record<string, ComponentType<{ className?: string }>> = {
+  hero: LayoutTemplate,
+  about: Sparkles,
+  rooms: BedDouble,
+  featuredSuites: BedDouble,
+  dining: Utensils,
+  wellness: Flower2,
+  pool: Waves,
+  events: HeartHandshake,
+  gallery: Images,
+  experiences: Compass,
+  attractions: Presentation,
+  testimonials: Quote,
+  awards: Trophy,
+  instagram: Camera,
+  journal: Newspaper,
+  footerCta: PanelBottom,
+  footer: PanelBottom,
+};
+
+const EDITOR_TABS: { id: EditorTab; label: string }[] = [
+  { id: "content", label: "Content" },
+  { id: "media", label: "Media" },
+  { id: "seo", label: "SEO" },
+  { id: "layout", label: "Layout" },
+  { id: "visibility", label: "Visibility" },
+  { id: "advanced", label: "Advanced" },
+];
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -50,6 +103,25 @@ function labelFor(key: string) {
   return key
     .replace(/([A-Z])/g, " $1")
     .replace(/^./, (value) => value.toUpperCase());
+}
+
+function sectionThumbnail(section: JsonObject): string | null {
+  if (isImage(section.image) && section.image.src) return section.image.src;
+  if (isImage(section.poster) && section.poster.src) return section.poster.src;
+  if (typeof section.videoUrl === "string" && section.videoUrl) return null;
+  if (Array.isArray(section.images)) {
+    const first = section.images.find((item) => isImage(item) && item.src);
+    if (isImage(first) && first.src) return first.src;
+  }
+  if (Array.isArray(section.items)) {
+    for (const item of section.items) {
+      if (item && typeof item === "object" && isImage((item as JsonObject).image)) {
+        const img = (item as JsonObject).image as EditableImage;
+        if (img.src) return img.src;
+      }
+    }
+  }
+  return null;
 }
 
 export function HomepageVisualEditor({
@@ -71,6 +143,11 @@ export function HomepageVisualEditor({
     "desktop" | "tablet" | "mobile" | "landscape" | "portrait"
   >("desktop");
   const [sectionQuery, setSectionQuery] = useState("");
+  const [editorTab, setEditorTab] = useState<EditorTab>("content");
+  const [previewOpen, setPreviewOpen] = useState(true);
+  const [sectionOrder, setSectionOrder] = useState<HomepageSectionKey[]>(() =>
+    HOMEPAGE_SECTIONS.map((section) => section.key)
+  );
   const bootstrapStarted = useRef(initialPersisted);
 
   useEffect(() => {
@@ -117,6 +194,7 @@ export function HomepageVisualEditor({
 
   function selectSection(section: HomepageSectionKey) {
     setActive(section);
+    setEditorTab("content");
     const url = new URL(window.location.href);
     url.searchParams.set("section", section);
     window.history.replaceState({}, "", url);
@@ -244,7 +322,10 @@ export function HomepageVisualEditor({
   }
 
   const activeMeta = HOMEPAGE_SECTIONS.find((item) => item.key === active)!;
-  const filteredSections = HOMEPAGE_SECTIONS.filter((section) => {
+  const orderedSections = sectionOrder
+    .map((key) => HOMEPAGE_SECTIONS.find((section) => section.key === key))
+    .filter(Boolean) as typeof HOMEPAGE_SECTIONS;
+  const filteredSections = orderedSections.filter((section) => {
     if (!sectionQuery.trim()) return true;
     const q = sectionQuery.trim().toLowerCase();
     return (
@@ -254,26 +335,46 @@ export function HomepageVisualEditor({
     );
   });
 
+  function moveSection(key: HomepageSectionKey, direction: -1 | 1) {
+    setSectionOrder((current) => {
+      const index = current.indexOf(key);
+      const next = index + direction;
+      if (index < 0 || next < 0 || next >= current.length) return current;
+      const copy = [...current];
+      const [item] = copy.splice(index, 1);
+      copy.splice(next, 0, item);
+      return copy;
+    });
+    setDirty(true);
+  }
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+    <div className="flex min-h-[calc(100svh-5rem)] w-full flex-col">
+      <div className="flex flex-col gap-4 border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between xl:px-8">
         <div>
-          <p className="text-[10px] font-semibold tracking-[0.28em] text-[#a67a30] uppercase">
-            Visual CMS
+          <p className="text-[10px] font-semibold tracking-[0.28em] text-[var(--orbit-gold-deep)] uppercase">
+            Visual CMS Studio
           </p>
-          <h1 className="font-display mt-2 text-4xl font-semibold text-[#10251e]">
-            Home Page
+          <h1 className="font-display mt-1 text-3xl font-semibold text-[var(--orbit-ink)] xl:text-4xl">
+            Homepage
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-[#62716b]">
-            Edit every homepage section like a premium website builder. Changes
-            go live instantly when you Save & Publish.
+          <p className="mt-1 max-w-2xl text-sm text-[var(--orbit-muted)]">
+            Section cards, full-width editing, and live preview — Save & Publish
+            updates production instantly.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setPreviewOpen((value) => !value)}
+            className="flex h-11 items-center gap-2 rounded-xl border border-[var(--orbit-border)] bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase xl:hidden"
+          >
+            <Eye className="size-4" /> {previewOpen ? "Hide" : "Show"} preview
+          </button>
           <Link
             href="/"
             target="_blank"
-            className="flex h-11 items-center gap-2 rounded-xl border border-[#17362b]/12 bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase"
+            className="flex h-11 items-center gap-2 rounded-xl border border-[var(--orbit-border)] bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase"
           >
             <ExternalLink className="size-4" /> Open website
           </Link>
@@ -281,7 +382,7 @@ export function HomepageVisualEditor({
             type="button"
             onClick={cancelChanges}
             disabled={!dirty || saving}
-            className="h-11 rounded-xl border border-[#17362b]/12 bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase disabled:opacity-40"
+            className="h-11 rounded-xl border border-[var(--orbit-border)] bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase disabled:opacity-40"
           >
             Cancel
           </button>
@@ -298,95 +399,204 @@ export function HomepageVisualEditor({
       </div>
 
       {dirty ? (
-        <div className="mt-5 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+        <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 sm:mx-6 xl:mx-8">
           <span className="size-2 rounded-full bg-amber-500" />
           Unsaved changes — the public website is unchanged until Save & Publish.
         </div>
       ) : (
-        <div className="mt-5 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
+        <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800 sm:mx-6 xl:mx-8">
           <Check className="size-4" />
           Showing the content currently used by the website.
         </div>
       )}
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[270px_minmax(0,1fr)_minmax(380px,0.95fr)]">
-        <nav className="orbit-panel h-fit rounded-2xl p-3 xl:sticky xl:top-24">
-          <label className="relative mb-3 block">
+      <div
+        className={cn(
+          "mt-4 grid min-h-0 flex-1 gap-0 border-t border-[var(--orbit-border)]",
+          previewOpen
+            ? "xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(360px,420px)]"
+            : "xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]",
+          "grid-cols-1 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)]"
+        )}
+      >
+        <nav className="orbit-scrollbar max-h-[42vh] overflow-y-auto border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] p-4 lg:max-h-none lg:border-r lg:border-b-0">
+          <label className="relative mb-4 block">
             <span className="sr-only">Search sections</span>
             <input
               value={sectionQuery}
               onChange={(event) => setSectionQuery(event.target.value)}
               placeholder="Search sections…"
-              className="h-10 w-full rounded-xl border border-[#17362b]/10 bg-white px-3 text-xs outline-none focus:border-[#c4943c]/50"
+              className="h-11 w-full rounded-xl border border-[var(--orbit-border)] bg-white px-4 text-xs outline-none focus:border-[var(--orbit-gold)]/50"
             />
           </label>
-          <div className="max-h-[70vh] space-y-1 overflow-y-auto pr-1">
-            {filteredSections.map((section, index) => {
+          <div className="space-y-3">
+            {filteredSections.map((section) => {
               const enabled =
                 (content[section.key] as { enabled?: boolean }).enabled !==
                 false;
+              const thumb = sectionThumbnail(
+                content[section.key] as JsonObject
+              );
+              const Icon = SECTION_ICONS[section.key] || LayoutTemplate;
+              const isActive = active === section.key;
               return (
-                <button
+                <div
                   key={section.key}
-                  type="button"
-                  onClick={() => selectSection(section.key)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition",
-                    active === section.key
-                      ? "bg-[#123429] text-[#f0d999]"
-                      : "text-[#42574e] hover:bg-[#eef1ed]"
-                  )}
+                  data-active={isActive}
+                  className="orbit-section-card overflow-hidden rounded-2xl"
                 >
-                  <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-current/15 text-[10px]">
-                    {index + 1}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-semibold">
-                      {section.label}
-                    </span>
-                  </span>
-                  <span
+                  <button
+                    type="button"
+                    onClick={() => selectSection(section.key)}
+                    className="flex w-full gap-3 p-3 text-left"
+                  >
+                    <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-[#dfe5e0]">
+                      {thumb ? (
+                        <Image
+                          src={thumb}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          unoptimized={thumb.startsWith("/media/")}
+                        />
+                      ) : (
+                        <div className="grid h-full place-items-center">
+                          <Icon className="size-5 opacity-60" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="truncate text-sm font-semibold">
+                          {section.label.replace(/ Section$/i, "")}
+                        </p>
+                        <span
+                          className={cn(
+                            "mt-1 size-2 shrink-0 rounded-full",
+                            enabled ? "bg-emerald-400" : "bg-[#a8b0ac]"
+                          )}
+                          title={enabled ? "Published" : "Hidden"}
+                        />
+                      </div>
+                      <p
+                        className={cn(
+                          "mt-1 line-clamp-2 text-[11px]",
+                          isActive ? "text-[#ead39f]/80" : "text-[#7a8781]"
+                        )}
+                      >
+                        {section.description}
+                      </p>
+                      <p
+                        className={cn(
+                          "mt-2 text-[9px] font-semibold tracking-[0.14em] uppercase",
+                          isActive ? "text-[#ead39f]" : "text-[var(--orbit-gold-deep)]"
+                        )}
+                      >
+                        {enabled ? "Live" : "Hidden"}
+                      </p>
+                    </div>
+                  </button>
+                  <div
                     className={cn(
-                      "size-2 rounded-full",
-                      enabled ? "bg-emerald-500" : "bg-[#a8b0ac]"
+                      "flex items-center justify-between border-t px-3 py-2",
+                      isActive ? "border-white/10" : "border-[var(--orbit-border)]"
                     )}
-                  />
-                </button>
+                  >
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 text-[9px] tracking-[0.12em] uppercase",
+                        isActive ? "text-[#ead39f]/70" : "text-[#8a948f]"
+                      )}
+                    >
+                      <GripVertical className="size-3.5" /> Reorder
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        aria-label="Move section up"
+                        onClick={() => moveSection(section.key, -1)}
+                        className={cn(
+                          "grid size-7 place-items-center rounded-lg",
+                          isActive
+                            ? "hover:bg-white/10"
+                            : "hover:bg-[#eef1ed]"
+                        )}
+                      >
+                        <ArrowUp className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Move section down"
+                        onClick={() => moveSection(section.key, 1)}
+                        className={cn(
+                          "grid size-7 place-items-center rounded-lg",
+                          isActive
+                            ? "hover:bg-white/10"
+                            : "hover:bg-[#eef1ed]"
+                        )}
+                      >
+                        <ArrowDown className="size-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               );
             })}
             {filteredSections.length === 0 ? (
-              <p className="px-2 py-6 text-center text-xs text-[#7a8781]">
+              <p className="px-2 py-10 text-center text-xs text-[#7a8781]">
                 No sections match “{sectionQuery}”
               </p>
             ) : null}
+            <Link
+              href="/orbit/seo"
+              className="orbit-section-card flex items-center gap-3 rounded-2xl p-4 text-sm font-semibold text-[var(--orbit-ink)]"
+            >
+              <Star className="size-4 text-[var(--orbit-gold-deep)]" />
+              Homepage SEO
+            </Link>
           </div>
         </nav>
 
-        <section className="orbit-panel min-w-0 rounded-2xl p-5 sm:p-7">
-          <div className="flex items-start justify-between gap-4 border-b border-[#17362b]/8 pb-5">
+        <section className="min-w-0 bg-[var(--orbit-bg)] p-4 sm:p-6 xl:p-8">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-[9px] font-semibold tracking-[0.22em] text-[#a67a30] uppercase">
+              <p className="text-[9px] font-semibold tracking-[0.22em] text-[var(--orbit-gold-deep)] uppercase">
                 Section editor
               </p>
-              <h2 className="font-display mt-1 text-2xl font-semibold text-[#10251e]">
+              <h2 className="font-display mt-1 text-3xl font-semibold text-[var(--orbit-ink)]">
                 {activeMeta.label}
               </h2>
-              <p className="mt-1 text-xs text-[#7a8781]">
+              <p className="mt-1 max-w-2xl text-sm text-[var(--orbit-muted)]">
                 {activeMeta.description}
               </p>
             </div>
             <button
               type="button"
               onClick={resetSection}
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-[#17362b]/10 px-3 text-[9px] font-semibold tracking-[0.12em] text-[#52665c] uppercase"
+              className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--orbit-border)] bg-white px-3 text-[9px] font-semibold tracking-[0.12em] text-[#52665c] uppercase"
             >
               <RotateCcw className="size-3.5" /> Reset
             </button>
           </div>
 
-          <div className="mt-6">
+          <div className="orbit-scrollbar mb-6 flex gap-1 overflow-x-auto border-b border-[var(--orbit-border)]">
+            {EDITOR_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                data-active={editorTab === tab.id}
+                onClick={() => setEditorTab(tab.id)}
+                className="orbit-tab shrink-0 px-4 py-3 text-[11px] tracking-[0.08em] uppercase"
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="orbit-panel min-h-[60vh] rounded-2xl p-5 sm:p-7">
             <SectionForm
               sectionKey={active}
+              tab={editorTab}
               value={content[active] as JsonObject}
               onChange={(value) =>
                 updateSection(value as HomepageContent[HomepageSectionKey])
@@ -395,60 +605,64 @@ export function HomepageVisualEditor({
           </div>
         </section>
 
-        <aside className="h-fit xl:sticky xl:top-24">
-          <div className="orbit-panel overflow-hidden rounded-2xl">
-            <div className="flex items-center justify-between border-b border-[#17362b]/8 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Eye className="size-4 text-[#a67a30]" />
-                <span className="text-[10px] font-semibold tracking-[0.16em] text-[#40554c] uppercase">
-                  Live Preview
-                </span>
-              </div>
-              <div className="flex flex-wrap rounded-lg bg-[#edf0ec] p-1">
-                {(
-                  [
-                    "desktop",
-                    "tablet",
-                    "mobile",
-                    "landscape",
-                    "portrait",
-                  ] as const
-                ).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setPreviewMode(mode)}
+        {previewOpen ? (
+          <aside className="border-t border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] lg:border-t-0 xl:border-l">
+            <div className="sticky top-20 p-4">
+              <div className="orbit-panel overflow-hidden rounded-2xl">
+                <div className="flex items-center justify-between border-b border-[var(--orbit-border)] px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Eye className="size-4 text-[var(--orbit-gold-deep)]" />
+                    <span className="text-[10px] font-semibold tracking-[0.16em] text-[#40554c] uppercase">
+                      Live Preview
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap rounded-lg bg-[#edf0ec] p-1">
+                    {(
+                      [
+                        "desktop",
+                        "tablet",
+                        "mobile",
+                        "landscape",
+                        "portrait",
+                      ] as const
+                    ).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setPreviewMode(mode)}
+                        className={cn(
+                          "rounded-md px-2 py-1 text-[8px] font-semibold uppercase",
+                          previewMode === mode
+                            ? "bg-white text-[var(--orbit-gold-deep)] shadow-sm"
+                            : "text-[#7a8781]"
+                        )}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="overflow-x-auto bg-[#e9ece8] p-4">
+                  <div
                     className={cn(
-                      "rounded-md px-2 py-1 text-[8px] font-semibold uppercase",
-                      previewMode === mode
-                        ? "bg-white text-[#a67a30] shadow-sm"
-                        : "text-[#7a8781]"
+                      "mx-auto overflow-hidden rounded-xl bg-white shadow-xl transition-all",
+                      previewMode === "desktop" && "w-full",
+                      previewMode === "tablet" && "w-[82%]",
+                      previewMode === "mobile" && "w-[48%] min-w-[260px]",
+                      previewMode === "landscape" && "w-full max-w-[640px]",
+                      previewMode === "portrait" && "w-[42%] min-w-[280px]"
                     )}
                   >
-                    {mode}
-                  </button>
-                ))}
+                    <SectionPreview
+                      sectionKey={active}
+                      value={content[active] as JsonObject}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="overflow-x-auto bg-[#e9ece8] p-4">
-              <div
-                className={cn(
-                  "mx-auto overflow-hidden rounded-xl bg-white shadow-xl transition-all",
-                  previewMode === "desktop" && "w-full",
-                  previewMode === "tablet" && "w-[82%]",
-                  previewMode === "mobile" && "w-[48%] min-w-[260px]",
-                  previewMode === "landscape" && "w-full max-w-[640px]",
-                  previewMode === "portrait" && "w-[42%] min-w-[280px]"
-                )}
-              >
-                <SectionPreview
-                  sectionKey={active}
-                  value={content[active] as JsonObject}
-                />
-              </div>
-            </div>
-          </div>
-        </aside>
+          </aside>
+        ) : null}
       </div>
     </div>
   );
@@ -456,10 +670,12 @@ export function HomepageVisualEditor({
 
 function SectionForm({
   sectionKey,
+  tab = "content",
   value,
   onChange,
 }: {
   sectionKey: HomepageSectionKey;
+  tab?: EditorTab;
   value: JsonObject;
   onChange: (value: JsonObject) => void;
 }) {
@@ -478,6 +694,113 @@ function SectionForm({
     "buttonLink",
   ];
 
+  if (tab === "visibility") {
+    return (
+      <div className="space-y-5">
+        {"enabled" in value ? (
+          <ToggleField
+            label="Visible on website"
+            checked={value.enabled !== false}
+            onChange={(checked) => set("enabled", checked)}
+          />
+        ) : (
+          <p className="text-sm text-[var(--orbit-muted)]">
+            This section is always available. Visibility is controlled by content.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (tab === "seo") {
+    return (
+      <div className="space-y-5">
+        <p className="text-sm text-[var(--orbit-muted)]">
+          Section-level SEO hints. Site-wide metadata lives in the SEO module.
+        </p>
+        {"heading" in value ? (
+          <PrimitiveField
+            fieldKey="heading"
+            value={value.heading}
+            onChange={(next) => set("heading", next)}
+          />
+        ) : null}
+        {"description" in value ? (
+          <PrimitiveField
+            fieldKey="description"
+            value={value.description}
+            onChange={(next) => set("description", next)}
+          />
+        ) : null}
+        <Link
+          href="/orbit/seo"
+          className="inline-flex text-[10px] font-semibold tracking-[0.14em] text-[var(--orbit-gold-deep)] uppercase"
+        >
+          Open SEO module →
+        </Link>
+      </div>
+    );
+  }
+
+  if (sectionKey === "hero") {
+    return <HeroExtraFields value={value} set={set} tab={tab} />;
+  }
+
+  if (tab === "layout" || tab === "advanced") {
+    return (
+      <div className="space-y-5">
+        <p className="text-sm text-[var(--orbit-muted)]">
+          Layout and advanced controls for this section. Use Content and Media
+          tabs for primary edits.
+        </p>
+        {Object.keys(value)
+          .filter(
+            (key) =>
+              !["enabled", "eyebrow", "heading", "description", "image", "images", "items"].includes(
+                key
+              )
+          )
+          .slice(0, 12)
+          .map((key) =>
+            typeof value[key] === "string" || typeof value[key] === "number" ? (
+              <PrimitiveField
+                key={key}
+                fieldKey={key}
+                value={value[key]}
+                onChange={(next) => set(key, next)}
+              />
+            ) : null
+          )}
+      </div>
+    );
+  }
+
+  if (tab === "media") {
+    return (
+      <div className="space-y-5">
+        {isImage(value.image) ? (
+          <ImageEditor
+            label="Primary image"
+            value={value.image}
+            onChange={(next) => set("image", next)}
+          />
+        ) : null}
+        {Array.isArray(value.images) ? (
+          <ImageListEditor
+            label="Images"
+            images={value.images as EditableImage[]}
+            onChange={(next) => set("images", next)}
+          />
+        ) : null}
+        {!isImage(value.image) && !Array.isArray(value.images) ? (
+          <p className="text-sm text-[var(--orbit-muted)]">
+            No direct media fields on this section. Edit item images under Content.
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {"enabled" in value ? (
@@ -488,22 +811,16 @@ function SectionForm({
         />
       ) : null}
 
-      {sectionKey !== "hero"
-        ? commonKeys.map((key) =>
-            key in value ? (
-              <PrimitiveField
-                key={key}
-                fieldKey={key}
-                value={value[key]}
-                onChange={(next) => set(key, next)}
-              />
-            ) : null
-          )
-        : null}
-
-      {sectionKey === "hero" ? (
-        <HeroExtraFields value={value} set={set} />
-      ) : null}
+      {commonKeys.map((key) =>
+        key in value && key !== "enabled" ? (
+          <PrimitiveField
+            key={key}
+            fieldKey={key}
+            value={value[key]}
+            onChange={(next) => set(key, next)}
+          />
+        ) : null
+      )}
 
       {sectionKey === "about" ? (
         <>
@@ -590,7 +907,6 @@ function SectionForm({
             key !== "logo" &&
             key !== "images" &&
             key !== "poster" &&
-            sectionKey !== "hero" &&
             sectionKey !== "about" &&
             sectionKey !== "footer" &&
             sectionKey !== "instagram" &&
@@ -688,9 +1004,11 @@ function SectionForm({
 function HeroExtraFields({
   value,
   set,
+  tab = "content",
 }: {
   value: JsonObject;
   set: (key: string, value: unknown) => void;
+  tab?: EditorTab;
 }) {
   const mediaType = String(value.mediaType || "IMAGE") as "IMAGE" | "VIDEO";
   const videoUrl = String(value.videoUrl || "");
@@ -763,304 +1081,322 @@ function HeroExtraFields({
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <details open className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
-        <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
-          Hero Content
-        </summary>
-        <div className="mt-4 space-y-4">
-          <PrimitiveField fieldKey="eyebrow" value={value.eyebrow} onChange={(next) => set("eyebrow", next)} />
-          <PrimitiveField fieldKey="heading" value={value.heading} onChange={(next) => set("heading", next)} />
-          <PrimitiveField fieldKey="highlightedText" value={value.highlightedText} onChange={(next) => set("highlightedText", next)} />
-          <PrimitiveField fieldKey="subheading" value={value.subheading} onChange={(next) => set("subheading", next)} />
-          <PrimitiveField fieldKey="description" value={value.description} onChange={(next) => set("description", next)} />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <PrimitiveField fieldKey="buttonText" value={value.buttonText} onChange={(next) => set("buttonText", next)} />
-            <PrimitiveField fieldKey="buttonLink" value={value.buttonLink} onChange={(next) => set("buttonLink", next)} />
-            <PrimitiveField fieldKey="secondaryButtonText" value={value.secondaryButtonText} onChange={(next) => set("secondaryButtonText", next)} />
-            <PrimitiveField fieldKey="secondaryButtonLink" value={value.secondaryButtonLink} onChange={(next) => set("secondaryButtonLink", next)} />
-          </div>
-          <PrimitiveField fieldKey="scrollLabel" value={value.scrollLabel} onChange={(next) => set("scrollLabel", next)} />
+  if (tab === "visibility") {
+    return (
+      <ToggleField
+        label="Visible on website"
+        checked={value.enabled !== false}
+        onChange={(next) => set("enabled", next)}
+      />
+    );
+  }
+
+  if (tab === "seo") {
+    return (
+      <div className="space-y-4">
+        <PrimitiveField fieldKey="heading" value={value.heading} onChange={(next) => set("heading", next)} />
+        <PrimitiveField fieldKey="description" value={value.description} onChange={(next) => set("description", next)} />
+      </div>
+    );
+  }
+
+  if (tab === "layout") {
+    return (
+      <div className="space-y-4">
+        <SelectField
+          label="Overlay Style"
+          value={String(value.overlay || "Balanced")}
+          options={["Light", "Balanced", "Dark"]}
+          onChange={(next) => set("overlay", next)}
+        />
+        <PrimitiveField
+          fieldKey="overlayOpacity"
+          value={value.overlayOpacity ?? 70}
+          onChange={(next) => set("overlayOpacity", next)}
+        />
+        <SelectField
+          label="Content Alignment"
+          value={String(value.contentAlignment || "Left")}
+          options={["Left", "Center", "Right"]}
+          onChange={(next) => set("contentAlignment", next)}
+        />
+        <SelectField
+          label="Desktop Height"
+          value={String(value.desktopHeight || "Viewport")}
+          options={["Viewport", "Tall", "Medium"]}
+          onChange={(next) => set("desktopHeight", next)}
+        />
+        <SelectField
+          label="Tablet Height"
+          value={String(value.tabletHeight || value.desktopHeight || "Viewport")}
+          options={["Viewport", "Tall", "Medium"]}
+          onChange={(next) => set("tabletHeight", next)}
+        />
+        <SelectField
+          label="Mobile Height"
+          value={String(value.mobileHeight || "Viewport")}
+          options={["Viewport", "Tall", "Medium"]}
+          onChange={(next) => set("mobileHeight", next)}
+        />
+        <SelectField
+          label="Animation"
+          value={String(value.animation || "KenBurns")}
+          options={["KenBurns", "Subtle", "None"]}
+          onChange={(next) => set("animation", next)}
+        />
+        <ToggleField
+          label="Show Search / Booking Box"
+          checked={value.bookingWidget !== false}
+          onChange={(next) => set("bookingWidget", next)}
+        />
+      </div>
+    );
+  }
+
+  if (tab === "advanced") {
+    return (
+      <div className="space-y-4">
+        {isImage(value.logo) ? (
+          <ImageEditor
+            label="Current Logo"
+            value={value.logo}
+            onChange={(next) => set("logo", next)}
+          />
+        ) : null}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[
+            "logoDesktopWidth",
+            "logoTabletWidth",
+            "logoMobileWidth",
+            "logoLeftMargin",
+            "logoTopMargin",
+            "logoOpacity",
+          ].map((key) => (
+            <PrimitiveField
+              key={key}
+              fieldKey={key}
+              value={value[key]}
+              onChange={(next) => set(key, next)}
+            />
+          ))}
         </div>
-      </details>
+        {value.booking && typeof value.booking === "object" ? (
+          <ObjectFields
+            value={value.booking as JsonObject}
+            onChange={(next) => set("booking", next)}
+          />
+        ) : null}
+      </div>
+    );
+  }
 
-      <details open className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
-        <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
-          Background Type
-        </summary>
-        <div className="mt-4 space-y-4">
-          <div className="flex gap-2">
-            {(["IMAGE", "VIDEO"] as const).map((option) => (
+  if (tab === "media") {
+    return (
+      <div className="space-y-4">
+        <div className="flex gap-2">
+          {(["IMAGE", "VIDEO"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => set("mediaType", option)}
+              className={cn(
+                "h-11 flex-1 rounded-xl border text-[10px] font-semibold tracking-[0.16em] uppercase transition",
+                mediaType === option
+                  ? "border-[#123429] bg-[#123429] text-[#f0d999]"
+                  : "border-[#17362b]/12 bg-white text-[#42574e]"
+              )}
+            >
+              {option === "IMAGE" ? "○ Image" : "○ Video"}
+            </button>
+          ))}
+        </div>
+        {mediaType === "VIDEO" ? (
+          <div className="space-y-4">
+            <MediaField
+              label="Desktop / Primary Video (MP4 / WebM, max 120 MB)"
+              kind="VIDEO"
+              value={{
+                assetId: String(value.videoAssetId || ""),
+                url: videoUrl,
+                kind: "VIDEO",
+              }}
+              onChange={(next) => {
+                const previousAssetId = String(value.videoAssetId || "");
+                const busted = withMediaCacheBust(next.url);
+                set("videoUrl", busted);
+                set("videoAssetId", next.assetId);
+                set("videoSizeBytes", next.size ?? null);
+                set("videoWidth", next.width ?? null);
+                set("videoHeight", next.height ?? null);
+                set("videoDurationMs", next.durationMs ?? null);
+                if (previousAssetId && previousAssetId !== next.assetId) {
+                  void fetch(`/api/orbit/media/${previousAssetId}?hard=1`, {
+                    method: "DELETE",
+                  }).catch(() => undefined);
+                }
+                const hasPoster =
+                  isImage(value.poster) && Boolean(value.poster.src);
+                if (!hasPoster) {
+                  if (isImage(value.image) && value.image.src) {
+                    set("poster", {
+                      ...value.image,
+                      title: "Hero Video Poster",
+                    });
+                  }
+                  void generatePosterFromVideo(busted);
+                }
+              }}
+            />
+            {videoUrl ? (
+              <div className="overflow-hidden rounded-xl border border-[#17362b]/10 bg-black">
+                <video
+                  ref={videoRef}
+                  key={videoUrl}
+                  src={videoUrl}
+                  className="aspect-video h-auto w-full object-cover"
+                  controls
+                  muted
+                  playsInline
+                  preload="metadata"
+                />
+                <div className="grid grid-cols-2 gap-2 border-t border-white/10 bg-[#10251e] p-3 text-[10px] text-[#ead39f] sm:grid-cols-4">
+                  <span>Status: Ready</span>
+                  <span>
+                    Size:{" "}
+                    {value.videoSizeBytes
+                      ? formatBytes(Number(value.videoSizeBytes))
+                      : "—"}
+                  </span>
+                  <span>
+                    Dims:{" "}
+                    {value.videoWidth && value.videoHeight
+                      ? `${value.videoWidth}×${value.videoHeight}`
+                      : "16:9"}
+                  </span>
+                  <span>
+                    Duration:{" "}
+                    {value.videoDurationMs
+                      ? `${Math.round(Number(value.videoDurationMs) / 1000)}s`
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+            <MediaField
+              label="Mobile Video (optional)"
+              kind="VIDEO"
+              value={{
+                assetId: String(value.mobileVideoAssetId || ""),
+                url: mobileVideoUrl,
+                kind: "VIDEO",
+              }}
+              onChange={(next) => {
+                set(
+                  "mobileVideoUrl",
+                  next.url ? withMediaCacheBust(next.url) : ""
+                );
+                set("mobileVideoAssetId", next.assetId);
+              }}
+            />
+            <div className="flex flex-wrap gap-2">
               <button
-                key={option}
                 type="button"
-                onClick={() => set("mediaType", option)}
-                className={cn(
-                  "h-11 flex-1 rounded-xl border text-[10px] font-semibold tracking-[0.16em] uppercase transition",
-                  mediaType === option
-                    ? "border-[#123429] bg-[#123429] text-[#f0d999]"
-                    : "border-[#17362b]/12 bg-white text-[#42574e]"
-                )}
-              >
-                {option === "IMAGE" ? "○ Image" : "○ Video"}
-              </button>
-            ))}
-          </div>
-
-          {mediaType === "VIDEO" ? (
-            <div className="space-y-4">
-              <MediaField
-                label="Desktop / Primary Video"
-                kind="VIDEO"
-                value={{
-                  assetId: String(value.videoAssetId || ""),
-                  url: videoUrl,
-                  kind: "VIDEO",
-                }}
-                onChange={(next) => {
-                  const busted = withMediaCacheBust(next.url);
-                  set("videoUrl", busted);
-                  set("videoAssetId", next.assetId);
-                  set("videoSizeBytes", next.size ?? null);
-                  set("videoWidth", next.width ?? null);
-                  set("videoHeight", next.height ?? null);
-                  set("videoDurationMs", next.durationMs ?? null);
-                  const hasPoster =
-                    isImage(value.poster) && Boolean(value.poster.src);
-                  if (!hasPoster) {
-                    if (isImage(value.image) && value.image.src) {
-                      set("poster", {
-                        ...value.image,
-                        title: "Hero Video Poster",
-                      });
-                    }
-                    void generatePosterFromVideo(busted);
+                onClick={() => {
+                  const assetId = String(value.videoAssetId || "");
+                  set("videoUrl", "");
+                  set("videoAssetId", null);
+                  set("mobileVideoUrl", "");
+                  set("mobileVideoAssetId", null);
+                  if (assetId) {
+                    void fetch(`/api/orbit/media/${assetId}?hard=1`, {
+                      method: "DELETE",
+                    }).catch(() => undefined);
                   }
                 }}
-              />
+                className="text-[10px] font-semibold tracking-[0.14em] text-red-700 uppercase"
+              >
+                Delete Video
+              </button>
               {videoUrl ? (
-                <div className="overflow-hidden rounded-xl border border-[#17362b]/10 bg-black">
-                  <video
-                    ref={videoRef}
-                    key={videoUrl}
-                    src={videoUrl}
-                    className="aspect-video h-auto w-full object-cover"
-                    controls
-                    muted
-                    playsInline
-                    preload="metadata"
-                  />
-                  <div className="grid grid-cols-2 gap-2 border-t border-white/10 bg-[#10251e] p-3 text-[10px] text-[#ead39f] sm:grid-cols-4">
-                    <span>Status: Ready</span>
-                    <span>
-                      Size:{" "}
-                      {value.videoSizeBytes
-                        ? formatBytes(Number(value.videoSizeBytes))
-                        : "—"}
-                    </span>
-                    <span>
-                      Dims:{" "}
-                      {value.videoWidth && value.videoHeight
-                        ? `${value.videoWidth}×${value.videoHeight}`
-                        : "16:9"}
-                    </span>
-                    <span>
-                      Duration:{" "}
-                      {value.videoDurationMs
-                        ? `${Math.round(Number(value.videoDurationMs) / 1000)}s`
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-              <MediaField
-                label="Mobile Video (optional)"
-                kind="VIDEO"
-                value={{
-                  assetId: String(value.mobileVideoAssetId || ""),
-                  url: mobileVideoUrl,
-                  kind: "VIDEO",
-                }}
-                onChange={(next) => {
-                  set(
-                    "mobileVideoUrl",
-                    next.url ? withMediaCacheBust(next.url) : ""
-                  );
-                  set("mobileVideoAssetId", next.assetId);
-                }}
-              />
-              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    set("videoUrl", "");
-                    set("videoAssetId", null);
-                    set("mobileVideoUrl", "");
-                    set("mobileVideoAssetId", null);
-                  }}
-                  className="text-[10px] font-semibold tracking-[0.14em] text-red-700 uppercase"
+                  disabled={posterBusy}
+                  onClick={() => void generatePosterFromVideo(videoUrl)}
+                  className="text-[10px] font-semibold tracking-[0.14em] text-[#a67a30] uppercase disabled:opacity-50"
                 >
-                  Delete Video
+                  {posterBusy ? "Generating Poster…" : "Generate Poster"}
                 </button>
-                {videoUrl ? (
-                  <button
-                    type="button"
-                    disabled={posterBusy}
-                    onClick={() => void generatePosterFromVideo(videoUrl)}
-                    className="text-[10px] font-semibold tracking-[0.14em] text-[#a67a30] uppercase disabled:opacity-50"
-                  >
-                    {posterBusy ? "Generating Poster…" : "Generate Poster"}
-                  </button>
-                ) : null}
-              </div>
-              {isImage(value.poster) ? (
-                <ImageEditor
-                  label="Poster Image"
-                  value={value.poster}
-                  onChange={(next) => set("poster", next)}
-                />
-              ) : (
-                <MediaField
-                  label="Poster Image"
-                  kind="IMAGE"
-                  onChange={(next) =>
-                    set("poster", {
-                      assetId: next.assetId,
-                      src: withMediaCacheBust(next.url),
-                      alt: next.alt || "Hero video poster",
-                    })
-                  }
-                />
-              )}
-              <div className="grid gap-3 sm:grid-cols-2">
-                {[
-                  ["videoAutoplay", "Autoplay"],
-                  ["videoLoop", "Loop"],
-                  ["videoMuted", "Muted"],
-                  ["videoPlaysInline", "Plays Inline"],
-                ].map(([key, label]) => (
-                  <ToggleField
-                    key={key}
-                    label={label}
-                    checked={value[key] !== false}
-                    onChange={(next) => set(key, next)}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {isImage(value.image) ? (
-                <ImageEditor
-                  label="Hero Image"
-                  value={value.image}
-                  onChange={(next) =>
-                    set("image", {
-                      ...next,
-                      src: next.src ? withMediaCacheBust(next.src) : next.src,
-                    })
-                  }
-                />
               ) : null}
             </div>
-          )}
-        </div>
-      </details>
-
-      <details className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
-        <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
-          Layout & Overlay
-        </summary>
-        <div className="mt-4 space-y-4">
-          <SelectField
-            label="Overlay Style"
-            value={String(value.overlay || "Balanced")}
-            options={["Light", "Balanced", "Dark"]}
-            onChange={(next) => set("overlay", next)}
-          />
-          <PrimitiveField
-            fieldKey="overlayOpacity"
-            value={value.overlayOpacity ?? 70}
-            onChange={(next) => set("overlayOpacity", next)}
-          />
-          <SelectField
-            label="Content Alignment"
-            value={String(value.contentAlignment || "Left")}
-            options={["Left", "Center", "Right"]}
-            onChange={(next) => set("contentAlignment", next)}
-          />
-          <SelectField
-            label="Desktop Height"
-            value={String(value.desktopHeight || "Viewport")}
-            options={["Viewport", "Tall", "Medium"]}
-            onChange={(next) => set("desktopHeight", next)}
-          />
-          <SelectField
-            label="Mobile Height"
-            value={String(value.mobileHeight || "Viewport")}
-            options={["Viewport", "Tall", "Medium"]}
-            onChange={(next) => set("mobileHeight", next)}
-          />
-          <SelectField
-            label="Animation"
-            value={String(value.animation || "KenBurns")}
-            options={["KenBurns", "Subtle", "None"]}
-            onChange={(next) => set("animation", next)}
-          />
-          <ToggleField
-            label="Show Search / Booking Box"
-            checked={value.bookingWidget !== false}
-            onChange={(next) => set("bookingWidget", next)}
-          />
-        </div>
-      </details>
-
-      <details className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
-        <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
-          Logo Controls
-        </summary>
-        <div className="mt-4 space-y-4">
-          {isImage(value.logo) ? (
-            <ImageEditor
-              label="Current Logo"
-              value={value.logo}
-              onChange={(next) => set("logo", next)}
-            />
-          ) : null}
-          <div className="grid gap-4 sm:grid-cols-2">
-            {[
-              "logoDesktopWidth",
-              "logoTabletWidth",
-              "logoMobileWidth",
-              "logoLeftMargin",
-              "logoTopMargin",
-              "logoOpacity",
-            ].map((key) => (
-              <PrimitiveField
-                key={key}
-                fieldKey={key}
-                value={value[key]}
-                onChange={(next) => set(key, next)}
+            {isImage(value.poster) ? (
+              <ImageEditor
+                label="Poster Image"
+                value={value.poster}
+                onChange={(next) => set("poster", next)}
               />
-            ))}
+            ) : (
+              <MediaField
+                label="Poster Image"
+                kind="IMAGE"
+                onChange={(next) =>
+                  set("poster", {
+                    assetId: next.assetId,
+                    src: withMediaCacheBust(next.url),
+                    alt: next.alt || "Hero video poster",
+                  })
+                }
+              />
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                ["videoAutoplay", "Autoplay"],
+                ["videoLoop", "Loop"],
+                ["videoMuted", "Muted"],
+                ["videoPlaysInline", "Plays Inline"],
+              ].map(([key, label]) => (
+                <ToggleField
+                  key={key}
+                  label={label}
+                  checked={value[key] !== false}
+                  onChange={(next) => set(key, next)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </details>
+        ) : isImage(value.image) ? (
+          <ImageEditor
+            label="Hero Image"
+            value={value.image}
+            onChange={(next) =>
+              set("image", {
+                ...next,
+                src: next.src ? withMediaCacheBust(next.src) : next.src,
+              })
+            }
+          />
+        ) : null}
+      </div>
+    );
+  }
 
-      {value.booking && typeof value.booking === "object" ? (
-        <details className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
-          <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
-            Search Box Labels
-          </summary>
-          <div className="mt-4">
-            <ObjectFields
-              value={value.booking as JsonObject}
-              onChange={(next) => set("booking", next)}
-            />
-          </div>
-        </details>
-      ) : null}
+  // content tab
+  return (
+    <div className="space-y-4">
+      <PrimitiveField fieldKey="eyebrow" value={value.eyebrow} onChange={(next) => set("eyebrow", next)} />
+      <PrimitiveField fieldKey="heading" value={value.heading} onChange={(next) => set("heading", next)} />
+      <PrimitiveField fieldKey="highlightedText" value={value.highlightedText} onChange={(next) => set("highlightedText", next)} />
+      <PrimitiveField fieldKey="subheading" value={value.subheading} onChange={(next) => set("subheading", next)} />
+      <PrimitiveField fieldKey="description" value={value.description} onChange={(next) => set("description", next)} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <PrimitiveField fieldKey="buttonText" value={value.buttonText} onChange={(next) => set("buttonText", next)} />
+        <PrimitiveField fieldKey="buttonLink" value={value.buttonLink} onChange={(next) => set("buttonLink", next)} />
+        <PrimitiveField fieldKey="secondaryButtonText" value={value.secondaryButtonText} onChange={(next) => set("secondaryButtonText", next)} />
+        <PrimitiveField fieldKey="secondaryButtonLink" value={value.secondaryButtonLink} onChange={(next) => set("secondaryButtonLink", next)} />
+      </div>
+      <PrimitiveField fieldKey="scrollLabel" value={value.scrollLabel} onChange={(next) => set("scrollLabel", next)} />
+      <p className="text-xs text-[var(--orbit-muted)]">
+        Switch to the Media tab for Hero video/image, Layout for overlay & height, Advanced for logo & booking labels.
+      </p>
     </div>
   );
 }

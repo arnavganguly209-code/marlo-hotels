@@ -28,7 +28,7 @@ export function maxImageBytes() {
 
 export function maxVideoBytes() {
   return (
-    Number(process.env.ORBIT_MAX_VIDEO_BYTES) || 200 * 1024 * 1024
+    Number(process.env.ORBIT_MAX_VIDEO_BYTES) || 120 * 1024 * 1024
   );
 }
 
@@ -280,6 +280,7 @@ export async function ensureMediaRoot() {
   await mkdir(mediaRoot(), { recursive: true });
   await mkdir(path.join(mediaRoot(), "general"), { recursive: true });
   await mkdir(path.join(mediaRoot(), "hero"), { recursive: true });
+  await mkdir(path.join(mediaRoot(), "video"), { recursive: true });
   await mkdir(path.join(mediaRoot(), "trash"), { recursive: true });
 }
 
