@@ -197,7 +197,8 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       logoOpacity: 100,
       overlay: "Balanced",
       bookingWidget: true,
-      mediaType: "IMAGE",
+      mediaType: "VIDEO",
+      videoUrl: "/videos/hero-demo.mp4",
       videoAutoplay: true,
       videoLoop: true,
       videoMuted: true,
@@ -539,7 +540,10 @@ export async function getHomepageContent(): Promise<HomepageContent> {
         ...defaults.hero,
         image: placedImage("home.hero", defaults.hero.image),
         logo: placedImage("brand.logo", defaults.hero.logo),
-        mediaType: heroPlacement?.mediaType ?? defaults.hero.mediaType,
+        mediaType:
+          heroPlacement?.mediaType === "VIDEO"
+            ? "VIDEO"
+            : defaults.hero.mediaType,
         videoUrl:
           heroPlacement?.mediaType === "VIDEO" && heroPlacement.asset
             ? heroPlacement.asset.url
@@ -635,7 +639,10 @@ export async function getHomepageContent(): Promise<HomepageContent> {
         hero: {
           ...merged.hero,
           image: placedImage("home.hero", merged.hero.image),
-          mediaType: heroPlacement.mediaType,
+          mediaType:
+            heroPlacement.mediaType === "VIDEO"
+              ? "VIDEO"
+              : merged.hero.mediaType,
           videoUrl:
             heroPlacement.mediaType === "VIDEO"
               ? heroPlacement.asset.url

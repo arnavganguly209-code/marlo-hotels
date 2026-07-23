@@ -8,20 +8,25 @@ import {
   useTransform,
 } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BookingWidget } from "@/components/home/booking-widget";
 import type { HeroEditorContent } from "@/lib/homepage-content";
+import { resolveHeroVideoSrc } from "@/lib/hero-video";
 
+/**
+ * Homepage Hero — full-bleed HTML5 background video only.
+ * Never renders a still hero image (prevents flash of previous media).
+ * Orbit can later assign `mediaType: "VIDEO"` + `videoUrl` to replace the demo.
+ */
 export function Hero({ content }: { content: HeroEditorContent }) {
   const reduceMotion = useReducedMotion();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 40, damping: 20 });
   const springY = useSpring(mouseY, { stiffness: 40, damping: 20 });
-  const imageX = useTransform(springX, [-0.5, 0.5], [14, -14]);
-  const imageY = useTransform(springY, [-0.5, 0.5], [10, -10]);
+  const mediaX = useTransform(springX, [-0.5, 0.5], [14, -14]);
+  const mediaY = useTransform(springY, [-0.5, 0.5], [10, -10]);
 
   const highlighted = content.highlightedText?.trim();
   let leadWords: string[];
@@ -43,10 +48,7 @@ export function Hero({ content }: { content: HeroEditorContent }) {
   const focalX = content.image.focalX ?? 50;
   const focalY = content.image.focalY ?? 45;
   const objectPosition = `${focalX}% ${focalY}%`;
-  const isVideo = content.mediaType === "VIDEO";
-  const mediaSrc = isVideo
-    ? content.videoUrl || content.image.src
-    : content.image.src;
+  const videoSrc = resolveHeroVideoSrc(content);
   const description = content.subheading || content.description;
   const overlayOpacity =
     content.overlay === "Light"
@@ -70,41 +72,29 @@ export function Hero({ content }: { content: HeroEditorContent }) {
       onMouseMove={onMouseMove}
       className="relative flex min-h-svh flex-col justify-end overflow-hidden bg-forest-950"
     >
+      {/* Aspect-aware full-bleed stage: cover fills every viewport (16:9 source) */}
       <motion.div
-        style={reduceMotion ? undefined : { x: imageX, y: imageY }}
+        style={reduceMotion ? undefined : { x: mediaX, y: mediaY }}
         className="absolute -inset-6"
       >
-        {isVideo ? (
-          <video
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition }}
-            autoPlay={content.videoAutoplay !== false}
-            loop={content.videoLoop !== false}
-            muted={content.videoMuted !== false}
-            playsInline
-            poster={content.poster?.src || undefined}
-            preload="metadata"
-          >
-            <source src={mediaSrc} />
-          </video>
-        ) : (
-          <Image
-            src={mediaSrc}
-            alt={content.image.alt}
-            fill
-            priority
-            quality={100}
-            sizes="100vw"
-            className="animate-kenburns object-cover"
-            style={{ objectPosition }}
-            unoptimized={mediaSrc.startsWith("/media/")}
-          />
-        )}
+        <video
+          key={videoSrc}
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ objectPosition, aspectRatio: "16 / 9" }}
+          autoPlay={content.videoAutoplay !== false}
+          loop={content.videoLoop !== false}
+          muted={content.videoMuted !== false}
+          playsInline
+          preload="auto"
+          // Intentionally no poster — a poster would flash the old hero image.
+        >
+          <source src={videoSrc} type="video/mp4" />
+        </video>
       </motion.div>
       <div
-        className={`absolute inset-0 bg-gradient-to-r ${overlayOpacity} via-charcoal-950/30 to-charcoal-950/20`}
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${overlayOpacity} via-charcoal-950/30 to-charcoal-950/20`}
       />
-      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-charcoal-950/90 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-charcoal-950/90 to-transparent" />
 
       <div className="relative mx-auto w-full max-w-7xl flex-1 px-5 md:px-8">
         <div className="flex h-full max-w-2xl flex-col justify-center pt-36 pb-16">
@@ -202,15 +192,11 @@ export function Hero({ content }: { content: HeroEditorContent }) {
         </span>
       </motion.div>
 
+      {/* Booking widget: immediately visible (no delayed fade) inside Hero */}
       {content.bookingWidget !== false ? (
-        <motion.div
-          initial={{ opacity: 0, y: 60 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.1, delay: 1.6, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mx-auto w-full max-w-7xl px-5 pb-8 md:px-8"
-        >
+        <div className="relative mx-auto w-full max-w-7xl px-5 pb-8 md:px-8">
           <BookingWidget content={content.booking} />
-        </motion.div>
+        </div>
       ) : null}
     </section>
   );
