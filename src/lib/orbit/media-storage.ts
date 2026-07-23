@@ -18,7 +18,11 @@ export const IMAGE_MIME_TYPES = new Set([
   "image/avif",
 ]);
 
-export const VIDEO_MIME_TYPES = new Set(["video/mp4", "video/webm"]);
+export const VIDEO_MIME_TYPES = new Set([
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
 
 export function maxImageBytes() {
   return (
@@ -70,6 +74,7 @@ export function extensionForMime(mimeType: string, originalName: string) {
     "image/avif": ".avif",
     "video/mp4": ".mp4",
     "video/webm": ".webm",
+    "video/quicktime": ".mov",
   };
   return map[mimeType] || ".bin";
 }

@@ -69,10 +69,10 @@ export function BookingWidget({
     <form
       onSubmit={onSearch}
       aria-label="Check availability"
-      className={cn(
-        "glass-dark shadow-luxury grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl p-6 md:p-7 lg:grid-cols-[1fr_1fr_1.2fr_1fr_auto] lg:items-end",
-        className
-      )}
+        className={cn(
+          "shadow-luxury grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-white/10 bg-[rgb(10_24_20_/_0.72)] p-6 backdrop-blur-2xl md:p-7 lg:grid-cols-[1fr_1fr_1.2fr_1fr_auto] lg:items-end",
+          className
+        )}
     >
       <div>
         <label htmlFor="widget-check-in" className={labelClass}>

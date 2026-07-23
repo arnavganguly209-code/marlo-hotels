@@ -11,6 +11,9 @@ import {
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/orbit/toast";
+import {
+  VideoUploadDialog,
+} from "@/components/orbit/video-upload-dialog";
 import { cn } from "@/lib/utils";
 
 export type PickerAsset = {
@@ -52,6 +55,8 @@ export function MediaPicker({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoDialogOpen, setVideoDialogOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
 
@@ -73,13 +78,13 @@ export function MediaPicker({
     if (open) void load();
   }, [open, load]);
 
-  function upload(file: File) {
+  function uploadImage(file: File) {
     setUploading(true);
     setProgress(0);
     push("Uploading…", "info");
     const body = new FormData();
     body.set("file", file);
-    body.set("folder", kind === "VIDEO" ? "video" : "general");
+    body.set("folder", "general");
     body.set("alt", file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " "));
     const xhr = new XMLHttpRequest();
     xhrRef.current = xhr;
@@ -98,7 +103,7 @@ export function MediaPicker({
           error?: string;
         };
         if (xhr.status >= 200 && xhr.status < 300 && result.asset) {
-          push(result.error ? "Upload Successful" : "Upload Successful", "success");
+          push("Upload Successful", "success");
           setAssets((current) => [result.asset!, ...current]);
           onSelect(result.asset);
           onClose();
@@ -117,18 +122,38 @@ export function MediaPicker({
     xhr.send(body);
   }
 
+  function handlePickedFile(file: File) {
+    const isVideo =
+      file.type.startsWith("video/") ||
+      /\.(mp4|webm|mov)$/i.test(file.name) ||
+      kind === "VIDEO";
+    if (isVideo) {
+      setVideoFile(file);
+      setVideoDialogOpen(true);
+      return;
+    }
+    uploadImage(file);
+  }
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[90] grid place-items-center bg-[#06100c]/65 p-4 backdrop-blur-sm">
-      <button type="button" aria-label="Close picker" className="absolute inset-0" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Close picker"
+        className="absolute inset-0"
+        onClick={onClose}
+      />
       <div className="relative flex h-[min(88vh,820px)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-[#f8f7f2] shadow-2xl">
         <div className="flex items-center justify-between border-b border-[#17362b]/10 px-5 py-4 sm:px-6">
           <div>
             <p className="text-[9px] font-semibold tracking-[0.22em] text-[#a67a30] uppercase">
               Media Library
             </p>
-            <h2 className="font-display text-2xl font-semibold text-[#10251e]">{title}</h2>
+            <h2 className="font-display text-2xl font-semibold text-[#10251e]">
+              {title}
+            </h2>
           </div>
           <button
             type="button"
@@ -152,7 +177,7 @@ export function MediaPicker({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || videoDialogOpen}
             className="orbit-gold-button flex h-11 items-center gap-2 rounded-xl px-5 text-[10px] font-semibold tracking-[0.16em] uppercase disabled:opacity-50"
           >
             <UploadCloud className="size-4" />
@@ -164,14 +189,14 @@ export function MediaPicker({
             hidden
             accept={
               kind === "VIDEO"
-                ? "video/mp4,video/webm"
+                ? "video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
                 : kind === "IMAGE"
                   ? "image/jpeg,image/png,image/webp,image/avif"
-                  : "image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
+                  : "image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
             }
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) upload(file);
+              if (file) handlePickedFile(file);
               event.target.value = "";
             }}
           />
@@ -192,7 +217,9 @@ export function MediaPicker({
 
         <div className="flex-1 overflow-y-auto p-5 sm:p-6">
           {loading ? (
-            <p className="py-20 text-center text-sm text-[#7a8781]">Loading media…</p>
+            <p className="py-20 text-center text-sm text-[#7a8781]">
+              Loading media…
+            </p>
           ) : assets.length ? (
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {assets.map((asset) => (
@@ -207,9 +234,13 @@ export function MediaPicker({
                 >
                   <div className="relative aspect-[4/3] bg-[#edf0ec]">
                     {asset.kind === "VIDEO" ? (
-                      <div className="grid h-full place-items-center text-[#a67a30]">
-                        <Video className="size-8" />
-                      </div>
+                      <video
+                        src={asset.url}
+                        className="h-full w-full object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
                     ) : (
                       <Image
                         src={asset.url}
@@ -229,7 +260,7 @@ export function MediaPicker({
                       {asset.originalName}
                     </p>
                     <p className="mt-1 text-[10px] text-[#7d8983]">
-                      {asset.kind} · {(asset.size / 1024).toFixed(0)} KB
+                      {asset.kind} · {(asset.size / 1024 / 1024).toFixed(1)} MB
                     </p>
                   </div>
                 </button>
@@ -238,11 +269,32 @@ export function MediaPicker({
           ) : (
             <div className="py-20 text-center">
               <ImagePlus className="mx-auto size-10 text-[#a8b0ac]" />
-              <p className="mt-3 text-sm text-[#7a8781]">No media found. Upload a file to continue.</p>
+              <p className="mt-3 text-sm text-[#7a8781]">
+                No media found. Upload a file to continue.
+              </p>
             </div>
           )}
         </div>
       </div>
+
+      <VideoUploadDialog
+        open={videoDialogOpen}
+        file={videoFile}
+        folder="video"
+        onClose={() => {
+          setVideoDialogOpen(false);
+          setVideoFile(null);
+        }}
+        onSuccess={(asset) => {
+          const next = asset as PickerAsset;
+          setAssets((current) => [next, ...current]);
+          onSelect(next);
+          setVideoDialogOpen(false);
+          setVideoFile(null);
+          onClose();
+          push("Upload Successful", "success");
+        }}
+      />
     </div>
   );
 }
