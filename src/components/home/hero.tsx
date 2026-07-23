@@ -8,6 +8,7 @@ import {
   useTransform,
 } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { BookingWidget } from "@/components/home/booking-widget";
@@ -15,9 +16,9 @@ import type { HeroEditorContent } from "@/lib/homepage-content";
 import { resolveHeroVideoSrc } from "@/lib/hero-video";
 
 /**
- * Homepage Hero — full-bleed HTML5 background video only.
- * Never renders a still hero image (prevents flash of previous media).
- * Orbit can later assign `mediaType: "VIDEO"` + `videoUrl` to replace the demo.
+ * Homepage Hero — video or image background from Orbit.
+ * When VIDEO: never renders a still (no poster flash of old hero).
+ * When IMAGE: renders the assigned image only.
  */
 export function Hero({ content }: { content: HeroEditorContent }) {
   const reduceMotion = useReducedMotion();
@@ -48,19 +49,34 @@ export function Hero({ content }: { content: HeroEditorContent }) {
   const focalX = content.image.focalX ?? 50;
   const focalY = content.image.focalY ?? 45;
   const objectPosition = `${focalX}% ${focalY}%`;
-  const videoSrc = resolveHeroVideoSrc(content);
+  const isVideo = content.mediaType === "VIDEO";
+  const videoSrc = isVideo ? resolveHeroVideoSrc(content) : "";
   const description = content.subheading || content.description;
-  const overlayOpacity =
-    content.overlay === "Light"
-      ? "from-charcoal-950/55"
-      : content.overlay === "Dark"
-        ? "from-charcoal-950/90"
-        : "from-charcoal-950/80";
+  const overlayStrength =
+    typeof content.overlayOpacity === "number"
+      ? content.overlayOpacity
+      : content.overlay === "Light"
+        ? 45
+        : content.overlay === "Dark"
+          ? 85
+          : 70;
+  const align =
+    content.contentAlignment === "Center"
+      ? "items-center text-center"
+      : content.contentAlignment === "Right"
+        ? "items-end text-right"
+        : "items-start text-left";
+  const heightClass =
+    content.desktopHeight === "Medium"
+      ? "min-h-[70vh] lg:min-h-[70vh]"
+      : content.desktopHeight === "Tall"
+        ? "min-h-[85vh] lg:min-h-[85vh]"
+        : "min-h-svh";
 
   if (!content.enabled) return null;
 
   function onMouseMove(event: React.MouseEvent<HTMLElement>) {
-    if (reduceMotion) return;
+    if (reduceMotion || content.animation === "None") return;
     const { innerWidth, innerHeight } = window;
     mouseX.set(event.clientX / innerWidth - 0.5);
     mouseY.set(event.clientY / innerHeight - 0.5);
@@ -70,34 +86,67 @@ export function Hero({ content }: { content: HeroEditorContent }) {
     <section
       aria-label="Welcome to Marlo Hotels"
       onMouseMove={onMouseMove}
-      className="relative flex min-h-svh flex-col justify-end overflow-hidden bg-forest-950"
+      className={`relative flex ${heightClass} flex-col justify-end overflow-hidden bg-forest-950`}
     >
-      {/* Aspect-aware full-bleed stage: cover fills every viewport (16:9 source) */}
       <motion.div
-        style={reduceMotion ? undefined : { x: mediaX, y: mediaY }}
+        style={
+          reduceMotion || content.animation === "None"
+            ? undefined
+            : { x: mediaX, y: mediaY }
+        }
         className="absolute -inset-6"
       >
-        <video
-          key={videoSrc}
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition, aspectRatio: "16 / 9" }}
-          autoPlay={content.videoAutoplay !== false}
-          loop={content.videoLoop !== false}
-          muted={content.videoMuted !== false}
-          playsInline
-          preload="auto"
-          // Intentionally no poster — a poster would flash the old hero image.
-        >
-          <source src={videoSrc} type="video/mp4" />
-        </video>
+        {isVideo ? (
+          <video
+            key={videoSrc}
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition, aspectRatio: "16 / 9" }}
+            autoPlay={content.videoAutoplay !== false}
+            loop={content.videoLoop !== false}
+            muted={content.videoMuted !== false}
+            playsInline={content.videoPlaysInline !== false}
+            preload="auto"
+          >
+            {content.mobileVideoUrl ? (
+              <source
+                src={content.mobileVideoUrl}
+                type="video/mp4"
+                media="(max-width: 768px)"
+              />
+            ) : null}
+            <source src={videoSrc} type="video/mp4" />
+          </video>
+        ) : (
+          <Image
+            key={content.image.src}
+            src={content.image.src}
+            alt={content.image.alt}
+            fill
+            priority
+            quality={100}
+            sizes="100vw"
+            className={
+              content.animation === "KenBurns" && !reduceMotion
+                ? "animate-kenburns object-cover"
+                : "object-cover"
+            }
+            style={{ objectPosition }}
+            unoptimized={content.image.src.startsWith("/media/")}
+          />
+        )}
       </motion.div>
       <div
-        className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${overlayOpacity} via-charcoal-950/30 to-charcoal-950/20`}
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-charcoal-950 via-charcoal-950/35 to-charcoal-950/15"
+        style={{ opacity: overlayStrength / 100 }}
       />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-charcoal-950/90 to-transparent" />
 
-      <div className="relative mx-auto w-full max-w-7xl flex-1 px-5 md:px-8">
-        <div className="flex h-full max-w-2xl flex-col justify-center pt-36 pb-16">
+      <div className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col px-5 md:px-8">
+        <div
+          className={`flex h-full max-w-2xl flex-col justify-center pt-36 pb-16 ${align} ${
+            content.contentAlignment === "Center" ? "mx-auto" : ""
+          } ${content.contentAlignment === "Right" ? "ml-auto" : ""}`}
+        >
           <motion.p
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -165,7 +214,9 @@ export function Hero({ content }: { content: HeroEditorContent }) {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 1.45, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-10 flex flex-wrap items-center gap-5"
+            className={`mt-10 flex flex-wrap items-center gap-5 ${
+              content.contentAlignment === "Center" ? "justify-center" : ""
+            } ${content.contentAlignment === "Right" ? "justify-end" : ""}`}
           >
             <Button asChild variant="outline" size="lg">
               <Link href={content.buttonLink || "/rooms"}>
@@ -173,26 +224,17 @@ export function Hero({ content }: { content: HeroEditorContent }) {
                 <ArrowRight />
               </Link>
             </Button>
+            {content.secondaryButtonText ? (
+              <Button asChild variant="ghost" size="lg">
+                <Link href={content.secondaryButtonLink || "/offers"}>
+                  {content.secondaryButtonText}
+                </Link>
+              </Button>
+            ) : null}
           </motion.div>
         </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2, duration: 1 }}
-        aria-hidden="true"
-        className="absolute right-8 bottom-44 hidden flex-col items-center gap-3 lg:flex"
-      >
-        <span className="text-[9px] tracking-[0.4em] text-cream-200/60 uppercase [writing-mode:vertical-lr]">
-          {content.scrollLabel}
-        </span>
-        <span className="flex h-10 w-6 items-start justify-center rounded-full border border-cream-200/30 pt-1.5">
-          <span className="animate-scroll-dot block size-1.5 rounded-full bg-gold-400" />
-        </span>
-      </motion.div>
-
-      {/* Booking widget: immediately visible (no delayed fade) inside Hero */}
       {content.bookingWidget !== false ? (
         <div className="relative mx-auto w-full max-w-7xl px-5 pb-8 md:px-8">
           <BookingWidget content={content.booking} />

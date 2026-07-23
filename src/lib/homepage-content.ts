@@ -57,14 +57,28 @@ export type HeroEditorContent = SectionCopy & {
   logoTopMargin: number;
   logoOpacity: number;
   overlay: "Light" | "Balanced" | "Dark";
+  overlayOpacity: number;
+  contentAlignment: "Left" | "Center" | "Right";
+  desktopHeight: "Viewport" | "Tall" | "Medium";
+  mobileHeight: "Viewport" | "Tall" | "Medium";
+  animation: "KenBurns" | "Subtle" | "None";
+  secondaryButtonText?: string;
+  secondaryButtonLink?: string;
   bookingWidget: boolean;
   mediaType: "IMAGE" | "VIDEO";
   videoUrl?: string;
   videoAssetId?: string | null;
+  mobileVideoUrl?: string;
+  mobileVideoAssetId?: string | null;
   poster?: EditableImage;
   videoAutoplay: boolean;
   videoLoop: boolean;
   videoMuted: boolean;
+  videoPlaysInline: boolean;
+  videoDurationMs?: number | null;
+  videoSizeBytes?: number | null;
+  videoWidth?: number | null;
+  videoHeight?: number | null;
   booking: {
     checkInLabel: string;
     checkOutLabel: string;
@@ -196,12 +210,20 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       logoTopMargin: 0,
       logoOpacity: 100,
       overlay: "Balanced",
+      overlayOpacity: 70,
+      contentAlignment: "Left",
+      desktopHeight: "Viewport",
+      mobileHeight: "Viewport",
+      animation: "KenBurns",
+      secondaryButtonText: "View Offers",
+      secondaryButtonLink: "/offers",
       bookingWidget: true,
       mediaType: "VIDEO",
       videoUrl: "/videos/hero-demo.mp4",
       videoAutoplay: true,
       videoLoop: true,
       videoMuted: true,
+      videoPlaysInline: true,
       booking: {
         checkInLabel: "Check In",
         checkOutLabel: "Check Out",

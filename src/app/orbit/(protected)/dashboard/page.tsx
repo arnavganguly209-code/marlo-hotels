@@ -255,6 +255,49 @@ export default async function OrbitDashboardPage() {
         />
       </div>
 
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          {
+            label: "Website Status",
+            value: "Live",
+            href: "/",
+            hint: "Public site online",
+          },
+          {
+            label: "Homepage Editor",
+            value: "Open",
+            href: "/orbit/homepage",
+            hint: "Hero, sections, media",
+          },
+          {
+            label: "Media Library",
+            value: "Manage",
+            href: "/orbit/media-library",
+            hint: "Upload · crop · replace",
+          },
+          {
+            label: "Messages",
+            value: String(recentMessages.length),
+            href: "/orbit/contact-messages",
+            hint: "Latest guest enquiries",
+          },
+        ].map((card) => (
+          <Link
+            key={card.label}
+            href={card.href}
+            className="orbit-panel rounded-2xl p-5 transition hover:border-[#c4943c]/35"
+          >
+            <p className="text-[9px] font-semibold tracking-[0.22em] text-[#a67a30] uppercase">
+              {card.label}
+            </p>
+            <p className="font-display mt-3 text-2xl font-semibold text-[#10251e]">
+              {card.value}
+            </p>
+            <p className="mt-1 text-xs text-[#738078]">{card.hint}</p>
+          </Link>
+        ))}
+      </div>
+
       <div className="mt-7 grid gap-7 xl:grid-cols-[1.55fr_1fr]">
         <section className="orbit-panel overflow-hidden rounded-2xl">
           <div className="flex items-center justify-between border-b border-[#17362b]/8 px-6 py-5">

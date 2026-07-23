@@ -65,9 +65,10 @@ export function HomepageVisualEditor({
   const [active, setActive] = useState<HomepageSectionKey>(initialSection);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [previewMode, setPreviewMode] = useState<"desktop" | "tablet" | "mobile">(
-    "desktop"
-  );
+  const [previewMode, setPreviewMode] = useState<
+    "desktop" | "tablet" | "mobile" | "landscape" | "portrait"
+  >("desktop");
+  const [sectionQuery, setSectionQuery] = useState("");
   const bootstrapStarted = useRef(initialPersisted);
 
   useEffect(() => {
@@ -241,21 +242,29 @@ export function HomepageVisualEditor({
   }
 
   const activeMeta = HOMEPAGE_SECTIONS.find((item) => item.key === active)!;
+  const filteredSections = HOMEPAGE_SECTIONS.filter((section) => {
+    if (!sectionQuery.trim()) return true;
+    const q = sectionQuery.trim().toLowerCase();
+    return (
+      section.label.toLowerCase().includes(q) ||
+      section.key.toLowerCase().includes(q) ||
+      section.description.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p className="text-[10px] font-semibold tracking-[0.28em] text-[#a67a30] uppercase">
-            Complete visual website editor
+            Visual CMS
           </p>
           <h1 className="font-display mt-2 text-4xl font-semibold text-[#10251e]">
             Home Page
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-[#62716b]">
-            Every field below is loaded from the content currently used by the
-            website. Edit a section, preview it beside the form, then publish
-            instantly without rebuilding.
+            Edit every homepage section like a premium website builder. Changes
+            go live instantly when you Save & Publish.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -298,40 +307,57 @@ export function HomepageVisualEditor({
         </div>
       )}
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-[250px_minmax(0,1fr)_minmax(340px,0.85fr)]">
-        <nav className="orbit-panel h-fit rounded-2xl p-2 xl:sticky xl:top-24">
-          {HOMEPAGE_SECTIONS.map((section, index) => {
-            const enabled =
-              (content[section.key] as { enabled?: boolean }).enabled !== false;
-            return (
-              <button
-                key={section.key}
-                type="button"
-                onClick={() => selectSection(section.key)}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition",
-                  active === section.key
-                    ? "bg-[#123429] text-[#f0d999]"
-                    : "text-[#42574e] hover:bg-[#eef1ed]"
-                )}
-              >
-                <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-current/15 text-[10px]">
-                  {index + 1}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-semibold">
-                    {section.label}
-                  </span>
-                </span>
-                <span
+      <div className="mt-6 grid gap-5 xl:grid-cols-[270px_minmax(0,1fr)_minmax(380px,0.95fr)]">
+        <nav className="orbit-panel h-fit rounded-2xl p-3 xl:sticky xl:top-24">
+          <label className="relative mb-3 block">
+            <span className="sr-only">Search sections</span>
+            <input
+              value={sectionQuery}
+              onChange={(event) => setSectionQuery(event.target.value)}
+              placeholder="Search sections…"
+              className="h-10 w-full rounded-xl border border-[#17362b]/10 bg-white px-3 text-xs outline-none focus:border-[#c4943c]/50"
+            />
+          </label>
+          <div className="max-h-[70vh] space-y-1 overflow-y-auto pr-1">
+            {filteredSections.map((section, index) => {
+              const enabled =
+                (content[section.key] as { enabled?: boolean }).enabled !==
+                false;
+              return (
+                <button
+                  key={section.key}
+                  type="button"
+                  onClick={() => selectSection(section.key)}
                   className={cn(
-                    "size-2 rounded-full",
-                    enabled ? "bg-emerald-500" : "bg-[#a8b0ac]"
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition",
+                    active === section.key
+                      ? "bg-[#123429] text-[#f0d999]"
+                      : "text-[#42574e] hover:bg-[#eef1ed]"
                   )}
-                />
-              </button>
-            );
-          })}
+                >
+                  <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-current/15 text-[10px]">
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-semibold">
+                      {section.label}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      "size-2 rounded-full",
+                      enabled ? "bg-emerald-500" : "bg-[#a8b0ac]"
+                    )}
+                  />
+                </button>
+              );
+            })}
+            {filteredSections.length === 0 ? (
+              <p className="px-2 py-6 text-center text-xs text-[#7a8781]">
+                No sections match “{sectionQuery}”
+              </p>
+            ) : null}
+          </div>
         </nav>
 
         <section className="orbit-panel min-w-0 rounded-2xl p-5 sm:p-7">
@@ -376,8 +402,16 @@ export function HomepageVisualEditor({
                   Live Preview
                 </span>
               </div>
-              <div className="flex rounded-lg bg-[#edf0ec] p-1">
-                {(["desktop", "tablet", "mobile"] as const).map((mode) => (
+              <div className="flex flex-wrap rounded-lg bg-[#edf0ec] p-1">
+                {(
+                  [
+                    "desktop",
+                    "tablet",
+                    "mobile",
+                    "landscape",
+                    "portrait",
+                  ] as const
+                ).map((mode) => (
                   <button
                     key={mode}
                     type="button"
@@ -399,8 +433,10 @@ export function HomepageVisualEditor({
                 className={cn(
                   "mx-auto overflow-hidden rounded-xl bg-white shadow-xl transition-all",
                   previewMode === "desktop" && "w-full",
-                  previewMode === "tablet" && "w-[78%]",
-                  previewMode === "mobile" && "w-[52%] min-w-[250px]"
+                  previewMode === "tablet" && "w-[82%]",
+                  previewMode === "mobile" && "w-[48%] min-w-[260px]",
+                  previewMode === "landscape" && "w-full max-w-[640px]",
+                  previewMode === "portrait" && "w-[42%] min-w-[280px]"
                 )}
               >
                 <SectionPreview
@@ -450,16 +486,18 @@ function SectionForm({
         />
       ) : null}
 
-      {commonKeys.map((key) =>
-        key in value ? (
-          <PrimitiveField
-            key={key}
-            fieldKey={key}
-            value={value[key]}
-            onChange={(next) => set(key, next)}
-          />
-        ) : null
-      )}
+      {sectionKey !== "hero"
+        ? commonKeys.map((key) =>
+            key in value ? (
+              <PrimitiveField
+                key={key}
+                fieldKey={key}
+                value={value[key]}
+                onChange={(next) => set(key, next)}
+              />
+            ) : null
+          )
+        : null}
 
       {sectionKey === "hero" ? (
         <HeroExtraFields value={value} set={set} />
@@ -652,111 +690,295 @@ function HeroExtraFields({
   value: JsonObject;
   set: (key: string, value: unknown) => void;
 }) {
+  const mediaType = String(value.mediaType || "IMAGE") as "IMAGE" | "VIDEO";
+  const videoUrl = String(value.videoUrl || "");
+  const mobileVideoUrl = String(value.mobileVideoUrl || "");
+
   return (
-    <>
-      <PrimitiveField fieldKey="scrollLabel" value={value.scrollLabel} onChange={(next) => set("scrollLabel", next)} />
-      {isImage(value.image) ? (
-        <ImageEditor
-          label="Current Hero Image"
-          value={value.image}
-          onChange={(next) => set("image", next)}
-        />
-      ) : null}
-      {isImage(value.logo) ? (
-        <ImageEditor
-          label="Current Logo"
-          value={value.logo}
-          onChange={(next) => set("logo", next)}
-        />
-      ) : null}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {[
-          "logoDesktopWidth",
-          "logoTabletWidth",
-          "logoMobileWidth",
-          "logoLeftMargin",
-          "logoTopMargin",
-          "logoOpacity",
-        ].map((key) => (
-          <PrimitiveField
-            key={key}
-            fieldKey={key}
-            value={value[key]}
-            onChange={(next) => set(key, next)}
-          />
-        ))}
-      </div>
-      <SelectField
-        label="Overlay"
-        value={String(value.overlay || "Balanced")}
-        options={["Light", "Balanced", "Dark"]}
-        onChange={(next) => set("overlay", next)}
-      />
-      <SelectField
-        label="Hero Media"
-        value={String(value.mediaType || "IMAGE")}
-        options={["IMAGE", "VIDEO"]}
-        onChange={(next) => set("mediaType", next)}
-      />
-      {value.mediaType === "VIDEO" ? (
-        <>
-          <MediaField
-            label="Hero Video"
-            kind="VIDEO"
-            value={{
-              assetId: String(value.videoAssetId || ""),
-              url: String(value.videoUrl || ""),
-              kind: "VIDEO",
-            }}
-            onChange={(next) => {
-              set("videoUrl", next.url);
-              set("videoAssetId", next.assetId);
-            }}
-          />
-          {isImage(value.poster) ? (
-            <ImageEditor
-              label="Video Poster"
-              value={value.poster}
-              onChange={(next) => set("poster", next)}
-            />
+    <div className="space-y-6">
+      <details open className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
+        <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
+          Hero Content
+        </summary>
+        <div className="mt-4 space-y-4">
+          <PrimitiveField fieldKey="eyebrow" value={value.eyebrow} onChange={(next) => set("eyebrow", next)} />
+          <PrimitiveField fieldKey="heading" value={value.heading} onChange={(next) => set("heading", next)} />
+          <PrimitiveField fieldKey="highlightedText" value={value.highlightedText} onChange={(next) => set("highlightedText", next)} />
+          <PrimitiveField fieldKey="subheading" value={value.subheading} onChange={(next) => set("subheading", next)} />
+          <PrimitiveField fieldKey="description" value={value.description} onChange={(next) => set("description", next)} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <PrimitiveField fieldKey="buttonText" value={value.buttonText} onChange={(next) => set("buttonText", next)} />
+            <PrimitiveField fieldKey="buttonLink" value={value.buttonLink} onChange={(next) => set("buttonLink", next)} />
+            <PrimitiveField fieldKey="secondaryButtonText" value={value.secondaryButtonText} onChange={(next) => set("secondaryButtonText", next)} />
+            <PrimitiveField fieldKey="secondaryButtonLink" value={value.secondaryButtonLink} onChange={(next) => set("secondaryButtonLink", next)} />
+          </div>
+          <PrimitiveField fieldKey="scrollLabel" value={value.scrollLabel} onChange={(next) => set("scrollLabel", next)} />
+        </div>
+      </details>
+
+      <details open className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
+        <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
+          Background Type
+        </summary>
+        <div className="mt-4 space-y-4">
+          <div className="flex gap-2">
+            {(["IMAGE", "VIDEO"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => set("mediaType", option)}
+                className={cn(
+                  "h-11 flex-1 rounded-xl border text-[10px] font-semibold tracking-[0.16em] uppercase transition",
+                  mediaType === option
+                    ? "border-[#123429] bg-[#123429] text-[#f0d999]"
+                    : "border-[#17362b]/12 bg-white text-[#42574e]"
+                )}
+              >
+                {option === "IMAGE" ? "○ Image" : "○ Video"}
+              </button>
+            ))}
+          </div>
+
+          {mediaType === "VIDEO" ? (
+            <div className="space-y-4">
+              <MediaField
+                label="Desktop / Primary Video"
+                kind="VIDEO"
+                value={{
+                  assetId: String(value.videoAssetId || ""),
+                  url: videoUrl,
+                  kind: "VIDEO",
+                }}
+                onChange={(next) => {
+                  const busted = next.url.includes("?")
+                    ? next.url
+                    : `${next.url}?v=${Date.now()}`;
+                  set("videoUrl", busted);
+                  set("videoAssetId", next.assetId);
+                  set("videoSizeBytes", next.size ?? null);
+                  set("videoWidth", next.width ?? null);
+                  set("videoHeight", next.height ?? null);
+                  set("videoDurationMs", next.durationMs ?? null);
+                  if (!value.poster || !(value.poster as EditableImage).src) {
+                    // Poster will be filled when user uploads; keep image as fallback poster candidate
+                    if (isImage(value.image) && value.image.src) {
+                      set("poster", { ...value.image, title: "Hero Video Poster" });
+                    }
+                  }
+                }}
+              />
+              {videoUrl ? (
+                <div className="overflow-hidden rounded-xl border border-[#17362b]/10 bg-black">
+                  <video
+                    key={videoUrl}
+                    src={videoUrl}
+                    className="aspect-video h-auto w-full object-cover"
+                    controls
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                  <div className="grid grid-cols-2 gap-2 border-t border-white/10 bg-[#10251e] p-3 text-[10px] text-[#ead39f] sm:grid-cols-4">
+                    <span>Status: Ready</span>
+                    <span>
+                      Size:{" "}
+                      {value.videoSizeBytes
+                        ? formatBytes(Number(value.videoSizeBytes))
+                        : "—"}
+                    </span>
+                    <span>
+                      Dims:{" "}
+                      {value.videoWidth && value.videoHeight
+                        ? `${value.videoWidth}×${value.videoHeight}`
+                        : "16:9"}
+                    </span>
+                    <span>
+                      Duration:{" "}
+                      {value.videoDurationMs
+                        ? `${Math.round(Number(value.videoDurationMs) / 1000)}s`
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+              <MediaField
+                label="Mobile Video (optional)"
+                kind="VIDEO"
+                value={{
+                  assetId: String(value.mobileVideoAssetId || ""),
+                  url: mobileVideoUrl,
+                  kind: "VIDEO",
+                }}
+                onChange={(next) => {
+                  set(
+                    "mobileVideoUrl",
+                    next.url ? `${next.url.split("?")[0]}?v=${Date.now()}` : ""
+                  );
+                  set("mobileVideoAssetId", next.assetId);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  set("videoUrl", "");
+                  set("videoAssetId", null);
+                  set("mobileVideoUrl", "");
+                  set("mobileVideoAssetId", null);
+                }}
+                className="text-[10px] font-semibold tracking-[0.14em] text-red-700 uppercase"
+              >
+                Delete Video
+              </button>
+              {isImage(value.poster) ? (
+                <ImageEditor
+                  label="Poster Image"
+                  value={value.poster}
+                  onChange={(next) => set("poster", next)}
+                />
+              ) : (
+                <MediaField
+                  label="Poster Image"
+                  kind="IMAGE"
+                  onChange={(next) =>
+                    set("poster", {
+                      assetId: next.assetId,
+                      src: `${next.url.split("?")[0]}?v=${Date.now()}`,
+                      alt: next.alt || "Hero video poster",
+                    })
+                  }
+                />
+              )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  ["videoAutoplay", "Autoplay"],
+                  ["videoLoop", "Loop"],
+                  ["videoMuted", "Muted"],
+                  ["videoPlaysInline", "Plays Inline"],
+                ].map(([key, label]) => (
+                  <ToggleField
+                    key={key}
+                    label={label}
+                    checked={value[key] !== false}
+                    onChange={(next) => set(key, next)}
+                  />
+                ))}
+              </div>
+            </div>
           ) : (
-            <MediaField
-              label="Video Poster"
-              kind="IMAGE"
-              onChange={(next) =>
-                set("poster", {
-                  assetId: next.assetId,
-                  src: next.url,
-                  alt: next.alt,
-                })
-              }
-            />
+            <div className="space-y-4">
+              {isImage(value.image) ? (
+                <ImageEditor
+                  label="Hero Image"
+                  value={value.image}
+                  onChange={(next) =>
+                    set("image", {
+                      ...next,
+                      src: next.src
+                        ? `${next.src.split("?")[0]}?v=${Date.now()}`
+                        : next.src,
+                    })
+                  }
+                />
+              ) : null}
+            </div>
           )}
-          {["videoAutoplay", "videoLoop", "videoMuted"].map((key) => (
-            <ToggleField
-              key={key}
-              label={labelFor(key)}
-              checked={value[key] !== false}
-              onChange={(next) => set(key, next)}
-            />
-          ))}
-        </>
-      ) : null}
-      <ToggleField
-        label="Show booking widget"
-        checked={value.bookingWidget !== false}
-        onChange={(next) => set("bookingWidget", next)}
-      />
-      {value.booking && typeof value.booking === "object" ? (
-        <div className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
-          <FieldLabel>Booking Widget Text</FieldLabel>
-          <ObjectFields
-            value={value.booking as JsonObject}
-            onChange={(next) => set("booking", next)}
+        </div>
+      </details>
+
+      <details className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
+        <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
+          Layout & Overlay
+        </summary>
+        <div className="mt-4 space-y-4">
+          <SelectField
+            label="Overlay Style"
+            value={String(value.overlay || "Balanced")}
+            options={["Light", "Balanced", "Dark"]}
+            onChange={(next) => set("overlay", next)}
+          />
+          <PrimitiveField
+            fieldKey="overlayOpacity"
+            value={value.overlayOpacity ?? 70}
+            onChange={(next) => set("overlayOpacity", next)}
+          />
+          <SelectField
+            label="Content Alignment"
+            value={String(value.contentAlignment || "Left")}
+            options={["Left", "Center", "Right"]}
+            onChange={(next) => set("contentAlignment", next)}
+          />
+          <SelectField
+            label="Desktop Height"
+            value={String(value.desktopHeight || "Viewport")}
+            options={["Viewport", "Tall", "Medium"]}
+            onChange={(next) => set("desktopHeight", next)}
+          />
+          <SelectField
+            label="Mobile Height"
+            value={String(value.mobileHeight || "Viewport")}
+            options={["Viewport", "Tall", "Medium"]}
+            onChange={(next) => set("mobileHeight", next)}
+          />
+          <SelectField
+            label="Animation"
+            value={String(value.animation || "KenBurns")}
+            options={["KenBurns", "Subtle", "None"]}
+            onChange={(next) => set("animation", next)}
+          />
+          <ToggleField
+            label="Show Search / Booking Box"
+            checked={value.bookingWidget !== false}
+            onChange={(next) => set("bookingWidget", next)}
           />
         </div>
+      </details>
+
+      <details className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
+        <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
+          Logo Controls
+        </summary>
+        <div className="mt-4 space-y-4">
+          {isImage(value.logo) ? (
+            <ImageEditor
+              label="Current Logo"
+              value={value.logo}
+              onChange={(next) => set("logo", next)}
+            />
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              "logoDesktopWidth",
+              "logoTabletWidth",
+              "logoMobileWidth",
+              "logoLeftMargin",
+              "logoTopMargin",
+              "logoOpacity",
+            ].map((key) => (
+              <PrimitiveField
+                key={key}
+                fieldKey={key}
+                value={value[key]}
+                onChange={(next) => set(key, next)}
+              />
+            ))}
+          </div>
+        </div>
+      </details>
+
+      {value.booking && typeof value.booking === "object" ? (
+        <details className="rounded-xl border border-[#17362b]/10 bg-[#f8f8f4] p-4">
+          <summary className="cursor-pointer text-[10px] font-semibold tracking-[0.2em] text-[#a67a30] uppercase">
+            Search Box Labels
+          </summary>
+          <div className="mt-4">
+            <ObjectFields
+              value={value.booking as JsonObject}
+              onChange={(next) => set("booking", next)}
+            />
+          </div>
+        </details>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -788,7 +1010,7 @@ function PrimitiveField({
       ? { min: 1, max: 5 }
       : fieldKey.includes("Width")
         ? { min: 40, max: 600 }
-        : fieldKey === "logoOpacity"
+        : fieldKey === "logoOpacity" || fieldKey === "overlayOpacity"
           ? { min: 0, max: 100 }
           : fieldKey.includes("Margin")
             ? { min: -500, max: 500 }
@@ -1441,6 +1663,9 @@ function SectionPreview({
   sectionKey: HomepageSectionKey;
   value: JsonObject;
 }) {
+  const isVideo =
+    sectionKey === "hero" && String(value.mediaType || "") === "VIDEO";
+  const videoUrl = String(value.videoUrl || "");
   const imageValue = isImage(value.image)
     ? value.image
     : Array.isArray(value.images) && isImage(value.images[0])
@@ -1452,7 +1677,12 @@ function SectionPreview({
     sectionKey
   );
   return (
-    <div className={cn("relative min-h-[500px]", dark ? "bg-[#10251e] text-white" : "bg-[#fbfaf5] text-[#10251e]")}>
+    <div
+      className={cn(
+        "relative min-h-[560px]",
+        dark ? "bg-[#10251e] text-white" : "bg-[#fbfaf5] text-[#10251e]"
+      )}
+    >
       {sectionKey === "hero" &&
       isImage(value.logo) &&
       value.logo.src.trim() ? (
@@ -1477,9 +1707,40 @@ function SectionPreview({
           </div>
         </div>
       ) : null}
-      {imageValue?.src ? (
-        <div className={cn("relative", sectionKey === "hero" ? "h-72" : "h-52")}>
+      {isVideo && videoUrl ? (
+        <div className="relative h-[22rem] overflow-hidden bg-black">
+          <video
+            key={videoUrl}
+            src={videoUrl}
+            className="absolute inset-0 h-full w-full object-cover"
+            autoPlay={value.videoAutoplay !== false}
+            muted={value.videoMuted !== false}
+            loop={value.videoLoop !== false}
+            playsInline
+            preload="auto"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/20" />
+          <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+            <p className="text-[8px] tracking-[0.22em] text-[#e2be72] uppercase">
+              {String(value.eyebrow || "")}
+            </p>
+            <h3 className="mt-2 font-serif text-3xl">
+              {String(value.heading || "")}
+            </h3>
+            <p className="mt-3 max-w-md text-xs text-white/75">
+              {String(value.subheading || value.description || "")}
+            </p>
+            {value.bookingWidget !== false ? (
+              <div className="mt-5 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-[9px] tracking-[0.14em] text-[#ead39f] uppercase backdrop-blur">
+                Search box · Check availability
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : imageValue?.src ? (
+        <div className={cn("relative", sectionKey === "hero" ? "h-[22rem]" : "h-52")}>
           <Image
+            key={imageValue.src}
             src={imageValue.src}
             alt={imageValue.alt}
             fill
@@ -1538,11 +1799,18 @@ function SectionPreview({
             })}
           </div>
         ) : null}
-        {value.buttonText ? (
-          <span className="mt-5 inline-block rounded-md border border-[#c4943c] px-3 py-2 text-[8px] font-semibold tracking-[0.14em] text-[#c4943c] uppercase">
-            {String(value.buttonText)}
-          </span>
-        ) : null}
+        <div className="mt-5 flex flex-wrap gap-2">
+          {value.buttonText ? (
+            <span className="mt-0 inline-block rounded-md border border-[#c4943c] px-3 py-2 text-[8px] font-semibold tracking-[0.14em] text-[#c4943c] uppercase">
+              {String(value.buttonText)}
+            </span>
+          ) : null}
+          {value.secondaryButtonText ? (
+            <span className="inline-block rounded-md border border-current/30 px-3 py-2 text-[8px] font-semibold tracking-[0.14em] uppercase opacity-80">
+              {String(value.secondaryButtonText)}
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );

@@ -179,16 +179,11 @@ export async function DELETE(request: Request, { params }: Context) {
   }
 
   if (hard) {
-    if (existing._count.placements > 0) {
-      return NextResponse.json(
-        {
-          error:
-            "Cannot permanently delete media that is still used. Reassign placements first.",
-          code: "IN_USE",
-        },
-        { status: 409 }
-      );
-    }
+    // Clear placements so deleted media can never reappear via overlays.
+    await db.mediaPlacement.updateMany({
+      where: { assetId: id },
+      data: { assetId: null },
+    });
     await db.mediaAsset.delete({ where: { id } });
     await removeMediaFile(existing.url);
     await writeAuditLog({
@@ -198,10 +193,17 @@ export async function DELETE(request: Request, { params }: Context) {
       summary: `Permanently deleted ${existing.originalName}`,
     });
     invalidate();
+    revalidatePath("/");
+    revalidatePath("/", "layout");
+    revalidatePath("/orbit/homepage");
     return NextResponse.json({ ok: true, message: "Deleted Successfully" });
   }
 
-  // Soft-delete keeps the original file on disk so Restore can reinstate it.
+  // Soft-delete: detach placements immediately so public/CMS never show it.
+  await db.mediaPlacement.updateMany({
+    where: { assetId: id },
+    data: { assetId: null },
+  });
   await db.mediaAsset.update({
     where: { id },
     data: { deletedAt: new Date() },
@@ -213,5 +215,8 @@ export async function DELETE(request: Request, { params }: Context) {
     summary: `Moved ${existing.originalName} to trash`,
   });
   invalidate();
+  revalidatePath("/");
+  revalidatePath("/", "layout");
+  revalidatePath("/orbit/homepage");
   return NextResponse.json({ ok: true, message: "Deleted Successfully" });
 }

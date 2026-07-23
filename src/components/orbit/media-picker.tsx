@@ -24,6 +24,7 @@ export type PickerAsset = {
   width: number | null;
   height: number | null;
   size: number;
+  durationMs?: number | null;
   folder: string;
   focalX?: number;
   focalY?: number;
@@ -266,6 +267,10 @@ export function MediaField({
     url: string;
     alt: string;
     kind: "IMAGE" | "VIDEO";
+    size?: number;
+    width?: number | null;
+    height?: number | null;
+    durationMs?: number | null;
   }) => void;
   kind?: "IMAGE" | "VIDEO" | "ALL";
   required?: boolean;
@@ -325,6 +330,10 @@ export function MediaField({
             url: asset.url,
             alt: asset.alt || asset.originalName,
             kind: asset.kind,
+            size: asset.size,
+            width: asset.width,
+            height: asset.height,
+            durationMs: asset.durationMs ?? null,
           })
         }
       />
