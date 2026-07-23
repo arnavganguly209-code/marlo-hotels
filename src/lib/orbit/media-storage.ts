@@ -283,10 +283,22 @@ export async function copyIntoMediaLibrary(options: {
 
 export async function ensureMediaRoot() {
   await mkdir(mediaRoot(), { recursive: true });
-  await mkdir(path.join(mediaRoot(), "general"), { recursive: true });
-  await mkdir(path.join(mediaRoot(), "hero"), { recursive: true });
-  await mkdir(path.join(mediaRoot(), "video"), { recursive: true });
-  await mkdir(path.join(mediaRoot(), "trash"), { recursive: true });
+  for (const folder of [
+    "general",
+    "hero",
+    "video",
+    "rooms",
+    "dining",
+    "spa",
+    "gallery",
+    "offers",
+    "experiences",
+    "wedding",
+    "meetings",
+    "trash",
+  ]) {
+    await mkdir(path.join(mediaRoot(), folder), { recursive: true });
+  }
 }
 
 export async function fileExists(url: string) {

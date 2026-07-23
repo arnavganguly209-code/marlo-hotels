@@ -219,7 +219,8 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       secondaryButtonLink: "/offers",
       bookingWidget: true,
       mediaType: "VIDEO",
-      videoUrl: "/videos/hero-demo.mp4",
+      videoUrl: "",
+      videoAssetId: null,
       videoAutoplay: true,
       videoLoop: true,
       videoMuted: true,
@@ -687,8 +688,28 @@ export async function getHomepageContent(): Promise<HomepageContent> {
         },
       };
     }
-    return merged;
+    return stripDemoHeroMedia(merged);
   } catch {
-    return defaults;
+    return stripDemoHeroMedia(defaults);
   }
+}
+
+/** Never serve placeholder / demo hero videos on the public site. */
+function stripDemoHeroMedia(content: HomepageContent): HomepageContent {
+  const videoUrl = content.hero.videoUrl || "";
+  const isDemo =
+    /hero-demo|sample[-_]?video|placeholder|flowers[-_]?demo|demo\.mp4/i.test(
+      videoUrl
+    );
+  if (!isDemo) return content;
+  return {
+    ...content,
+    hero: {
+      ...content.hero,
+      videoUrl: "",
+      videoAssetId: null,
+      mobileVideoUrl: "",
+      mobileVideoAssetId: null,
+    },
+  };
 }

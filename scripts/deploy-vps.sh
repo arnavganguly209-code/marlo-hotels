@@ -183,6 +183,8 @@ npx prisma generate || die "prisma generate failed"
 echo "==> prisma migrate deploy"
 if [[ -n "${DATABASE_URL:-}" ]] || grep -qE '^DATABASE_URL=.+' .env 2>/dev/null; then
   npx prisma migrate deploy || die "prisma migrate deploy failed"
+  echo "==> purge demo / placeholder media (preserve large Hero video)"
+  node --env-file=.env scripts/purge-demo-media.mjs || echo "WARN: demo media purge skipped"
 else
   echo "WARN: DATABASE_URL not set — skipping migrate (Orbit login may still work)."
 fi

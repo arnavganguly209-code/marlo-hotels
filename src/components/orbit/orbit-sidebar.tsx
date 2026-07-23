@@ -59,6 +59,14 @@ const icons: Record<string, LucideIcon> = {
   "scroll-text": ScrollText,
 };
 
+const GROUP_ORDER = ["Website", "Operations", "Platform"] as const;
+
+const GROUP_LABEL: Record<(typeof GROUP_ORDER)[number], string> = {
+  Website: "Website",
+  Operations: "Operations",
+  Platform: "Platform",
+};
+
 export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
   const pathname = usePathname() ?? "";
   const [open, setOpen] = useState(false);
@@ -101,10 +109,10 @@ export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
           Dashboard
         </Link>
 
-        {(["Content", "Operations", "Platform"] as const).map((group) => (
+        {GROUP_ORDER.map((group) => (
           <div key={group} className="mb-6">
             <p className="mb-2 px-4 text-[9px] font-semibold tracking-[0.3em] text-[#d0a654]/70 uppercase">
-              {group}
+              {GROUP_LABEL[group]}
             </p>
             <ul className="space-y-0.5">
               {orbitModules
@@ -112,7 +120,8 @@ export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
                 .map((module) => {
                   const Icon = icons[module.icon] ?? PanelsTopLeft;
                   const href = `/orbit/${module.slug}`;
-                  const active = pathname === href || pathname.startsWith(`${href}/`);
+                  const active =
+                    pathname === href || pathname.startsWith(`${href}/`);
                   return (
                     <li key={module.slug}>
                       <Link
@@ -147,7 +156,9 @@ export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
         <p className="text-[9px] tracking-[0.24em] text-white/25 uppercase">
           Orbit Enterprise
         </p>
-        <p className="mt-1 text-xs text-white/45">Marlo Hotels · Production</p>
+        <p className="mt-1 text-xs text-white/45">
+          Page-based CMS · Marlo Hotels
+        </p>
       </div>
     </div>
   );

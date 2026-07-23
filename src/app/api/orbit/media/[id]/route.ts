@@ -172,7 +172,7 @@ export async function DELETE(request: Request, { params }: Context) {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
   const { id } = await params;
-  const hard = new URL(request.url).searchParams.get("hard") === "1";
+  const hard = new URL(request.url).searchParams.get("soft") !== "1";
   const existing = await db.mediaAsset.findUnique({
     where: { id },
     include: { _count: { select: { placements: true } } },
@@ -181,7 +181,7 @@ export async function DELETE(request: Request, { params }: Context) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Detach placements + scrub homepage JSON so deleted media never flashes.
+  // Detach placements + scrub content JSON so deleted media never returns.
   await db.mediaPlacement.updateMany({
     where: { assetId: id },
     data: { assetId: null },
@@ -192,6 +192,10 @@ export async function DELETE(request: Request, { params }: Context) {
   });
 
   if (hard) {
+    // Permanent delete: DB row, file, poster, cache, placements already cleared.
+    if (existing.posterUrl) {
+      await removeMediaFile(existing.posterUrl);
+    }
     await db.mediaAsset.delete({ where: { id } });
     await removeMediaFile(existing.url);
     await writeAuditLog({
@@ -218,5 +222,9 @@ export async function DELETE(request: Request, { params }: Context) {
   revalidatePath("/", "layout");
   revalidatePath("/orbit/homepage");
   revalidateTag("homepage");
-  return NextResponse.json({ ok: true, message: "Deleted Successfully" });
+  revalidateTag("media");
+  return NextResponse.json({
+    ok: true,
+    message: hard ? "Permanently Deleted" : "Moved to Trash",
+  });
 }

@@ -12,6 +12,7 @@ import { moduleBySlug } from "@/lib/orbit/modules";
 
 const contentSchema = z.object({
   module: z.string().min(1).max(80),
+  key: z.string().min(1).max(120).optional(),
   title: z.string().min(1).max(240),
   slug: z.string().max(240).optional().nullable(),
   status: z.enum(["DRAFT", "SCHEDULED", "PUBLISHED", "ARCHIVED"]),
@@ -55,33 +56,57 @@ export async function POST(request: Request) {
   const db = getDb();
   if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
 
-  const key = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
-  const entry = await db.contentEntry.create({
-    data: {
-      module: parsed.data.module,
-      title: parsed.data.title,
-      slug: parsed.data.slug,
-      status: parsed.data.status,
-      data: parsed.data.data as Prisma.InputJsonValue,
-      seo: parsed.data.seo
-        ? (parsed.data.seo as Prisma.InputJsonValue)
-        : undefined,
-      key,
-      scheduledAt: parsed.data.scheduledAt
-        ? new Date(parsed.data.scheduledAt)
-        : null,
-      publishedAt:
-        parsed.data.status === "PUBLISHED" ? new Date() : null,
+  const key =
+    parsed.data.key || `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  const payload = {
+    module: parsed.data.module,
+    title: parsed.data.title,
+    slug: parsed.data.slug,
+    status: parsed.data.status,
+    data: parsed.data.data as Prisma.InputJsonValue,
+    seo: parsed.data.seo
+      ? (parsed.data.seo as Prisma.InputJsonValue)
+      : undefined,
+    key,
+    scheduledAt: parsed.data.scheduledAt
+      ? new Date(parsed.data.scheduledAt)
+      : null,
+    publishedAt: parsed.data.status === "PUBLISHED" ? new Date() : null,
+  };
+
+  const entry = await db.contentEntry.upsert({
+    where: {
+      module_key: { module: parsed.data.module, key },
+    },
+    create: payload,
+    update: {
+      title: payload.title,
+      slug: payload.slug,
+      status: payload.status,
+      data: payload.data,
+      seo: payload.seo,
+      scheduledAt: payload.scheduledAt,
+      publishedAt: payload.publishedAt,
     },
   });
   await writeAuditLog({
-    action: "CREATE",
+    action: parsed.data.key ? "UPDATE" : "CREATE",
     module: parsed.data.module,
     entityId: entry.id,
-    summary: `Created ${entry.title}`,
+    summary: `${parsed.data.key ? "Updated" : "Created"} ${entry.title}`,
   });
   revalidateTag("media");
+  revalidateTag("homepage");
   revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath(`/orbit/${parsed.data.module}`);
-  return NextResponse.json({ entry }, { status: 201 });
+  const publicPath =
+    parsed.data.module === "homepage"
+      ? "/"
+      : `/${parsed.data.module === "contact" ? "contact" : parsed.data.module}`;
+  revalidatePath(publicPath);
+  return NextResponse.json({
+    entry,
+    message: "Saved Successfully · Published",
+  }, { status: parsed.data.key ? 200 : 201 });
 }

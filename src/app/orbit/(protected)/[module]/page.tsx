@@ -5,6 +5,7 @@ import { MediaManager } from "@/components/orbit/media-manager";
 import {
   OperationalManager,
 } from "@/components/orbit/operational-manager";
+import { PageStudioEditor } from "@/components/orbit/page-studio-editor";
 import { PasskeySettings } from "@/components/orbit/passkey-settings";
 import { getDb } from "@/lib/db";
 import { getHomepageContent } from "@/lib/homepage-content";
@@ -13,14 +14,18 @@ import {
   type HomepageSectionKey,
 } from "@/lib/homepage-schema";
 import { isNextNavigationError, orbitLog } from "@/lib/orbit/logger";
-import { moduleBySlug } from "@/lib/orbit/modules";
+import {
+  moduleBySlug,
+  PAGE_PUBLIC_PATH,
+} from "@/lib/orbit/modules";
+import { PAGE_STUDIO_SECTIONS } from "@/lib/orbit/page-studio";
 import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ module: string }>;
-  searchParams?: Promise<{ section?: string }>;
+  searchParams?: Promise<{ section?: string; inventory?: string }>;
 };
 
 function ModuleUnavailable({ label }: { label: string }) {
@@ -385,6 +390,46 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
         ]}
         canDelete
         readOnly
+      />
+    );
+  }
+
+  const studioSections = PAGE_STUDIO_SECTIONS[slug];
+  const showInventory = (await searchParams)?.inventory === "1";
+
+  if (studioSections && !showInventory) {
+    const studioEntry = db
+      ? await db.contentEntry.findUnique({
+          where: {
+            module_key: { module: slug, key: "page-studio" },
+          },
+        })
+      : null;
+    const initialDocument =
+      studioEntry?.data && typeof studioEntry.data === "object"
+        ? (studioEntry.data as Record<
+            string,
+            {
+              enabled: boolean;
+              eyebrow: string;
+              heading: string;
+              description: string;
+              buttonText: string;
+              buttonLink: string;
+              image: { assetId?: string | null; src: string; alt: string };
+              seoTitle: string;
+              seoDescription: string;
+            }
+          >)
+        : null;
+
+    return (
+      <PageStudioEditor
+        moduleSlug={slug}
+        moduleLabel={moduleConfig.label}
+        sections={studioSections}
+        publicPath={PAGE_PUBLIC_PATH[slug] || "/"}
+        initialDocument={initialDocument}
       />
     );
   }

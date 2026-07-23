@@ -341,13 +341,14 @@ export async function PUT(request: Request) {
     });
 
     revalidateTag("media");
+    revalidateTag("homepage");
     revalidatePath("/");
     revalidatePath("/", "layout");
     revalidatePath("/orbit/homepage");
 
     return NextResponse.json({
       content: await getHomepageContent(),
-      message: "Saved Successfully",
+      message: "Saved Successfully · Published",
     });
   } catch (error) {
     return NextResponse.json(

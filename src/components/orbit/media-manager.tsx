@@ -360,20 +360,20 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
     }
   }
 
-  async function remove(ids: string[], hard = false) {
+  async function remove(ids: string[], soft = false) {
     if (!ids.length) return;
     if (
       !window.confirm(
-        hard
-          ? `Permanently delete ${ids.length} asset(s)?`
-          : `Move ${ids.length} asset(s) to trash?`
+        soft
+          ? `Move ${ids.length} asset(s) to trash?`
+          : `Permanently delete ${ids.length} asset(s)? This cannot be undone.`
       )
     ) {
       return;
     }
     const results = await Promise.all(
       ids.map((id) =>
-        fetch(`/api/orbit/media/${id}${hard ? "?hard=1" : ""}`, {
+        fetch(`/api/orbit/media/${id}${soft ? "?soft=1" : ""}`, {
           method: "DELETE",
         }).then(async (response) => ({
           id,
@@ -640,48 +640,93 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
             >
               Trash
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setPage(1);
-                setFolder("all");
-              }}
-              className={cn(
-                "rounded-lg px-3 py-2 text-[9px] font-semibold tracking-[0.13em] uppercase",
-                folder === "all"
-                  ? "bg-[#123429] text-[#e4c784]"
-                  : "bg-[#f2f3ef] text-[#64736c]"
-              )}
-            >
-              All folders
-            </button>
-            {folders.map((name) => (
+            {(
+              [
+                "all",
+                "hero",
+                "rooms",
+                "dining",
+                "spa",
+                "gallery",
+                "general",
+                "video",
+              ] as const
+            ).map((name) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => {
                   setPage(1);
                   setFolder(name);
+                  setTrash(false);
                 }}
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-3 py-2 text-[9px] font-semibold tracking-[0.13em] uppercase",
-                  folder === name
+                  folder === name && !trash
                     ? "bg-[#123429] text-[#e4c784]"
                     : "bg-[#f2f3ef] text-[#64736c]"
                 )}
               >
-                <Folder className="size-3" /> {name}
+                <Folder className="size-3" /> {name === "all" ? "All folders" : name}
               </button>
             ))}
+            {folders
+              .filter(
+                (name) =>
+                  !["hero", "rooms", "dining", "spa", "gallery", "general", "video"].includes(
+                    name
+                  )
+              )
+              .map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => {
+                    setPage(1);
+                    setFolder(name);
+                    setTrash(false);
+                  }}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-lg px-3 py-2 text-[9px] font-semibold tracking-[0.13em] uppercase",
+                    folder === name
+                      ? "bg-[#123429] text-[#e4c784]"
+                      : "bg-[#f2f3ef] text-[#64736c]"
+                  )}
+                >
+                  <Folder className="size-3" /> {name}
+                </button>
+              ))}
             {selected.length ? (
               <button
                 type="button"
-                onClick={() => remove(selected, trash)}
+                onClick={() => remove(selected)}
                 className="ml-2 flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-[9px] font-semibold tracking-[0.13em] text-red-600 uppercase"
               >
                 <Trash2 className="size-3" /> Delete {selected.length}
               </button>
             ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                void fetch("/api/orbit/media/purge-demo", { method: "POST" })
+                  .then(async (response) => {
+                    const result = (await response.json()) as {
+                      message?: string;
+                      error?: string;
+                    };
+                    if (!response.ok) {
+                      push(result.error || "Purge failed", "error");
+                      return;
+                    }
+                    push(result.message || "Demo media purged", "success");
+                    void load();
+                  })
+                  .catch(() => push("Purge failed", "error"));
+              }}
+              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[9px] font-semibold tracking-[0.13em] text-amber-900 uppercase"
+            >
+              Purge Demo Media
+            </button>
           </div>
         </div>
 
@@ -850,7 +895,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
                           )}
                           <button
                             type="button"
-                            onClick={() => remove([asset.id], trash)}
+                            onClick={() => remove([asset.id])}
                             className="rounded-md bg-red-50 px-2 py-1 text-[9px] font-semibold text-red-600 uppercase"
                           >
                             Delete
@@ -986,7 +1031,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
                       )}
                       <button
                         type="button"
-                        onClick={() => remove([asset.id], trash)}
+                        onClick={() => remove([asset.id])}
                         aria-label="Delete media"
                         className="grid size-8 place-items-center rounded-lg bg-[#0a1813]/80 text-white backdrop-blur-md hover:text-red-300"
                       >

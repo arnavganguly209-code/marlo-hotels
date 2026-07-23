@@ -353,14 +353,14 @@ export function HomepageVisualEditor({
       <div className="flex flex-col gap-4 border-b border-[var(--orbit-border)] bg-[var(--orbit-bg-elevated)] px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between xl:px-8">
         <div>
           <p className="text-[10px] font-semibold tracking-[0.28em] text-[var(--orbit-gold-deep)] uppercase">
-            Visual CMS Studio
+            Website · Homepage
           </p>
           <h1 className="font-display mt-1 text-3xl font-semibold text-[var(--orbit-ink)] xl:text-4xl">
             Homepage
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-[var(--orbit-muted)]">
-            Section cards, full-width editing, and live preview — Save & Publish
-            updates production instantly.
+            Homepage sections only — Hero, About, previews and CTAs. Other
+            website pages have their own editors in the sidebar.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

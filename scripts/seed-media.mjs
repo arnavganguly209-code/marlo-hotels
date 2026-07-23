@@ -183,25 +183,11 @@ async function importRemote(url, originalName, folder, alt, title) {
   });
 }
 
-const REMOTE_PLACEMENTS = [
-  ["home.about.primary", "Homepage About — Primary", "https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=1600&auto=format&fit=crop", "Marlo Hotels architecture rising above the gardens"],
-  ["home.about.secondary", "Homepage About — Secondary", "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1200&auto=format&fit=crop", "The infinity pool at first light"],
-  ["home.wellness.primary", "Homepage Wellness — Primary", "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1600&auto=format&fit=crop", "Spa treatment room at Marlo Hotels"],
-  ["home.wellness.secondary", "Homepage Wellness — Secondary", "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=1200&auto=format&fit=crop", "Wellness amenities"],
-  ["home.pool", "Homepage Pool Banner", "https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=2400&auto=format&fit=crop", "Infinity pool overlooking the valley"],
-  ["home.events.primary", "Homepage Events — Primary", "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1600&auto=format&fit=crop", "Wedding celebration at Marlo"],
-  ["home.events.secondary", "Homepage Events — Secondary", "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1600&auto=format&fit=crop", "Meetings and conferences"],
-  ["page.rooms.hero", "Rooms Page Hero", "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=2400&auto=format&fit=crop", "A Marlo guest room bathed in morning light"],
-  ["page.dining.hero", "Dining Page Hero", "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=2400&auto=format&fit=crop", "Fine dining at Marlo Hotels"],
-  ["page.spa.hero", "Spa Page Hero", "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=2400&auto=format&fit=crop", "Spa sanctuary at Marlo Hotels"],
-  ["page.spa.body", "Spa Page Body", "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1600&auto=format&fit=crop", "Spa treatment detail"],
-  ["page.experiences.hero", "Experiences Page Hero", "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2400&auto=format&fit=crop", "Experiences around Marlo Hotels"],
-  ["page.gallery.hero", "Gallery Page Hero", "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2400&auto=format&fit=crop", "Gallery of Marlo Hotels"],
-  ["page.offers.hero", "Offers Page Hero", "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=2400&auto=format&fit=crop", "Exclusive offers at Marlo Hotels"],
-  ["page.blog.hero", "Blog Page Hero", "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=2400&auto=format&fit=crop", "Journal and stories from Marlo"],
-  ["page.contact.hero", "Contact Page Hero", "https://images.unsplash.com/photo-1423666639041-f56000c27a9a?q=80&w=2400&auto=format&fit=crop", "Contact Marlo Hotels"],
-  ["page.booking.hero", "Booking Page Hero", "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=2400&auto=format&fit=crop", "Book your stay at Marlo Hotels"],
-];
+const REMOTE_PLACEMENTS = [];
+
+console.log(
+  "seed-media: REMOTE_PLACEMENTS disabled — Orbit starts empty of demo Unsplash assets."
+);
 
 async function findHeroSource() {
   const candidates = [
