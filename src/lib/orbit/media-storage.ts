@@ -16,6 +16,7 @@ export const IMAGE_MIME_TYPES = new Set([
   "image/png",
   "image/webp",
   "image/avif",
+  "image/svg+xml",
 ]);
 
 export const VIDEO_MIME_TYPES = new Set([
@@ -26,7 +27,7 @@ export const VIDEO_MIME_TYPES = new Set([
 
 export function maxImageBytes() {
   return (
-    Number(process.env.ORBIT_MAX_IMAGE_BYTES) || 25 * 1024 * 1024
+    Number(process.env.ORBIT_MAX_IMAGE_BYTES) || 20 * 1024 * 1024
   );
 }
 
@@ -72,6 +73,7 @@ export function extensionForMime(mimeType: string, originalName: string) {
     "image/png": ".png",
     "image/webp": ".webp",
     "image/avif": ".avif",
+    "image/svg+xml": ".svg",
     "video/mp4": ".mp4",
     "video/webm": ".webm",
     "video/quicktime": ".mov",
@@ -79,10 +81,43 @@ export function extensionForMime(mimeType: string, originalName: string) {
   return map[mimeType] || ".bin";
 }
 
+export function normalizeUploadMime(
+  mimeType: string | null | undefined,
+  originalName: string
+) {
+  const trimmed = String(mimeType || "").trim().toLowerCase();
+  if (trimmed && trimmed !== "application/octet-stream") return trimmed;
+  const ext = path.extname(originalName).toLowerCase();
+  const byExt: Record<string, string> = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".avif": "image/avif",
+    ".svg": "image/svg+xml",
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+    ".mov": "video/quicktime",
+  };
+  return byExt[ext] || trimmed;
+}
+
 export function kindForMime(mimeType: string): "IMAGE" | "VIDEO" | null {
   if (IMAGE_MIME_TYPES.has(mimeType)) return "IMAGE";
   if (VIDEO_MIME_TYPES.has(mimeType)) return "VIDEO";
   return null;
+}
+
+function hashedFilename(originalName: string, mimeType: string, checksum: string) {
+  const ext = extensionForMime(mimeType, originalName);
+  const stem = path
+    .basename(originalName, path.extname(originalName))
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  const hash = checksum.slice(0, 5);
+  return `${stem || "media"}-${hash}${ext}`;
 }
 
 export function checksumBuffer(buffer: Buffer) {
@@ -126,7 +161,8 @@ export async function storeOriginalUpload(options: {
   originalName: string;
   folder?: string | null;
 }): Promise<StoredMediaFile> {
-  const kind = kindForMime(options.mimeType);
+  const mimeType = normalizeUploadMime(options.mimeType, options.originalName);
+  const kind = kindForMime(mimeType);
   if (!kind) throw new Error("Unsupported file type");
 
   const max =
@@ -134,14 +170,15 @@ export async function storeOriginalUpload(options: {
   if (options.buffer.byteLength > max) {
     throw new Error(
       kind === "IMAGE"
-        ? `Maximum image size exceeded (${Math.round(max / 1024 / 1024)} MB).`
-        : `Maximum video size exceeded (${Math.round(max / 1024 / 1024)} MB).`
+        ? `File too large — maximum image size is ${Math.round(max / 1024 / 1024)} MB.`
+        : `File too large — maximum video size is ${Math.round(max / 1024 / 1024)} MB.`
     );
   }
 
   let width: number | null = null;
   let height: number | null = null;
-  if (kind === "IMAGE") {
+  const isSvg = mimeType === "image/svg+xml";
+  if (kind === "IMAGE" && !isSvg) {
     try {
       const dims = await probeImage(options.buffer);
       width = dims.width;
@@ -152,26 +189,57 @@ export async function storeOriginalUpload(options: {
   }
 
   const folder = safeFolder(options.folder);
-  const ext = extensionForMime(options.mimeType, options.originalName);
-  const filename = `${Date.now()}-${randomUUID().slice(0, 10)}${ext}`;
+  const checksum = checksumBuffer(options.buffer);
+  const filename = hashedFilename(options.originalName, mimeType, checksum);
   const destinationDir = path.join(mediaRoot(), folder);
   await mkdir(destinationDir, { recursive: true });
   const absolutePath = path.join(destinationDir, filename);
   const tempPath = `${absolutePath}.tmp`;
-  await writeFile(tempPath, options.buffer, { flag: "wx" });
-  await rename(tempPath, absolutePath);
+  try {
+    await writeFile(tempPath, options.buffer, { flag: "wx" });
+    await rename(tempPath, absolutePath);
+  } catch (error) {
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code?: string }).code || "")
+        : "";
+    if (code === "ENOSPC") throw new Error("Disk full — could not store media.");
+    if (code === "EACCES" || code === "EPERM") {
+      throw new Error("Storage permission denied — could not store media.");
+    }
+    // Collision on hashed name is extremely unlikely; fall back to uuid name.
+    const fallback = `${Date.now()}-${randomUUID().slice(0, 10)}${extensionForMime(
+      mimeType,
+      options.originalName
+    )}`;
+    const fallbackPath = path.join(destinationDir, fallback);
+    await writeFile(fallbackPath, options.buffer);
+    return {
+      filename: fallback,
+      originalName: options.originalName.slice(0, 240),
+      url: publicMediaUrl(folder, fallback),
+      mimeType,
+      kind,
+      size: options.buffer.byteLength,
+      width,
+      height,
+      durationMs: null,
+      checksum,
+      absolutePath: fallbackPath,
+    };
+  }
 
   return {
     filename,
     originalName: options.originalName.slice(0, 240),
     url: publicMediaUrl(folder, filename),
-    mimeType: options.mimeType,
+    mimeType,
     kind,
     size: options.buffer.byteLength,
     width,
     height,
     durationMs: null,
-    checksum: checksumBuffer(options.buffer),
+    checksum,
     absolutePath,
   };
 }
@@ -295,6 +363,10 @@ export async function ensureMediaRoot() {
     "experiences",
     "wedding",
     "meetings",
+    "blog",
+    "about",
+    "footer",
+    "payments",
     "trash",
   ]) {
     await mkdir(path.join(mediaRoot(), folder), { recursive: true });

@@ -13,6 +13,7 @@ import {
   kindForMime,
   maxImageBytes,
   maxVideoBytes,
+  normalizeUploadMime,
   removeMediaFile,
   storeOriginalUpload,
   VIDEO_MIME_TYPES,
@@ -260,11 +261,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const kind = kindForMime(file.type);
+  const mimeType = normalizeUploadMime(file.type, file.name);
+  const kind = kindForMime(mimeType);
   if (!kind) {
     return NextResponse.json(
       {
-        error: "Unsupported File. Use JPG, PNG, WebP, AVIF, MP4 or WebM.",
+        error:
+          "Unsupported format. Use PNG, JPG, WEBP, AVIF, SVG, MP4 or WebM.",
         code: "UNSUPPORTED_FILE",
       },
       { status: 400 }
@@ -275,7 +278,7 @@ export async function POST(request: Request) {
   if (file.size > max) {
     return NextResponse.json(
       {
-        error: `Maximum Size Exceeded (${Math.round(max / 1024 / 1024)} MB).`,
+        error: `File too large — maximum ${kind === "IMAGE" ? "image" : "video"} size is ${Math.round(max / 1024 / 1024)} MB.`,
         code: "MAX_SIZE",
       },
       { status: 400 }
@@ -287,18 +290,21 @@ export async function POST(request: Request) {
   try {
     stored = await storeOriginalUpload({
       buffer: input,
-      mimeType: file.type,
+      mimeType,
       originalName: file.name,
       folder: String(form.get("folder") || "general"),
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Upload Failed",
-        code: "SERVER_ERROR",
-      },
-      { status: 400 }
-    );
+    const message =
+      error instanceof Error ? error.message : "Upload Failed";
+    const code = /permission/i.test(message)
+      ? "STORAGE_PERMISSION"
+      : /disk full/i.test(message)
+        ? "DISK_FULL"
+        : /too large/i.test(message)
+          ? "MAX_SIZE"
+          : "SERVER_ERROR";
+    return NextResponse.json({ error: message, code }, { status: 400 });
   }
 
   const duplicate = await db.mediaAsset.findFirst({

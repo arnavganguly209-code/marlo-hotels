@@ -8,6 +8,7 @@ import {
 import { PageStudioEditor } from "@/components/orbit/page-studio-editor";
 import { PasskeySettings } from "@/components/orbit/passkey-settings";
 import { RoomsStudioEditor } from "@/components/orbit/rooms-studio-editor";
+import { SiteSettingsStudio } from "@/components/orbit/site-settings-studio";
 import { getDb } from "@/lib/db";
 import { getOrbitRoomEntries } from "@/content/rooms";
 import { getHomepageContent } from "@/lib/homepage-content";
@@ -22,6 +23,7 @@ import {
 } from "@/lib/orbit/modules";
 import { PAGE_STUDIO_SECTIONS, type StudioSectionData } from "@/lib/orbit/page-studio";
 import { getStudioDefaults } from "@/lib/orbit/page-studio-defaults";
+import { getPaymentLogoSettings } from "@/lib/site-settings";
 import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -400,6 +402,37 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
   if (slug === "rooms") {
     const roomEntries = await getOrbitRoomEntries();
     return <RoomsStudioEditor initialEntries={roomEntries} />;
+  }
+
+  if (slug === "site-settings") {
+    const entries = db
+      ? await db.contentEntry.findMany({
+          where: {
+            module: slug,
+            NOT: { key: "payment-methods" },
+          },
+          orderBy: { updatedAt: "desc" },
+        })
+      : [];
+    const payment = await getPaymentLogoSettings();
+    return (
+      <SiteSettingsStudio
+        module={moduleConfig}
+        paymentMarks={payment.marks}
+        initialEntries={entries.map((entry) => ({
+          id: entry.id,
+          module: entry.module,
+          key: entry.key,
+          title: entry.title,
+          slug: entry.slug,
+          status: entry.status,
+          data: entry.data as Record<string, unknown>,
+          seo: entry.seo as Record<string, unknown> | null,
+          scheduledAt: entry.scheduledAt?.toISOString() ?? null,
+          updatedAt: entry.updatedAt.toISOString(),
+        }))}
+      />
+    );
   }
 
   const studioSections = PAGE_STUDIO_SECTIONS[slug];

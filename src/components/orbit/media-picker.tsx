@@ -40,6 +40,7 @@ type MediaPickerProps = {
   onSelect: (asset: PickerAsset) => void;
   kind?: "IMAGE" | "VIDEO" | "ALL";
   title?: string;
+  folder?: string;
 };
 
 export function MediaPicker({
@@ -48,6 +49,7 @@ export function MediaPicker({
   onSelect,
   kind = "ALL",
   title = "Select media",
+  folder = "general",
 }: MediaPickerProps) {
   const { push } = useToast();
   const [assets, setAssets] = useState<PickerAsset[]>([]);
@@ -79,12 +81,30 @@ export function MediaPicker({
   }, [open, load]);
 
   function uploadImage(file: File) {
+    const maxBytes = 20 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      push("File too large — maximum image size is 20 MB.", "error");
+      return;
+    }
+    const allowed = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/avif",
+      "image/svg+xml",
+    ];
+    const isSvg = /\.svg$/i.test(file.name) || file.type === "image/svg+xml";
+    if (!allowed.includes(file.type) && !isSvg) {
+      push("Unsupported format. Use PNG, JPG, WEBP, AVIF or SVG.", "error");
+      return;
+    }
+
     setUploading(true);
     setProgress(0);
     push("Uploading…", "info");
     const body = new FormData();
     body.set("file", file);
-    body.set("folder", "general");
+    body.set("folder", folder || "general");
     body.set("alt", file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " "));
     const xhr = new XMLHttpRequest();
     xhrRef.current = xhr;
@@ -101,24 +121,40 @@ export function MediaPicker({
         const result = JSON.parse(xhr.responseText) as {
           asset?: PickerAsset;
           error?: string;
+          code?: string;
         };
         if (xhr.status >= 200 && xhr.status < 300 && result.asset) {
-          push("Upload Successful", "success");
+          setProgress(100);
+          push("Upload Complete", "success");
           setAssets((current) => [result.asset!, ...current]);
           onSelect(result.asset);
           onClose();
         } else {
-          push(result.error || "Upload Failed", "error");
+          push(
+            result.error ||
+              (xhr.status === 413
+                ? "File too large"
+                : xhr.status === 403
+                  ? "Storage permission denied"
+                  : "Upload Failed"),
+            "error"
+          );
         }
       } catch {
-        push("Server Error", "error");
+        push("API validation failed — invalid server response.", "error");
       }
     };
     xhr.onerror = () => {
       setUploading(false);
       xhrRef.current = null;
-      push("Network Error", "error");
+      push("Network Error — connection lost. Please try again.", "error");
     };
+    xhr.ontimeout = () => {
+      setUploading(false);
+      xhrRef.current = null;
+      push("Network timeout — upload did not finish.", "error");
+    };
+    xhr.timeout = 120_000;
     xhr.send(body);
   }
 
@@ -191,8 +227,8 @@ export function MediaPicker({
               kind === "VIDEO"
                 ? "video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
                 : kind === "IMAGE"
-                  ? "image/jpeg,image/png,image/webp,image/avif"
-                  : "image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
+                  ? "image/jpeg,image/png,image/webp,image/avif,image/svg+xml,.svg"
+                  : "image/jpeg,image/png,image/webp,image/avif,image/svg+xml,.svg,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
             }
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -200,6 +236,20 @@ export function MediaPicker({
               event.target.value = "";
             }}
           />
+          {uploading ? (
+            <div className="w-full basis-full">
+              <div className="h-2 overflow-hidden rounded-full bg-[#e5ebe7]">
+                <div
+                  className="h-full rounded-full bg-[#c4943c] transition-[width] duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="mt-1.5 text-[10px] font-semibold tracking-[0.14em] text-[#53675e] uppercase">
+                Uploading… {progress}%
+                {progress >= 100 ? " · Upload Complete" : ""}
+              </p>
+            </div>
+          ) : null}
           {uploading ? (
             <button
               type="button"
@@ -303,7 +353,9 @@ export function MediaField({
   label,
   value,
   onChange,
+  onClear,
   kind = "IMAGE",
+  folder = "general",
   required,
   help,
 }: {
@@ -324,7 +376,9 @@ export function MediaField({
     height?: number | null;
     durationMs?: number | null;
   }) => void;
+  onClear?: () => void;
   kind?: "IMAGE" | "VIDEO" | "ALL";
+  folder?: string;
   required?: boolean;
   help?: string;
 }) {
@@ -349,12 +403,11 @@ export function MediaField({
                 <Video className="size-6" />
               </div>
             ) : (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={value.url}
                 alt={value.alt || label}
-                fill
-                className="object-cover"
-                unoptimized={value.url.startsWith("/media/")}
+                className="h-full w-full object-contain p-1"
               />
             )
           ) : (
@@ -363,23 +416,35 @@ export function MediaField({
             </div>
           )}
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-[#294138]">
-            {value?.url ? "Replace media" : "Choose from Media Library"}
+            {value?.url ? "Replace media" : "Upload / Choose from Library"}
           </p>
           <p className="mt-1 truncate text-xs text-[#7a8781]">
             {value?.url || "No media selected"}
           </p>
         </div>
       </button>
+      {value?.url && onClear ? (
+        <button
+          type="button"
+          onClick={onClear}
+          className="mt-2 text-[10px] font-semibold tracking-[0.14em] text-red-700 uppercase"
+        >
+          Delete / Clear
+        </button>
+      ) : null}
       <MediaPicker
         open={open}
         onClose={() => setOpen(false)}
         kind={kind}
+        folder={folder}
         onSelect={(asset) =>
           onChange({
             assetId: asset.id,
-            url: asset.url,
+            url: asset.url.includes("?")
+              ? asset.url
+              : `${asset.url}?v=${Date.now()}`,
             alt: asset.alt || asset.originalName,
             kind: asset.kind,
             size: asset.size,

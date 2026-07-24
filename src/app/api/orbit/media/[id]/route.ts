@@ -8,7 +8,10 @@ import {
   writeAuditLog,
 } from "@/lib/orbit/auth";
 import { removeMediaFile } from "@/lib/orbit/media-storage";
-import { scrubDeletedMediaFromContent } from "@/lib/orbit/scrub-media-refs";
+import {
+  cleanupUnreferencedMedia,
+  scrubDeletedMediaFromContent,
+} from "@/lib/orbit/scrub-media-refs";
 
 const updateSchema = z.object({
   alt: z.string().max(500).optional(),
@@ -37,8 +40,26 @@ async function authorized(request: Request) {
 
 function invalidate() {
   revalidateTag("media");
+  revalidateTag("homepage");
   revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/orbit/media-library");
+  revalidatePath("/orbit/homepage");
+  revalidatePath("/orbit/site-settings");
+  for (const path of [
+    "/rooms",
+    "/dining",
+    "/spa",
+    "/gallery",
+    "/offers",
+    "/experiences",
+    "/wedding",
+    "/meetings",
+    "/blog",
+    "/about",
+  ]) {
+    revalidatePath(path);
+  }
 }
 
 export async function GET(_request: Request, { params }: Context) {
@@ -84,7 +105,7 @@ export async function PATCH(request: Request, { params }: Context) {
   const parsed = updateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Validation Error", code: "VALIDATION_ERROR" },
+      { error: "API validation failed", code: "VALIDATION_ERROR" },
       { status: 400 }
     );
   }
@@ -175,13 +196,17 @@ export async function DELETE(request: Request, { params }: Context) {
   const hard = new URL(request.url).searchParams.get("soft") !== "1";
   const existing = await db.mediaAsset.findUnique({
     where: { id },
-    include: { _count: { select: { placements: true } } },
+    include: {
+      versions: true,
+      _count: { select: { placements: true } },
+    },
   });
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Detach placements + scrub content JSON so deleted media never returns.
+  const versionUrls = existing.versions.map((version) => version.url);
+
   await db.mediaPlacement.updateMany({
     where: { assetId: id },
     data: { assetId: null },
@@ -189,21 +214,26 @@ export async function DELETE(request: Request, { params }: Context) {
   await scrubDeletedMediaFromContent({
     assetId: id,
     url: existing.url,
+    extraUrls: versionUrls,
   });
 
   if (hard) {
-    // Permanent delete: DB row, file, poster, cache, placements already cleared.
+    for (const url of new Set([existing.url, ...versionUrls])) {
+      await removeMediaFile(url);
+    }
     if (existing.posterUrl) {
       await removeMediaFile(existing.posterUrl);
     }
     await db.mediaAsset.delete({ where: { id } });
-    await removeMediaFile(existing.url);
     await writeAuditLog({
       action: "DELETE_MEDIA_HARD",
       module: "media-library",
       entityId: id,
       summary: `Permanently deleted ${existing.originalName}`,
     });
+    await cleanupUnreferencedMedia({ excludeIds: [id], limit: 50 }).catch(
+      () => undefined
+    );
   } else {
     await db.mediaAsset.update({
       where: { id },
@@ -218,13 +248,8 @@ export async function DELETE(request: Request, { params }: Context) {
   }
 
   invalidate();
-  revalidatePath("/");
-  revalidatePath("/", "layout");
-  revalidatePath("/orbit/homepage");
-  revalidateTag("homepage");
-  revalidateTag("media");
   return NextResponse.json({
     ok: true,
-    message: hard ? "Permanently Deleted" : "Moved to Trash",
+    message: hard ? "Media deleted successfully." : "Moved to Trash",
   });
 }

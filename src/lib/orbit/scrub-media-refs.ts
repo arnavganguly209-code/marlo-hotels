@@ -1,6 +1,8 @@
 import "server-only";
 
 import { getDb } from "@/lib/db";
+import { removeMediaFile } from "@/lib/orbit/media-storage";
+import { writeAuditLog } from "@/lib/orbit/auth";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -8,7 +10,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * Recursively clear image/video references that point at a deleted media asset
- * so homepage JSON never keeps stale URLs after delete.
+ * so content JSON never keeps stale URLs after delete.
  */
 export function scrubMediaRefsInJson(
   value: unknown,
@@ -56,6 +58,11 @@ export function scrubMediaRefsInJson(
       "videoUrl",
       "mobileVideoUrl",
       "posterUrl",
+      "logoUrl",
+      "footerLogoUrl",
+      "faviconUrl",
+      "coverUrl",
+      "imageUrl",
     ] as const) {
       const raw = next[key];
       if (typeof raw === "string" && urlSet.has(raw.split("?")[0])) {
@@ -83,28 +90,25 @@ export function scrubMediaRefsInJson(
   return { next: visit(value), changed };
 }
 
-/** Scrub deleted asset from homepage visual-editor (+ legacy hero) content entries. */
+/** Scrub deleted asset from every content entry across Orbit modules. */
 export async function scrubDeletedMediaFromContent(options: {
   assetId: string;
   url: string;
+  extraUrls?: string[];
 }) {
   const db = getDb();
   if (!db) return { scrubbed: 0 };
 
   const entries = await db.contentEntry.findMany({
-    where: {
-      OR: [
-        { module: "homepage", key: "visual-editor" },
-        { module: "homepage", key: "hero" },
-      ],
-    },
+    select: { id: true, data: true, module: true, key: true },
   });
 
+  const urls = [options.url, ...(options.extraUrls || [])];
   let scrubbed = 0;
   for (const entry of entries) {
     const { next, changed } = scrubMediaRefsInJson(entry.data, {
       assetId: options.assetId,
-      urls: [options.url],
+      urls,
     });
     if (!changed) continue;
     await db.contentEntry.update({
@@ -118,4 +122,71 @@ export async function scrubDeletedMediaFromContent(options: {
   }
 
   return { scrubbed };
+}
+
+function contentReferencesAsset(
+  data: unknown,
+  assetId: string,
+  url: string
+): boolean {
+  const raw = JSON.stringify(data || {});
+  const bare = url.split("?")[0];
+  return raw.includes(assetId) || (bare ? raw.includes(bare) : false);
+}
+
+/**
+ * Permanently remove media assets that are no longer referenced by placements
+ * or any content entry JSON.
+ */
+export async function cleanupUnreferencedMedia(options?: {
+  excludeIds?: string[];
+  limit?: number;
+}) {
+  const db = getDb();
+  if (!db) return { removed: 0, ids: [] as string[] };
+
+  const candidates = await db.mediaAsset.findMany({
+    where: {
+      deletedAt: null,
+      placements: { none: {} },
+      ...(options?.excludeIds?.length
+        ? { id: { notIn: options.excludeIds } }
+        : {}),
+    },
+    take: options?.limit ?? 200,
+    include: { versions: true },
+  });
+
+  if (!candidates.length) return { removed: 0, ids: [] as string[] };
+
+  const entries = await db.contentEntry.findMany({
+    select: { data: true },
+  });
+
+  const removedIds: string[] = [];
+  for (const asset of candidates) {
+    const referenced = entries.some((entry) =>
+      contentReferencesAsset(entry.data, asset.id, asset.url)
+    );
+    if (referenced) continue;
+
+    for (const version of asset.versions) {
+      await removeMediaFile(version.url);
+    }
+    if (asset.posterUrl) await removeMediaFile(asset.posterUrl);
+    await removeMediaFile(asset.url);
+    await db.mediaAsset.delete({ where: { id: asset.id } }).catch(() => null);
+    removedIds.push(asset.id);
+  }
+
+  if (removedIds.length) {
+    await writeAuditLog({
+      action: "CLEANUP_UNREFERENCED_MEDIA",
+      module: "media-library",
+      summary: `Removed ${removedIds.length} unreferenced media asset(s)`,
+      metadata: { ids: removedIds },
+    });
+  }
+
+  return { removed: removedIds.length, ids: removedIds };
 }

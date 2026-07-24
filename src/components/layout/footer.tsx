@@ -9,6 +9,7 @@ import {
   YoutubeIcon,
 } from "@/components/shared/social-icons";
 import { PaymentMarks } from "@/components/shared/payment-marks";
+import type { PaymentLogoMark } from "@/components/shared/payment-marks";
 import type {
   FooterCtaEditorContent,
   FooterEditorContent,
@@ -33,10 +34,12 @@ export function Footer({
   logoUrl,
   content,
   ctaContent,
+  paymentLogos,
 }: {
   logoUrl?: string;
   content?: FooterEditorContent;
   ctaContent?: FooterCtaEditorContent;
+  paymentLogos?: PaymentLogoMark[];
 }) {
   if (content && !content.enabled) return null;
 
@@ -173,7 +176,7 @@ export function Footer({
               </span>
             </li>
           </ul>
-          <PaymentMarks className="mt-6 flex flex-wrap items-center gap-2" />
+          <PaymentMarks logos={paymentLogos} />
         </div>
       </div>
 

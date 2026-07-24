@@ -195,8 +195,16 @@ export const orbitModules: OrbitModule[] = [
     singular: "setting",
     icon: "settings-2",
     group: "Website",
-    description: "Global brand, contact, social, map and booking settings.",
-    capabilities: ["Brand", "Contact", "Social", "WhatsApp", "Booking URL"],
+    description:
+      "Global brand, payment logos, contact, social, map and booking settings.",
+    capabilities: [
+      "Payment Methods",
+      "Brand",
+      "Contact",
+      "Social",
+      "WhatsApp",
+      "Booking URL",
+    ],
   },
   {
     slug: "reviews",

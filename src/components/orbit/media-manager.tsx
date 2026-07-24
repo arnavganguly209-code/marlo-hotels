@@ -270,6 +270,18 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
   }
 
   function uploadViaXhr(jobId: string, file: File, alt: string) {
+    const isSvg = /\.svg$/i.test(file.name) || file.type === "image/svg+xml";
+    if (
+      file.type.startsWith("image/") ||
+      isSvg ||
+      /\.(jpe?g|png|webp|avif)$/i.test(file.name)
+    ) {
+      const maxBytes = 20 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        failJob(jobId, "File too large — maximum image size is 20 MB.");
+        return;
+      }
+    }
     const body = new FormData();
     body.set("file", file);
     body.set("folder", file.type.startsWith("video/") ? "video" : "general");
@@ -277,6 +289,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
     const xhr = new XMLHttpRequest();
     updateJob(jobId, { xhr });
     xhr.open("POST", "/api/orbit/media");
+    xhr.timeout = 120_000;
     xhr.upload.onprogress = (event) => {
       if (!event.lengthComputable) return;
       updateJob(jobId, {
@@ -292,7 +305,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
           message?: string;
         };
         if (xhr.status >= 200 && xhr.status < 300 && result.asset) {
-          finishJob(jobId, result.asset, result.message);
+          finishJob(jobId, result.asset, result.message || "Upload Complete");
           if (result.duplicate) {
             push(
               `Duplicate detection: similar to “${result.duplicate.originalName}”`,
@@ -300,13 +313,24 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
             );
           }
         } else {
-          failJob(jobId, result.error || "Upload Failed");
+          failJob(
+            jobId,
+            result.error ||
+              (xhr.status === 413
+                ? "File too large"
+                : xhr.status === 403
+                  ? "Storage permission denied"
+                  : "API validation failed")
+          );
         }
       } catch {
-        failJob(jobId, "Server Error");
+        failJob(jobId, "API validation failed — invalid server response.");
       }
     };
-    xhr.onerror = () => failJob(jobId, "Network Error");
+    xhr.onerror = () =>
+      failJob(jobId, "Network Error — connection lost. Please try again.");
+    xhr.ontimeout = () =>
+      failJob(jobId, "Network timeout — upload did not finish.");
     xhr.onabort = () => updateJob(jobId, { status: "cancelled" });
     xhr.send(body);
   }
@@ -366,7 +390,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
       !window.confirm(
         soft
           ? `Move ${ids.length} asset(s) to trash?`
-          : `Permanently delete ${ids.length} asset(s)? This cannot be undone.`
+          : "Delete permanently?\n\nCancel | Delete"
       )
     ) {
       return;
@@ -387,14 +411,28 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
     );
     const removed = results.filter((item) => item.ok);
     if (removed.length) {
-      push(removed[0]?.body.message || "Deleted Successfully", "success");
+      push(
+        removed[0]?.body.message || "Media deleted successfully.",
+        "success"
+      );
       setAssets((current) =>
         current.filter((asset) => !removed.some((item) => item.id === asset.id))
       );
       setSelected([]);
+      setEditing((current) =>
+        current && removed.some((item) => item.id === current.id)
+          ? null
+          : current
+      );
     }
     const failed = results.find((item) => !item.ok);
-    if (failed) push(failed.body.error || "Server Error", "error");
+    if (failed) {
+      push(
+        failed.body.error ||
+          "Delete failed — media may still be locked or unreachable.",
+        "error"
+      );
+    }
   }
 
   async function restore(id: string) {
@@ -526,7 +564,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
         type="file"
         multiple
         hidden
-        accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
+        accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml,.svg,video/mp4,video/webm"
         onChange={(event) => {
           if (event.target.files?.length) enqueueFiles(event.target.files);
           event.target.value = "";
@@ -708,6 +746,30 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
             <button
               type="button"
               onClick={() => {
+                void fetch("/api/orbit/media/cleanup", { method: "POST" })
+                  .then(async (response) => {
+                    const result = (await response.json()) as {
+                      message?: string;
+                      error?: string;
+                    };
+                    if (!response.ok) {
+                      push(result.error || "Cleanup failed", "error");
+                      return;
+                    }
+                    push(result.message || "Cleanup complete", "success");
+                    void load();
+                  })
+                  .catch(() =>
+                    push("Network Error — cleanup failed.", "error")
+                  );
+              }}
+              className="rounded-lg border border-[#17362b]/15 bg-white px-3 py-2 text-[9px] font-semibold tracking-[0.13em] text-[#53675e] uppercase"
+            >
+              Cleanup Unused
+            </button>
+            <button
+              type="button"
+              onClick={() => {
                 void fetch("/api/orbit/media/purge-demo", { method: "POST" })
                   .then(async (response) => {
                     const result = (await response.json()) as {
@@ -759,11 +821,18 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
                       style={{ width: `${job.progress}%` }}
                     />
                   </div>
-                  <p className="mt-1 text-[10px] text-[#7a8781]">
+                  <p
+                    className={cn(
+                      "mt-1 text-[10px]",
+                      job.status === "error"
+                        ? "rounded-md border border-red-200 bg-red-50 px-2 py-1 text-red-800"
+                        : "text-[#7a8781]"
+                    )}
+                  >
                     {job.status === "uploading"
-                      ? `${job.progress}%`
+                      ? `Uploading… ${job.progress}%`
                       : job.status === "done"
-                        ? "Upload Successful"
+                        ? "Upload Complete"
                         : job.error || job.status}
                   </p>
                 </div>
@@ -1318,7 +1387,7 @@ function MetadataDialog({
         <input
           ref={replaceRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
+          accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml,.svg,video/mp4,video/webm"
           hidden
           onChange={(event) => {
             setReplacement(event.target.files?.[0] ?? null);

@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import type { PaymentLogoMark } from "@/components/shared/payment-marks";
 import type {
   FooterCtaEditorContent,
   FooterEditorContent,
@@ -15,6 +16,7 @@ export function SiteShell({
   footerLogoUrl,
   footerContent,
   footerCtaContent,
+  paymentLogos,
   logoDisplay,
 }: {
   children: React.ReactNode;
@@ -22,6 +24,7 @@ export function SiteShell({
   footerLogoUrl?: string;
   footerContent?: FooterEditorContent;
   footerCtaContent?: FooterCtaEditorContent;
+  paymentLogos?: PaymentLogoMark[];
   logoDisplay?: Pick<
     HeroEditorContent,
     | "logoDesktopWidth"
@@ -65,6 +68,7 @@ export function SiteShell({
         logoUrl={footerLogoUrl ?? logoUrl}
         content={footerContent}
         ctaContent={footerCtaContent}
+        paymentLogos={paymentLogos}
       />
     </>
   );

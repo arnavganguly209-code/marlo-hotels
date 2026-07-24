@@ -6,7 +6,7 @@ import { JsonLd } from "@/components/shared/json-ld";
 import { getHomepageContent } from "@/lib/homepage-content";
 import { hotelJsonLd } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
-import { getBrandSettings } from "@/lib/site-settings";
+import { getBrandSettings, getPaymentLogoSettings } from "@/lib/site-settings";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -113,12 +113,19 @@ export default async function RootLayout({
     footerLogoUrl: "/images/brand/logo.png",
     faviconUrl: "/images/brand/logo.png",
   };
+  let paymentMarks: Awaited<
+    ReturnType<typeof getPaymentLogoSettings>
+  >["marks"] = [];
   let homepage: Awaited<ReturnType<typeof getHomepageContent>> | null = null;
   try {
-    [brand, homepage] = await Promise.all([
+    const [brandResult, homepageResult, paymentResult] = await Promise.all([
       getBrandSettings(),
       getHomepageContent(),
+      getPaymentLogoSettings(),
     ]);
+    brand = brandResult;
+    homepage = homepageResult;
+    paymentMarks = paymentResult.marks;
   } catch {
     // Keep the public shell rendering even if brand settings fail.
   }
@@ -132,6 +139,7 @@ export default async function RootLayout({
           footerLogoUrl={brand.footerLogoUrl}
           footerContent={homepage?.footer}
           footerCtaContent={homepage?.footerCta}
+          paymentLogos={paymentMarks}
           logoDisplay={homepage?.hero}
         >
           {children}

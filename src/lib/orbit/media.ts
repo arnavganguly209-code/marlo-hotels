@@ -202,4 +202,9 @@ export const SITE_PLACEMENTS = [
   { key: "brand.logo", label: "Primary Logo" },
   { key: "brand.footerLogo", label: "Footer Logo" },
   { key: "brand.favicon", label: "Favicon" },
+  { key: "brand.payment.visa", label: "Payment — Visa" },
+  { key: "brand.payment.mastercard", label: "Payment — Mastercard" },
+  { key: "brand.payment.amex", label: "Payment — American Express" },
+  { key: "brand.payment.alipay", label: "Payment — Alipay" },
+  { key: "brand.payment.unionpay", label: "Payment — UnionPay" },
 ] as const;
