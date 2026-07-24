@@ -14,14 +14,21 @@ export function formatCurrency(amount: number, currency = "USD") {
 }
 
 export function formatDate(date: string | Date) {
+  const value = typeof date === "string" ? new Date(date) : date;
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+    return "—";
+  }
   return new Intl.DateTimeFormat("en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
-  }).format(typeof date === "string" ? new Date(date) : date);
+  }).format(value);
 }
 
 export function toISODateString(date: Date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return "";
+  }
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");

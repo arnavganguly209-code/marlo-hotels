@@ -109,7 +109,16 @@ function mapEntryToRoom(entry: {
     featured: data.featured === true,
     images: imageUrl
       ? [{ src: imageUrl, alt: text("imageAlt", entry.title) }, ...gallery]
-      : gallery,
+      : gallery.length
+        ? gallery
+        : [
+            {
+              src:
+                defaults?.imageUrl ||
+                "/images/brand/hero-reception.png",
+              alt: text("imageAlt", entry.title),
+            },
+          ],
     amenities: lines("amenities").length
       ? lines("amenities")
       : (defaults?.amenities || "")

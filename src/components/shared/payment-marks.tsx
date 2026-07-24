@@ -37,7 +37,7 @@ export function PaymentMarks({
   className?: string;
   logos?: PaymentLogoMark[];
 }) {
-  const marks =
+  const marks = (
     logos?.length === PAYMENT_METHODS.length
       ? logos
       : PAYMENT_METHODS.map((item) => ({
@@ -45,7 +45,16 @@ export function PaymentMarks({
           label: item.label,
           src: item.defaultSrc,
           version: 1,
-        }));
+        }))
+  ).map((mark, index) => {
+    const fallback = PAYMENT_METHODS[index]!;
+    return {
+      key: mark.key || fallback.key,
+      label: mark.label || fallback.label,
+      src: mark.src || fallback.defaultSrc,
+      version: mark.version ?? 1,
+    };
+  });
 
   return (
     <ul
@@ -57,6 +66,7 @@ export function PaymentMarks({
     >
       {marks.map((mark) => {
         const src = withMediaCacheBust(mark.src, mark.version);
+        if (!src) return null;
         return (
           <li key={mark.key} className="min-w-0">
             <span

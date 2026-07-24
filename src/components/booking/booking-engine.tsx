@@ -34,7 +34,7 @@ import type { Room } from "@/types/content";
 
 const guestDetailsSchema = z.object({
   guestName: z.string().min(2, "Please tell us your name"),
-  guestEmail: z.email("Please enter a valid email address"),
+  guestEmail: z.string().email("Please enter a valid email address"),
   guestPhone: z.string().min(5, "Please enter a phone number"),
   notes: z.string().optional(),
 });
@@ -58,6 +58,16 @@ const steps = ["Dates & Guests", "Select Your Room", "Guest Details"] as const;
 
 function parseDate(value?: string) {
   if (!value) return null;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (iso) {
+    const date = new Date(
+      Number(iso[1]),
+      Number(iso[2]) - 1,
+      Number(iso[3])
+    );
+    date.setHours(0, 0, 0, 0);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
@@ -302,15 +312,21 @@ export function BookingEngine({ rooms, initial }: BookingEngineProps) {
                         : "border-forest-800/10 shadow-luxury-sm hover:border-gold-500/40"
                     )}
                   >
-                    <div className="relative min-h-40 sm:min-h-full">
-                      <Image
-                        src={room.images[0].src}
-                        alt={room.images[0].alt}
-                        fill
-                        sizes="(max-width: 640px) 100vw, 220px"
-                        className="object-cover"
-                        unoptimized={room.images[0].src.startsWith("/media/")}
-                      />
+                    <div className="relative min-h-40 bg-forest-950 sm:min-h-full">
+                      {room.images[0]?.src ? (
+                        <Image
+                          src={room.images[0].src}
+                          alt={room.images[0].alt || room.name}
+                          fill
+                          sizes="(max-width: 640px) 100vw, 220px"
+                          className="object-cover"
+                          unoptimized={room.images[0].src.startsWith("/media/")}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-forest-900 to-forest-950">
+                          <BedDouble className="size-8 text-gold-500/70" />
+                        </div>
+                      )}
                     </div>
                     <div className="px-6 py-5 sm:px-0">
                       <p className="text-[9px] font-medium tracking-[0.28em] text-gold-600 uppercase">
