@@ -69,10 +69,10 @@ export function hotelJsonLd() {
       longitude: siteConfig.contact.geo.lng,
     },
     amenityFeature: [
-      { "@type": "LocationFeatureSpecification", name: "Infinity Pool" },
+      { "@type": "LocationFeatureSpecification", name: "Luxury Accommodation" },
       { "@type": "LocationFeatureSpecification", name: "Luxury Spa" },
       { "@type": "LocationFeatureSpecification", name: "Fine Dining" },
-      { "@type": "LocationFeatureSpecification", name: "Fitness Centre" },
+      { "@type": "LocationFeatureSpecification", name: "Airport Transfer" },
       { "@type": "LocationFeatureSpecification", name: "Free Wi-Fi" },
     ],
     sameAs: Object.values(siteConfig.social),
