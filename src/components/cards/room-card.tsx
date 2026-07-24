@@ -80,14 +80,14 @@ export function RoomCard({
           <div className="absolute inset-0 bg-gradient-to-br from-forest-900 to-forest-950" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/45 to-transparent" />
-        <span className="glass-dark absolute top-4 left-4 rounded-full px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase">
+        <span className="glass-dark absolute top-4 left-4 rounded-full border border-white/15 px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase backdrop-blur-md">
           {soldOut
             ? "Sold Out"
             : room.category === "suite"
               ? labels?.suite ?? "Suite"
               : labels?.room ?? "Room"}
         </span>
-        <span className="absolute right-4 bottom-4 text-right">
+        <span className="absolute right-4 bottom-4 rounded-xl border border-white/10 bg-charcoal-950/35 px-3 py-2 text-right backdrop-blur-md">
           <span className="block text-[9px] tracking-[0.28em] text-cream-200/80 uppercase">
             {quote
               ? `${quote.nights} night${quote.nights > 1 ? "s" : ""}`

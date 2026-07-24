@@ -39,7 +39,6 @@ export function WellnessSection({
 
   const primary = content.images[0];
   const secondary = content.images[1] ?? primary;
-  if (!primary || !secondary) return null;
 
   return (
     <section className="overflow-hidden bg-cream-100 py-24 md:py-36">
@@ -58,28 +57,30 @@ export function WellnessSection({
             </p>
           </Reveal>
 
-          <Reveal delay={0.15}>
-            <ul className="mt-10 divide-y divide-forest-800/10 border-y border-forest-800/10">
-              {content.treatments.map((treatment) => (
-                <li
-                  key={treatment.name}
-                  className="flex items-baseline justify-between gap-6 py-5"
-                >
-                  <div>
-                    <h3 className="font-display text-xl font-medium text-forest-900">
-                      {treatment.name}
-                    </h3>
-                    <p className="mt-1 text-xs font-light tracking-wider text-charcoal-900/55 uppercase">
-                      {treatment.duration}
-                    </p>
-                  </div>
-                  <span className="font-display shrink-0 text-xl text-gold-600">
-                    {formatCurrency(treatment.price)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Reveal>
+          {content.treatments.length ? (
+            <Reveal delay={0.15}>
+              <ul className="mt-10 divide-y divide-forest-800/10 border-y border-forest-800/10">
+                {content.treatments.map((treatment) => (
+                  <li
+                    key={treatment.name}
+                    className="flex items-baseline justify-between gap-6 py-5"
+                  >
+                    <div>
+                      <h3 className="font-display text-xl font-medium text-forest-900">
+                        {treatment.name}
+                      </h3>
+                      <p className="mt-1 text-xs font-light tracking-wider text-charcoal-900/55 uppercase">
+                        {treatment.duration}
+                      </p>
+                    </div>
+                    <span className="font-display shrink-0 text-xl text-gold-600">
+                      {formatCurrency(treatment.price)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          ) : null}
 
           <Reveal delay={0.25}>
             <Button asChild variant="forest" size="lg" className="mt-10">
@@ -93,36 +94,40 @@ export function WellnessSection({
 
         <div className="relative order-1 lg:order-2">
           <Reveal direction="left">
-            <div className="img-hover-frame shadow-luxury relative aspect-[4/5] overflow-hidden rounded-xl">
-              <Image
-                src={primary.src}
-                alt={primary.alt}
-                fill
-                quality={100}
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover"
-                style={{ objectPosition: objectPosition(primary) }}
-                unoptimized={primary.src.startsWith("/media/")}
-              />
+            <div className="img-hover-frame shadow-luxury relative aspect-[4/5] overflow-hidden rounded-xl bg-forest-950">
+              {primary?.src ? (
+                <Image
+                  src={primary.src}
+                  alt={primary.alt}
+                  fill
+                  quality={100}
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
+                  style={{ objectPosition: objectPosition(primary) }}
+                  unoptimized={primary.src.startsWith("/media/")}
+                />
+              ) : null}
             </div>
           </Reveal>
-          <Reveal
-            delay={0.25}
-            className="absolute -bottom-10 -left-4 w-1/2 md:-left-8"
-          >
-            <div className="img-hover-frame shadow-luxury relative aspect-[4/3] overflow-hidden rounded-xl border-6 border-cream-100">
-              <Image
-                src={secondary.src}
-                alt={secondary.alt}
-                fill
-                quality={100}
-                sizes="25vw"
-                className="object-cover"
-                style={{ objectPosition: objectPosition(secondary) }}
-                unoptimized={secondary.src.startsWith("/media/")}
-              />
-            </div>
-          </Reveal>
+          {secondary?.src ? (
+            <Reveal
+              delay={0.25}
+              className="absolute -bottom-10 -left-4 w-1/2 md:-left-8"
+            >
+              <div className="img-hover-frame shadow-luxury relative aspect-[4/3] overflow-hidden rounded-xl border-6 border-cream-100">
+                <Image
+                  src={secondary.src}
+                  alt={secondary.alt}
+                  fill
+                  quality={100}
+                  sizes="25vw"
+                  className="object-cover"
+                  style={{ objectPosition: objectPosition(secondary) }}
+                  unoptimized={secondary.src.startsWith("/media/")}
+                />
+              </div>
+            </Reveal>
+          ) : null}
         </div>
       </div>
     </section>

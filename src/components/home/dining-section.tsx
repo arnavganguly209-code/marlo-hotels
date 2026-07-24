@@ -12,9 +12,7 @@ export function DiningSection({
   content: HomepageContent["dining"];
 }) {
   if (!content.enabled) return null;
-  const restaurants = content.items.filter(
-    (restaurant) => restaurant.images[0]?.src
-  );
+  const restaurants = content.items;
 
   return (
     <section className="bg-ivory py-24 md:py-36">
@@ -27,27 +25,29 @@ export function DiningSection({
 
         <Stagger className="mt-16 grid gap-8 lg:grid-cols-3">
           {restaurants.map((restaurant, index) => {
-            const imageSrc = restaurant.images[0].src;
+            const imageSrc = restaurant.images[0]?.src || "";
             return (
               <StaggerItem
                 key={restaurant.slug}
                 className={index === 0 ? "lg:row-span-2" : ""}
               >
-                <article className="group relative h-full overflow-hidden rounded-xl shadow-luxury-sm transition-shadow duration-700 hover:shadow-luxury">
+                <article className="group relative h-full overflow-hidden rounded-xl bg-forest-950 shadow-luxury-sm transition-shadow duration-700 hover:shadow-luxury">
                   <div
                     className={`img-hover-frame relative ${
                       index === 0 ? "aspect-[3/4] lg:h-full lg:aspect-auto" : "aspect-[16/10]"
                     }`}
                   >
-                    <Image
-                      src={imageSrc}
-                      alt={restaurant.images[0].alt}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 33vw"
-                      className="object-cover"
-                      quality={100}
-                      unoptimized={imageSrc.startsWith("/media/")}
-                    />
+                    {imageSrc ? (
+                      <Image
+                        src={imageSrc}
+                        alt={restaurant.images[0]?.alt || restaurant.name}
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 33vw"
+                        className="object-cover"
+                        quality={100}
+                        unoptimized={imageSrc.startsWith("/media/")}
+                      />
+                    ) : null}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/95 via-charcoal-950/30 to-transparent" />
 

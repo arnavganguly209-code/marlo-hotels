@@ -1,15 +1,12 @@
 import { AboutSection } from "@/components/home/about-section";
 import { AttractionsSection } from "@/components/home/attractions-section";
-import { AwardsStrip } from "@/components/home/awards-strip";
+import { BreakfastSection } from "@/components/home/breakfast-section";
 import { DiningSection } from "@/components/home/dining-section";
-import { EventsSection } from "@/components/home/events-section";
-import { ExperiencesSection } from "@/components/home/experiences-section";
-import { FeaturedSuites } from "@/components/home/featured-suites";
+import { FeatureGridSectionView } from "@/components/home/feature-grid-section";
 import { GalleryPreview } from "@/components/home/gallery-preview";
 import { Hero } from "@/components/home/hero";
-import { InstagramStrip } from "@/components/home/instagram-strip";
-import { JournalPreview } from "@/components/home/journal-preview";
-import { PoolBanner } from "@/components/home/pool-banner";
+import { LocationSection } from "@/components/home/location-section";
+import { OffersSection } from "@/components/home/offers-section";
 import { RoomsShowcase } from "@/components/home/rooms-showcase";
 import { TestimonialsSection } from "@/components/home/testimonials-section";
 import { WellnessSection } from "@/components/home/wellness-section";
@@ -23,7 +20,6 @@ export default async function HomePage() {
   ]);
   const heroContent = {
     ...homepage.hero,
-    // Prefer Orbit Homepage document. Placement only fills empty Hero media.
     image:
       homepage.hero.mediaType === "VIDEO"
         ? { ...homepage.hero.image, src: "", alt: homepage.hero.image.alt || "" }
@@ -72,18 +68,17 @@ export default async function HomePage() {
       <Hero content={heroContent} />
       <AboutSection content={homepage.about} />
       <RoomsShowcase content={homepage.rooms} />
-      <FeaturedSuites content={homepage.featuredSuites} />
+      <BreakfastSection content={homepage.breakfast} />
       <DiningSection content={homepage.dining} />
       <WellnessSection content={homepage.wellness} />
-      <PoolBanner content={homepage.pool} />
-      <EventsSection content={homepage.events} />
-      <GalleryPreview content={homepage.gallery} />
-      <ExperiencesSection content={homepage.experiences} />
+      <FeatureGridSectionView content={homepage.facilities} tone="cream" />
+      <FeatureGridSectionView content={homepage.whyStay} tone="ivory" />
+      <FeatureGridSectionView content={homepage.guestServices} tone="forest" />
       <AttractionsSection content={homepage.attractions} />
       <TestimonialsSection content={homepage.testimonials} />
-      <AwardsStrip content={homepage.awards} />
-      <InstagramStrip content={homepage.instagram} />
-      <JournalPreview content={homepage.journal} />
+      <OffersSection content={homepage.offers} />
+      <GalleryPreview content={homepage.gallery} />
+      <LocationSection content={homepage.location} />
     </>
   );
 }

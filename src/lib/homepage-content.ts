@@ -115,6 +115,39 @@ export type PoolEditorContent = SectionCopy & {
   overlay: "Light" | "Balanced" | "Dark";
 };
 
+export type FeatureItem = {
+  title: string;
+  description: string;
+  icon: string;
+};
+
+export type FeatureGridSection = SectionCopy & {
+  items: FeatureItem[];
+};
+
+export type BreakfastEditorContent = SectionCopy & {
+  images: EditableImage[];
+  timings: { label: string; hours: string }[];
+};
+
+export type LocationEditorContent = SectionCopy & {
+  address: string;
+  phone: string;
+  mapEmbedUrl: string;
+};
+
+export type OfferPreviewItem = {
+  title: string;
+  description: string;
+  buttonText?: string;
+  buttonLink?: string;
+  image: EditableImage;
+};
+
+export type OffersEditorContent = SectionCopy & {
+  items: OfferPreviewItem[];
+};
+
 export type EventEditorItem = {
   eyebrow: string;
   title: string;
@@ -159,14 +192,20 @@ export type HomepageContent = {
   about: AboutEditorContent;
   rooms: CollectionSection<Room>;
   featuredSuites: CollectionSection<Room>;
+  breakfast: BreakfastEditorContent;
   dining: CollectionSection<Restaurant>;
   wellness: WellnessEditorContent;
+  facilities: FeatureGridSection;
+  whyStay: FeatureGridSection;
+  guestServices: FeatureGridSection;
   pool: PoolEditorContent;
   events: CollectionSection<EventEditorItem>;
   gallery: CollectionSection<GalleryImage>;
   experiences: CollectionSection<Experience>;
   attractions: CollectionSection<Attraction>;
   testimonials: CollectionSection<Testimonial> & { autoplayMs: number };
+  offers: OffersEditorContent;
+  location: LocationEditorContent;
   awards: CollectionSection<Award>;
   instagram: InstagramEditorContent;
   journal: CollectionSection<Post>;
@@ -290,7 +329,7 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       items: rooms,
     },
     featuredSuites: {
-      enabled: true,
+      enabled: false,
       eyebrow: "Featured Suites",
       heading: "The addresses guests return for",
       description:
@@ -307,24 +346,44 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       eyebrow: "Dining Experience",
       heading: "Tables worth travelling for",
       description:
-        "Three venues, one philosophy — the Himalayan larder treated with the world's finest technique, from tasting menus to midnight cocktails.",
-      buttonText: "Discover All Venues",
+        "Himalayan hospitality at the table — from breakfast to late-hour dining.",
+      buttonText: "View Dining",
       buttonLink: "/dining",
       items: restaurants,
+    },
+    breakfast: {
+      enabled: true,
+      eyebrow: "Breakfast & Restaurant",
+      heading: "A morning composed with care",
+      description:
+        "Begin the day in our breakfast area with fresh breads, seasonal fruit and hot dishes prepared to order. Our restaurant continues through the day with Nepali and continental favourites.",
+      buttonText: "View Dining",
+      buttonLink: "/dining",
+      images: [
+        image(
+          "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1600&auto=format&fit=crop",
+          "Breakfast at Marlo Hotels"
+        ),
+      ],
+      timings: [
+        { label: "Breakfast", hours: "7:00 AM – 10:30 AM" },
+        { label: "Lunch", hours: "12:00 PM – 3:00 PM" },
+        { label: "Dinner", hours: "6:30 PM – 10:00 PM" },
+      ],
     },
     wellness: {
       enabled: true,
       eyebrow: "Spa & Wellness",
-      heading: "Stillness, drawn from the mountains",
-      highlightedText: "mountains",
+      heading: "Stillness, drawn from quiet care",
+      highlightedText: "quiet care",
       description:
-        "Five treatment suites, a couples' pavilion and a thermal circuit fed by mountain spring water. Our therapies weave singing bowls, warmed river stone and valley-pressed oils into rituals you will carry home.",
+        "Massage, wellness rituals and unhurried relaxation — a spa experience composed for recovery after travel and exploration.",
       buttonText: "Enter Marlo Spa",
       buttonLink: "/spa",
       images: [
         image(
           "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1600&auto=format&fit=crop",
-          "A Marlo Spa ritual with flowers and warm stone"
+          "A Marlo Spa ritual"
         ),
         image(
           "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200&auto=format&fit=crop",
@@ -335,8 +394,57 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
         (treatment) => treatment.category === "Signature Journey"
       ),
     },
-    pool: {
+    facilities: {
       enabled: true,
+      eyebrow: "Hotel Facilities",
+      heading: "Everything arranged for an easy stay",
+      description:
+        "From arrival to departure, Marlo is equipped with the essentials of a modern luxury hotel.",
+      items: [
+        { icon: "bed", title: "Luxury Accommodation", description: "Thoughtfully appointed rooms and suites." },
+        { icon: "utensils", title: "Restaurant", description: "All-day dining with Himalayan hospitality." },
+        { icon: "coffee", title: "Breakfast Area", description: "Fresh morning service every day." },
+        { icon: "spa", title: "Spa", description: "Massage and wellness in quiet suites." },
+        { icon: "wifi", title: "Free WiFi", description: "High-speed internet throughout the hotel." },
+        { icon: "plane", title: "Airport Transfer", description: "Private transfers on request." },
+        { icon: "clock", title: "24 Hour Reception", description: "Front desk assistance around the clock." },
+        { icon: "roomService", title: "Room Service", description: "In-room dining when you prefer privacy." },
+        { icon: "laundry", title: "Laundry", description: "Same-day laundry and pressing." },
+        { icon: "parking", title: "Parking", description: "Secure parking for guests." },
+        { icon: "travel", title: "Travel Assistance", description: "Tickets, guides and itineraries." },
+      ],
+    },
+    whyStay: {
+      enabled: true,
+      eyebrow: "Why Stay With Marlo",
+      heading: "A hotel that feels considered",
+      description:
+        "Quiet luxury, attentive service and a location that places Kathmandu’s finest addresses within easy reach.",
+      items: [
+        { icon: "sparkles", title: "Thoughtful Design", description: "Warm materials, calm spaces and rooms made for rest." },
+        { icon: "concierge", title: "Attentive Service", description: "A team that anticipates without interrupting." },
+        { icon: "bed", title: "Genuine Comfort", description: "Premium bedding and practical luxury amenities." },
+        { icon: "plane", title: "Effortless Arrival", description: "Transfers, guidance and a seamless check-in." },
+      ],
+    },
+    guestServices: {
+      enabled: true,
+      eyebrow: "Guest Services",
+      heading: "Support that stays out of the way",
+      description:
+        "Practical services arranged with the same quiet standard as the rooms themselves.",
+      items: [
+        { icon: "plane", title: "Airport Pickup", description: "Meet-and-greet transfers from Tribhuvan International." },
+        { icon: "roomService", title: "Room Service", description: "Meals delivered to your room." },
+        { icon: "wifi", title: "Free WiFi", description: "Reliable connection in every space." },
+        { icon: "laundry", title: "Laundry", description: "Laundry and dry cleaning on request." },
+        { icon: "sparkles", title: "Daily Housekeeping", description: "Fresh linens and a reset room each day." },
+        { icon: "travel", title: "Travel Desk", description: "Tours, tickets and local recommendations." },
+        { icon: "concierge", title: "Concierge", description: "Reservations, arrangements and local insight." },
+      ],
+    },
+    pool: {
+      enabled: false,
       eyebrow: "The Infinity Pool",
       heading: "Where the water ends and the valley begins",
       highlightedText: "valley begins",
@@ -351,7 +459,7 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       overlay: "Balanced",
     },
     events: {
-      enabled: true,
+      enabled: false,
       eyebrow: "Weddings · Meetings · Events",
       heading: "Occasions, given a stage",
       description:
@@ -388,13 +496,13 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       eyebrow: "Gallery",
       heading: "Marlo, framed",
       description:
-        "Light on water, brass at dusk, the valley from a suite window — a preview of life at Marlo Hotels.",
+        "Light on brass, quiet corridors and rooms composed for rest — a preview of life at Marlo Hotels.",
       buttonText: "View Full Gallery",
       buttonLink: "/gallery",
       items: galleryImages.slice(0, 6),
     },
     experiences: {
-      enabled: true,
+      enabled: false,
       eyebrow: "Luxury Experiences",
       heading: "The valley, opened for you",
       description:
@@ -420,21 +528,75 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       autoplayMs: 7000,
       items: testimonials,
     },
-    awards: {
+    offers: {
       enabled: true,
+      eyebrow: "Special Offers",
+      heading: "Occasions to stay longer",
+      description:
+        "Seasonal rates and packages composed for couples, families and extended stays.",
+      buttonText: "View All Offers",
+      buttonLink: "/offers",
+      items: [
+        {
+          title: "Extended Stay",
+          description: "Preferential rates when you stay three nights or more.",
+          buttonText: "Enquire",
+          buttonLink: "/offers",
+          image: image(
+            "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=1400&auto=format&fit=crop",
+            "Suite at Marlo Hotels"
+          ),
+        },
+        {
+          title: "Breakfast Inclusive",
+          description: "Add breakfast for every guest in your room.",
+          buttonText: "Book Now",
+          buttonLink: "/rooms",
+          image: image(
+            "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1400&auto=format&fit=crop",
+            "Breakfast service"
+          ),
+        },
+        {
+          title: "Airport Transfer",
+          description: "Arrive rested with private transfer from the airport.",
+          buttonText: "Contact Us",
+          buttonLink: "/contact",
+          image: image(
+            "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1400&auto=format&fit=crop",
+            "Airport transfer"
+          ),
+        },
+      ],
+    },
+    location: {
+      enabled: true,
+      eyebrow: "Location",
+      heading: "In the heart of Kathmandu",
+      description:
+        "Marlo Hotels sits within easy reach of Durbar Marg, Thamel and the city’s ceremonial squares.",
+      buttonText: "Get Directions",
+      buttonLink: "https://maps.google.com/?q=Durbar+Marg+Kathmandu",
+      address: "Durbar Marg, Kathmandu 44600, Nepal",
+      phone: siteConfig.contact.phone,
+      mapEmbedUrl:
+        "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.2!2d85.318!3d27.705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjfCsDQyJzE4LjAiTiA4NcKwMTknMDQuOCJF!5e0!3m2!1sen!2snp!4v1",
+    },
+    awards: {
+      enabled: false,
       eyebrow: "Awards",
       heading: "Recognition",
       description: "Independent recognition for Marlo hospitality.",
       items: awards,
     },
     instagram: {
-      enabled: true,
+      enabled: false,
       handle: "@marlohotels",
       link: siteConfig.social.instagram,
       images: instagramFeed.map((item) => image(item.src, item.alt)),
     },
     journal: {
-      enabled: true,
+      enabled: false,
       eyebrow: "The Journal",
       heading: "Latest from the valley",
       description:
@@ -709,12 +871,19 @@ async function withLiveRooms(
   const rooms = await getRooms();
   return {
     ...content,
+    pool: { ...content.pool, enabled: false },
+    events: { ...content.events, enabled: false },
+    experiences: { ...content.experiences, enabled: false },
+    awards: { ...content.awards, enabled: false },
+    instagram: { ...content.instagram, enabled: false },
+    journal: { ...content.journal, enabled: false },
     rooms: {
       ...content.rooms,
       items: rooms,
     },
     featuredSuites: {
       ...content.featuredSuites,
+      enabled: false,
       items: rooms.filter((room) => room.category === "suite" && room.featured),
     },
   };

@@ -4,6 +4,7 @@ import {
   ArrowDown,
   ArrowUp,
   BedDouble,
+  Building2,
   Compass,
   ExternalLink,
   Flower2,
@@ -13,6 +14,7 @@ import {
   Images,
   Camera,
   LayoutTemplate,
+  MapPin,
   Newspaper,
   PanelBottom,
   Plus,
@@ -25,6 +27,8 @@ import {
   Trophy,
   Utensils,
   Waves,
+  Wifi,
+  BadgePercent,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,14 +64,20 @@ const SECTION_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   about: Sparkles,
   rooms: BedDouble,
   featuredSuites: BedDouble,
+  breakfast: Utensils,
   dining: Utensils,
   wellness: Flower2,
+  facilities: Building2,
+  whyStay: Sparkles,
+  guestServices: Wifi,
   pool: Waves,
   events: HeartHandshake,
   gallery: Images,
   experiences: Compass,
   attractions: Presentation,
   testimonials: Quote,
+  offers: BadgePercent,
+  location: MapPin,
   awards: Trophy,
   instagram: Camera,
   journal: Newspaper,
@@ -307,8 +317,8 @@ export function HomepageVisualEditor({
           </h1>
           <p className="mt-1 text-sm text-[var(--orbit-muted)]">
             {dirty
-              ? "Unsaved changes"
-              : "Edit homepage sections — Save updates the live website."}
+              ? "Unsaved changes — Save publishes to the live website."
+              : "Select a section card. Each editor opens full width."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -317,7 +327,7 @@ export function HomepageVisualEditor({
             target="_blank"
             className="flex h-11 items-center gap-2 rounded-xl border border-[var(--orbit-border)] bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase"
           >
-            <ExternalLink className="size-4" /> Open website
+            <ExternalLink className="size-4" /> Live preview
           </Link>
           <button
             type="button"
@@ -339,90 +349,133 @@ export function HomepageVisualEditor({
         </div>
       </div>
 
-      <div className="orbit-scrollbar border-b border-[var(--orbit-border)] bg-white px-4 xl:px-10">
-        <div className="flex gap-1 overflow-x-auto py-2">
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="orbit-scrollbar max-h-[40vh] space-y-2 overflow-y-auto border-b border-[var(--orbit-border)] bg-[#f6f7f4] p-4 lg:max-h-none lg:border-r lg:border-b-0 lg:p-5">
+          <p className="mb-3 px-1 text-[9px] font-semibold tracking-[0.22em] text-[#a67a30] uppercase">
+            Sections
+          </p>
           {orderedSections.map((section) => {
+            const Icon = SECTION_ICONS[section.key] || LayoutTemplate;
             const isActive = active === section.key;
+            const enabled =
+              (content[section.key] as { enabled?: boolean } | undefined)
+                ?.enabled !== false;
             return (
               <button
                 key={section.key}
                 type="button"
                 onClick={() => selectSection(section.key)}
                 className={cn(
-                  "shrink-0 rounded-xl px-4 py-2.5 text-[11px] font-semibold tracking-[0.1em] uppercase transition",
+                  "flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition",
                   isActive
-                    ? "bg-[#123429] text-[#f0d999]"
-                    : "text-[#5a6b63] hover:bg-[#f3f5f2]"
+                    ? "border-[#123429] bg-[#123429] text-[#f0d999] shadow-lg"
+                    : "border-transparent bg-white text-[#294138] hover:border-[#c4943c]/35"
                 )}
               >
-                {section.label}
+                <span
+                  className={cn(
+                    "mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl",
+                    isActive ? "bg-white/10" : "bg-[#edf1ed]"
+                  )}
+                >
+                  <Icon className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">
+                    {section.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "mt-1 block text-[11px] leading-snug",
+                      isActive ? "text-[#e4c784]/75" : "text-[#7b8982]"
+                    )}
+                  >
+                    {section.description}
+                  </span>
+                  <span
+                    className={cn(
+                      "mt-2 inline-block rounded-full px-2 py-0.5 text-[8px] font-semibold tracking-[0.14em] uppercase",
+                      enabled
+                        ? isActive
+                          ? "bg-[#e4c784]/20 text-[#f0d999]"
+                          : "bg-emerald-50 text-emerald-800"
+                        : isActive
+                          ? "bg-white/10 text-[#e4c784]/70"
+                          : "bg-[#f0f1ee] text-[#8a968f]"
+                    )}
+                  >
+                    {enabled ? "Visible" : "Hidden"}
+                  </span>
+                </span>
               </button>
             );
           })}
-        </div>
-      </div>
+        </aside>
 
-      <section className="min-w-0 flex-1 bg-[var(--orbit-bg)] px-4 py-8 sm:px-8 xl:px-12">
-        {active === "hero" ? (
-          <SimpleHeroVideoPanel
-            value={content.hero as unknown as JsonObject}
-            set={(key, next) =>
-              updateSection({
-                ...(content.hero as unknown as JsonObject),
-                [key]: next,
-              } as HomepageContent["hero"])
-            }
-            onSave={() => void save()}
-            saving={saving}
-            dirty={dirty}
-          />
-        ) : (
-          <div className="mx-auto w-full max-w-5xl">
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 className="font-display text-3xl font-semibold text-[var(--orbit-ink)]">
-                  {activeMeta.label}
-                </h2>
-                <p className="mt-1 text-sm text-[var(--orbit-muted)]">
-                  {activeMeta.description}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={resetSection}
-                className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--orbit-border)] bg-white px-3 text-[9px] font-semibold tracking-[0.12em] text-[#52665c] uppercase"
-              >
-                <RotateCcw className="size-3.5" /> Reset
-              </button>
-            </div>
-
-            <div className="orbit-scrollbar mb-6 flex gap-1 overflow-x-auto border-b border-[var(--orbit-border)]">
-              {EDITOR_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  data-active={editorTab === tab.id}
-                  onClick={() => setEditorTab(tab.id)}
-                  className="orbit-tab shrink-0 px-4 py-3 text-[11px] tracking-[0.08em] uppercase"
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="orbit-panel min-h-[55vh] rounded-2xl p-6 sm:p-8">
-              <SectionForm
-                sectionKey={active}
-                tab={editorTab}
-                value={content[active] as JsonObject}
-                onChange={(value) =>
-                  updateSection(value as HomepageContent[HomepageSectionKey])
+        <section className="min-w-0 flex-1 bg-[var(--orbit-bg)] px-4 py-8 sm:px-8 xl:px-12 2xl:px-16">
+          {active === "hero" ? (
+            <div className="mx-auto w-full max-w-6xl">
+              <SimpleHeroVideoPanel
+                value={content.hero as unknown as JsonObject}
+                set={(key, next) =>
+                  updateSection({
+                    ...(content.hero as unknown as JsonObject),
+                    [key]: next,
+                  } as HomepageContent["hero"])
                 }
+                onSave={() => void save()}
+                saving={saving}
+                dirty={dirty}
               />
             </div>
-          </div>
-        )}
-      </section>
+          ) : (
+            <div className="mx-auto w-full max-w-6xl">
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="font-display text-3xl font-semibold text-[var(--orbit-ink)] xl:text-4xl">
+                    {activeMeta.label}
+                  </h2>
+                  <p className="mt-1 max-w-2xl text-sm text-[var(--orbit-muted)]">
+                    {activeMeta.description}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetSection}
+                  className="flex h-10 items-center gap-1.5 rounded-xl border border-[var(--orbit-border)] bg-white px-3 text-[9px] font-semibold tracking-[0.12em] text-[#52665c] uppercase"
+                >
+                  <RotateCcw className="size-3.5" /> Reset
+                </button>
+              </div>
+
+              <div className="orbit-scrollbar mb-6 flex gap-1 overflow-x-auto border-b border-[var(--orbit-border)]">
+                {EDITOR_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    data-active={editorTab === tab.id}
+                    onClick={() => setEditorTab(tab.id)}
+                    className="orbit-tab shrink-0 px-4 py-3 text-[11px] tracking-[0.08em] uppercase"
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="orbit-panel min-h-[60vh] rounded-2xl p-6 sm:p-8 xl:p-10">
+                <SectionForm
+                  sectionKey={active}
+                  tab={editorTab}
+                  value={content[active] as JsonObject}
+                  onChange={(value) =>
+                    updateSection(value as HomepageContent[HomepageSectionKey])
+                  }
+                />
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
