@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { RoomCard } from "@/components/cards/room-card";
 import { JsonLd } from "@/components/shared/json-ld";
 import { PageHero } from "@/components/shared/page-hero";
-import { RoomBookingCard } from "@/components/rooms/room-booking-card";
+import { StickyRoomBookingCard } from "@/components/rooms/sticky-room-booking-card";
 import { RoomGallery } from "@/components/rooms/room-gallery";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -17,7 +17,18 @@ import {
 import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
-type PageProps = { params: Promise<{ slug: string }> };
+type PageProps = {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{
+    checkIn?: string;
+    checkOut?: string;
+    adults?: string;
+    children?: string;
+    rooms?: string;
+    breakfast?: string;
+    promo?: string;
+  }>;
+};
 
 export async function generateStaticParams() {
   const rooms = await getRooms();
@@ -38,8 +49,9 @@ export async function generateMetadata({
   });
 }
 
-export default async function RoomDetailPage({ params }: PageProps) {
+export default async function RoomDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const query = (await searchParams) || {};
   const room = await getRoomBySlug(slug);
   if (!room) notFound();
 
@@ -81,7 +93,6 @@ export default async function RoomDetailPage({ params }: PageProps) {
 
       <section className="bg-ivory py-20 md:py-28">
         <div className="mx-auto grid max-w-7xl gap-14 px-5 md:px-8 lg:grid-cols-3">
-          {/* Left: gallery + narrative */}
           <div className="lg:col-span-2">
             <Reveal>
               <RoomGallery images={room.images} />
@@ -137,7 +148,7 @@ export default async function RoomDetailPage({ params }: PageProps) {
 
             <Reveal className="mt-14">
               <h3 className="font-display text-2xl font-medium text-forest-950">
-                Room Features
+                Facilities
               </h3>
               <ul className="mt-6 space-y-3">
                 {room.features.map((feature) => (
@@ -177,18 +188,20 @@ export default async function RoomDetailPage({ params }: PageProps) {
             </Reveal>
           </div>
 
-          {/* Right: sticky booking card */}
-          <aside className="lg:col-span-1">
-            <div className="lg:sticky lg:top-28">
-              <Reveal direction="left">
-                <RoomBookingCard
-                  roomSlug={room.slug}
-                  roomName={room.name}
-                  priceFrom={room.priceFrom}
-                />
-              </Reveal>
-            </div>
-          </aside>
+          <div className="lg:col-span-1">
+            <StickyRoomBookingCard
+              room={room}
+              initial={{
+                checkIn: query.checkIn,
+                checkOut: query.checkOut,
+                adults: query.adults ? Number(query.adults) : undefined,
+                children: query.children ? Number(query.children) : undefined,
+                rooms: query.rooms ? Number(query.rooms) : undefined,
+                breakfast: query.breakfast === "1",
+                promo: query.promo,
+              }}
+            />
+          </div>
         </div>
       </section>
 

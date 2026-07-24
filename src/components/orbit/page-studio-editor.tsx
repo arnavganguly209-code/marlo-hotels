@@ -201,12 +201,14 @@ export function PageStudioEditor({
               </button>
             );
           })}
-          <Link
-            href={`/orbit/${moduleSlug}?inventory=1`}
-            className="mt-3 block rounded-xl border border-dashed border-[var(--orbit-border)] px-3 py-3 text-center text-[10px] font-semibold tracking-[0.14em] text-[var(--orbit-gold-deep)] uppercase"
-          >
-            Open room inventory →
-          </Link>
+          {moduleSlug === "rooms" ? (
+            <Link
+              href={`/orbit/${moduleSlug}?inventory=1`}
+              className="mt-3 block rounded-xl border border-dashed border-[var(--orbit-border)] px-3 py-3 text-center text-[10px] font-semibold tracking-[0.14em] text-[var(--orbit-gold-deep)] uppercase"
+            >
+              Open room inventory →
+            </Link>
+          ) : null}
         </nav>
 
         <section className="min-w-0 bg-[var(--orbit-bg)] p-4 sm:p-6 xl:p-8">

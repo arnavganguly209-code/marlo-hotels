@@ -1,16 +1,8 @@
 import { NextResponse } from "next/server";
 import { getRoomBySlug } from "@/content/rooms";
+import { generateMarloBookingId } from "@/lib/booking-id";
 import { getDb } from "@/lib/db";
 import { bookingRequestSchema } from "@/lib/validators";
-
-function generateReference() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let index = 0; index < 6; index += 1) {
-    code += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return `MRL-${code}`;
-}
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -35,11 +27,27 @@ export async function POST(request: Request) {
     );
   }
 
-  const reference = generateReference();
+  const reference = await generateMarloBookingId();
   const db = getDb();
   const checkIn = new Date(parsed.data.checkIn);
   const checkOut = new Date(parsed.data.checkOut);
   const roomsRequested = Math.max(1, parsed.data.rooms);
+
+  const notesPayload = [
+    parsed.data.notes,
+    `WhatsApp: ${parsed.data.whatsapp}`,
+    `Country: ${parsed.data.country}`,
+    `Arrival: ${parsed.data.arrivalTime}`,
+    `Breakfast: ${parsed.data.breakfast ? "Yes" : "No"}`,
+    parsed.data.billingName
+      ? `Billing: ${parsed.data.billingName}, ${parsed.data.billingCountry}, ${parsed.data.billingAddress}`
+      : null,
+    parsed.data.paymentIntent
+      ? `Payment: ${parsed.data.paymentIntent}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   if (db) {
     const roomRecord = await db.room.upsert({
@@ -68,7 +76,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Active bookings overlapping the requested stay consume inventory.
     const overlapping = await db.booking.findMany({
       where: {
         roomId: roomRecord.id,
@@ -106,7 +113,10 @@ export async function POST(request: Request) {
         guestName: parsed.data.guestName,
         guestEmail: parsed.data.guestEmail,
         guestPhone: parsed.data.guestPhone,
-        notes: parsed.data.notes,
+        notes: notesPayload,
+        totalAmount: parsed.data.totalAmount ?? null,
+        paymentStatus: "UNPAID",
+        status: "PENDING",
         roomId: roomRecord.id,
       },
     });

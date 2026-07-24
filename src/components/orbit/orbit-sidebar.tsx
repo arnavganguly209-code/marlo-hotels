@@ -3,6 +3,7 @@
 import {
   BadgePercent,
   BedDouble,
+  BookOpen,
   CalendarCheck,
   Compass,
   DatabaseBackup,
@@ -34,6 +35,7 @@ import { cn } from "@/lib/utils";
 
 const icons: Record<string, LucideIcon> = {
   "layout-template": PanelsTopLeft,
+  "book-open": BookOpen,
   "bed-double": BedDouble,
   utensils: UtensilsCrossed,
   "flower-2": Flower2,
@@ -61,6 +63,7 @@ const icons: Record<string, LucideIcon> = {
 /** Flat page list — no Website / Homepage nesting. */
 const PRIMARY_NAV: { slug: string; label: string; icon: string }[] = [
   { slug: "homepage", label: "Homepage", icon: "layout-template" },
+  { slug: "about", label: "About", icon: "book-open" },
   { slug: "rooms", label: "Rooms", icon: "bed-double" },
   { slug: "dining", label: "Dining", icon: "utensils" },
   { slug: "spa", label: "Spa", icon: "flower-2" },

@@ -249,7 +249,7 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
         "From the tasting tables of Amaya to the stillness of the spa and the infinity pool that pours into the horizon, ours is a hospitality of unhurried detail — Himalayan at heart, world-class in execution.",
       ],
       buttonText: "Explore The Hotel",
-      buttonLink: "/gallery",
+      buttonLink: "/about",
       badgeValue: "Since 2024",
       badgeLabel: "A New Landmark",
       stats: [
@@ -688,10 +688,29 @@ export async function getHomepageContent(): Promise<HomepageContent> {
         },
       };
     }
-    return await ensureOfficialHeroVideo(stripDemoHeroMedia(merged));
+    return await ensureOfficialHeroVideo(
+      stripDemoHeroMedia(normalizeAboutLinks(merged))
+    );
   } catch {
-    return await ensureOfficialHeroVideo(stripDemoHeroMedia(defaults));
+    return await ensureOfficialHeroVideo(
+      stripDemoHeroMedia(normalizeAboutLinks(defaults))
+    );
   }
+}
+
+/** Explore The Hotel must open /about (never the gallery). */
+function normalizeAboutLinks(content: HomepageContent): HomepageContent {
+  const link = content.about?.buttonLink?.trim();
+  if (!link || link === "/gallery" || link === "/gallery/") {
+    return {
+      ...content,
+      about: {
+        ...content.about,
+        buttonLink: "/about",
+      },
+    };
+  }
+  return content;
 }
 
 /** Prefer the real large uploaded Hero MP4 when demo URLs are gone. */

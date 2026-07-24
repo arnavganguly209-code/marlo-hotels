@@ -12,13 +12,15 @@ export type Room = {
   description: string[];
   priceFrom: number;
   currency: string;
-  mealPlan: string;
+  breakfastPrice: number;
   inventory: number;
   size: string;
   occupancy: string;
   bed: string;
   view: string;
   featured: boolean;
+  published?: boolean;
+  sortOrder?: number;
   images: ImageAsset[];
   amenities: string[];
   features: string[];

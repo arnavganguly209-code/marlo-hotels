@@ -14,7 +14,7 @@ const rooms: Room[] = [
     ],
     priceFrom: 22,
     currency: "USD",
-    mealPlan: "EP",
+    breakfastPrice: 5,
     inventory: 6,
     size: "22 m²",
     occupancy: "2 adults",
@@ -37,7 +37,7 @@ const rooms: Room[] = [
     ],
     priceFrom: 22,
     currency: "USD",
-    mealPlan: "EP",
+    breakfastPrice: 5,
     inventory: 6,
     size: "22 m²",
     occupancy: "2 adults",
@@ -60,7 +60,7 @@ const rooms: Room[] = [
     ],
     priceFrom: 27,
     currency: "USD",
-    mealPlan: "EP",
+    breakfastPrice: 5,
     inventory: 3,
     size: "28 m²",
     occupancy: "3 adults",
@@ -83,7 +83,7 @@ const rooms: Room[] = [
     ],
     priceFrom: 27,
     currency: "USD",
-    mealPlan: "EP",
+    breakfastPrice: 5,
     inventory: 3,
     size: "30 m²",
     occupancy: "2 adults, 2 children",
@@ -106,7 +106,7 @@ const rooms: Room[] = [
     ],
     priceFrom: 35,
     currency: "USD",
-    mealPlan: "EP",
+    breakfastPrice: 5,
     inventory: 6,
     size: "32 m²",
     occupancy: "2 adults",
@@ -129,7 +129,7 @@ const rooms: Room[] = [
     ],
     priceFrom: 35,
     currency: "USD",
-    mealPlan: "EP",
+    breakfastPrice: 5,
     inventory: 6,
     size: "36 m²",
     occupancy: "2 adults, 2 children",
@@ -152,7 +152,7 @@ const rooms: Room[] = [
     ],
     priceFrom: 55,
     currency: "USD",
-    mealPlan: "EP",
+    breakfastPrice: 5,
     inventory: 6,
     size: "55 m²",
     occupancy: "3 adults, or 2 adults & 2 children",
@@ -177,64 +177,83 @@ export async function getRooms(): Promise<Room[]> {
         (entry) => entry.key !== "page-studio" && entry.slug
       );
       if (inventory.length) {
-        return inventory.map((entry) => {
-          const data = (entry.data || {}) as Record<string, unknown>;
-          const text = (key: string, fallback = "") => {
-            const value = data[key];
-            return typeof value === "string" && value.trim()
-              ? value.trim()
-              : fallback;
-          };
-          const number = (key: string, fallback = 0) => {
-            const value = data[key];
-            return typeof value === "number" && Number.isFinite(value)
-              ? value
-              : fallback;
-          };
-          const lines = (key: string) =>
-            text(key)
-              .split("\n")
-              .map((item) => item.trim())
-              .filter(Boolean);
-          const description = text("description")
-            .replace(/<[^>]+>/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
-          const gallery = Array.isArray(data.gallery)
-            ? (data.gallery as { src?: string; alt?: string; url?: string }[])
-                .map((item) => ({
-                  src: String(item.src || item.url || "").trim(),
-                  alt: String(item.alt || entry.title),
-                }))
-                .filter((item) => item.src)
-            : [];
-          const imageUrl = text("imageUrl") || gallery[0]?.src || "";
-          return {
-            slug: entry.slug ?? entry.key,
-            name: entry.title,
-            category:
-              text("roomType", "Room").toLowerCase() === "suite"
-                ? "suite"
-                : "room",
-            tagline: text("subheading", entry.title),
-            shortDescription: description.slice(0, 220) || entry.title,
-            description: description ? [description] : [entry.title],
-            priceFrom: number("price", 0),
-            currency: text("currency", "USD") || "USD",
-            mealPlan: text("mealPlan", "EP") || "EP",
-            inventory: Math.max(0, number("inventory", 0)),
-            size: text("floorSize", "—"),
-            occupancy: `${number("maxGuests", 2)} guests`,
-            bed: text("beds", "—"),
-            view: text("view", "Hotel"),
-            featured: data.featured === true,
-            images: imageUrl
-              ? [{ src: imageUrl, alt: text("imageAlt", entry.title) }, ...gallery]
-              : gallery,
-            amenities: lines("amenities"),
-            features: lines("policies"),
-          };
-        });
+        return inventory
+          .map((entry) => {
+            const data = (entry.data || {}) as Record<string, unknown>;
+            const text = (key: string, fallback = "") => {
+              const value = data[key];
+              return typeof value === "string" && value.trim()
+                ? value.trim()
+                : fallback;
+            };
+            const number = (key: string, fallback = 0) => {
+              const value = data[key];
+              return typeof value === "number" && Number.isFinite(value)
+                ? value
+                : fallback;
+            };
+            const lines = (key: string) =>
+              text(key)
+                .split("\n")
+                .map((item) => item.trim())
+                .filter(Boolean);
+            const description = text("description")
+              .replace(/<[^>]+>/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+            const galleryFromArray = Array.isArray(data.gallery)
+              ? (data.gallery as { src?: string; alt?: string; url?: string }[])
+                  .map((item) => ({
+                    src: String(item.src || item.url || "").trim(),
+                    alt: String(item.alt || entry.title),
+                  }))
+                  .filter((item) => item.src)
+              : [];
+            const galleryFromUrls = lines("galleryUrls").map((src) => ({
+              src,
+              alt: entry.title,
+            }));
+            const gallery = [...galleryFromArray, ...galleryFromUrls];
+            const imageUrl = text("imageUrl") || gallery[0]?.src || "";
+            const published =
+              entry.status === "PUBLISHED" && data.available !== false;
+            return {
+              slug: entry.slug ?? entry.key,
+              name: entry.title,
+              category:
+                text("roomType", "Room").toLowerCase() === "suite"
+                  ? ("suite" as const)
+                  : ("room" as const),
+              tagline: text("subheading", entry.title),
+              shortDescription: description.slice(0, 220) || entry.title,
+              description: description ? [description] : [entry.title],
+              priceFrom: number("price", 0),
+              currency: text("currency", "USD") || "USD",
+              breakfastPrice: number("breakfastPrice", 5),
+              inventory: Math.max(0, number("inventory", 0)),
+              published,
+              sortOrder: number("sortOrder", 100),
+              size: text("floorSize", "—"),
+              occupancy: `${number("maxGuests", 2)} guests`,
+              bed: text("beds", "—"),
+              view: text("view", "Hotel"),
+              featured: data.featured === true,
+              images: imageUrl
+                ? [
+                    { src: imageUrl, alt: text("imageAlt", entry.title) },
+                    ...gallery,
+                  ]
+                : gallery,
+              amenities: lines("amenities"),
+              features: lines("policies"),
+            };
+          })
+          .filter((room) => room.published)
+          .sort(
+            (a, b) =>
+              (a.sortOrder ?? 100) - (b.sortOrder ?? 100) ||
+              a.name.localeCompare(b.name)
+          );
       }
     } catch {
       // Static content remains the safe bootstrap until the first CMS publish.

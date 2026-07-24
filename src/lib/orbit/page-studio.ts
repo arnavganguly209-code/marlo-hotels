@@ -9,6 +9,16 @@ export type PageSectionDef = {
 };
 
 export const PAGE_STUDIO_SECTIONS: Record<string, PageSectionDef[]> = {
+  about: [
+    { key: "hero", label: "Cover", description: "About page cover image and intro." },
+    { key: "story", label: "Luxury Story", description: "Brand story heading and copy." },
+    { key: "facilities", label: "Facilities", description: "Facilities introduction." },
+    { key: "services", label: "Services", description: "Services introduction." },
+    { key: "gallery", label: "Gallery", description: "About page gallery." },
+    { key: "experience", label: "Experience", description: "Experience section." },
+    { key: "cta", label: "CTA", description: "Bottom call to action." },
+    { key: "seo", label: "SEO", description: "Title, description and Open Graph." },
+  ],
   rooms: [
     { key: "hero", label: "Page Cover", description: "Rooms page cover image." },
     { key: "listing", label: "Intro", description: "Rooms listing introduction." },

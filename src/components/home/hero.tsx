@@ -17,9 +17,9 @@ export function Hero({ content }: { content: HeroEditorContent }) {
   return (
     <section
       aria-label="Welcome to Marlo Hotels"
-      className="relative flex min-h-svh flex-col overflow-hidden bg-forest-950"
+      className="relative flex min-h-svh flex-col bg-forest-950"
     >
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 overflow-hidden">
         {videoSrc ? (
           <HeroVideoClient src={videoSrc} />
         ) : imageSrc ? (
@@ -41,8 +41,8 @@ export function Hero({ content }: { content: HeroEditorContent }) {
       </div>
 
       {content.bookingWidget !== false ? (
-        <div className="relative z-20 mt-auto w-full px-4 pb-5 pt-28 sm:px-6 sm:pb-7 lg:px-8">
-          <div className="mx-auto max-w-[1400px]">
+        <div className="relative z-50 mt-auto w-full overflow-visible px-4 pb-5 pt-28 sm:px-6 sm:pb-7 lg:px-8">
+          <div className="mx-auto max-w-[1400px] overflow-visible">
             <BookingWidget content={content.booking} />
           </div>
         </div>

@@ -24,7 +24,16 @@ export const bookingRequestSchema = z
     guestName: z.string().min(2, "Please tell us your name"),
     guestEmail: z.email("Please enter a valid email address"),
     guestPhone: z.string().min(5, "Please enter a phone number"),
-    notes: z.string().optional(),
+    whatsapp: z.string().min(5, "Please enter a WhatsApp number"),
+    country: z.string().min(2, "Please enter your country"),
+    arrivalTime: z.string().min(1, "Please enter arrival time"),
+    notes: z.string().min(2, "Please add a special request"),
+    breakfast: z.boolean().optional(),
+    totalAmount: z.number().optional(),
+    billingName: z.string().optional(),
+    billingCountry: z.string().optional(),
+    billingAddress: z.string().optional(),
+    paymentIntent: z.string().optional(),
   })
   .refine(
     (data) => new Date(data.checkOut) > new Date(data.checkIn),

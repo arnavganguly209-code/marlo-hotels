@@ -31,13 +31,32 @@ export const orbitModules: OrbitModule[] = [
     ],
   },
   {
+    slug: "about",
+    label: "About",
+    singular: "about section",
+    icon: "book-open",
+    group: "Website",
+    description: "Independent About page editor — cover, story, gallery and CTA.",
+    capabilities: ["Cover", "Story", "Facilities", "Gallery", "Experience", "CTA", "SEO"],
+  },
+  {
     slug: "rooms",
     label: "Rooms",
     singular: "room",
     icon: "bed-double",
     group: "Website",
     description: "Rooms page studio plus room inventory.",
-    capabilities: ["Hero", "Listing", "Amenities", "Gallery", "CTA", "SEO"],
+    capabilities: [
+      "Create",
+      "Duplicate",
+      "Hide",
+      "Publish",
+      "Sort",
+      "Inventory",
+      "Cover",
+      "Gallery",
+      "SEO",
+    ],
   },
   {
     slug: "dining",
@@ -262,6 +281,7 @@ export const moduleBySlug = new Map(
 /** Public path for each Website page studio. */
 export const PAGE_PUBLIC_PATH: Record<string, string> = {
   homepage: "/",
+  about: "/about",
   rooms: "/rooms",
   dining: "/dining",
   spa: "/spa",
