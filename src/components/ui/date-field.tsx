@@ -89,13 +89,19 @@ export function DateField({
   );
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(false);
 
   useEffect(() => setMounted(true), []);
 
+  // Sync the visible month ONLY when the calendar opens — never while the
+  // guest is browsing months (that was locking Previous/Next navigation).
   useEffect(() => {
-    if (!open) return;
-    setView(new Date(selected.getFullYear(), selected.getMonth(), 1));
-  }, [open, selected]);
+    if (open && !wasOpenRef.current) {
+      const date = parseISODate(value) || startOfDay(new Date());
+      setView(new Date(date.getFullYear(), date.getMonth(), 1));
+    }
+    wasOpenRef.current = open;
+  }, [open, value]);
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) {
@@ -169,12 +175,15 @@ export function DateField({
               <button
                 type="button"
                 aria-label="Previous month"
-                onClick={() =>
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
                   setView(
                     (current) =>
                       new Date(current.getFullYear(), current.getMonth() - 1, 1)
-                  )
-                }
+                  );
+                }}
                 className={cn(
                   "grid size-9 place-items-center rounded-lg transition",
                   dark
@@ -198,12 +207,15 @@ export function DateField({
               <button
                 type="button"
                 aria-label="Next month"
-                onClick={() =>
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
                   setView(
                     (current) =>
                       new Date(current.getFullYear(), current.getMonth() + 1, 1)
-                  )
-                }
+                  );
+                }}
                 className={cn(
                   "grid size-9 place-items-center rounded-lg transition",
                   dark
