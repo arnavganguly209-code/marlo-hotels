@@ -47,7 +47,13 @@ export function DiningSection({
                         quality={100}
                         unoptimized={imageSrc.startsWith("/media/")}
                       />
-                    ) : null}
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-forest-900 to-forest-950 px-6 text-center">
+                        <p className="font-display text-xl text-cream-100/80">
+                          Image coming soon
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/95 via-charcoal-950/30 to-transparent" />
 

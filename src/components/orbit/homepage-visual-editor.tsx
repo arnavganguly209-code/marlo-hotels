@@ -42,6 +42,11 @@ import { MediaField } from "@/components/orbit/media-picker";
 import { ImageCropper } from "@/components/orbit/image-cropper";
 import { SimpleHeroVideoPanel } from "@/components/orbit/simple-hero-video-panel";
 import { useToast } from "@/components/orbit/toast";
+import {
+  TextField,
+  emptyEditableImage,
+  VisualCardStack,
+} from "@/components/orbit/visual-card-stack";
 import type { EditableImage, HomepageContent } from "@/lib/homepage-content";
 import { withMediaCacheBust } from "@/lib/media-cache";
 import {
@@ -443,6 +448,37 @@ export function HomepageVisualEditor({
                     )}
                   >
                     Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const source = content[section.key];
+                      const copy = clone(source) as { enabled?: boolean } & Record<
+                        string,
+                        unknown
+                      >;
+                      if ("heading" in copy && typeof copy.heading === "string") {
+                        copy.heading = `${copy.heading} (Copy)`;
+                      }
+                      setContent(
+                        (doc) =>
+                          ({
+                            ...doc,
+                            [section.key]: copy,
+                          }) as HomepageContent
+                      );
+                      setDirty(true);
+                      selectSection(section.key);
+                      push(`${section.label} duplicated into editor`, "success");
+                    }}
+                    className={cn(
+                      "rounded-lg px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] uppercase",
+                      isActive
+                        ? "text-[#e4c784]/80 hover:bg-white/5"
+                        : "text-[#53675e] hover:bg-white"
+                    )}
+                  >
+                    Duplicate
                   </button>
                   <button
                     type="button"
@@ -904,6 +940,21 @@ function SectionForm({
               src: String(item.src || ""),
               alt: String(item.alt || ""),
             }))}
+            onChange={(next) => set("items", next)}
+          />
+        ) : sectionKey === "dining" ? (
+          <DiningExperienceEditor
+            items={value.items as JsonObject[]}
+            onChange={(next) => set("items", next)}
+          />
+        ) : sectionKey === "attractions" ? (
+          <AttractionsCardsEditor
+            items={value.items as JsonObject[]}
+            onChange={(next) => set("items", next)}
+          />
+        ) : sectionKey === "offers" ? (
+          <OffersCardsEditor
+            items={value.items as JsonObject[]}
             onChange={(next) => set("items", next)}
           />
         ) : (
@@ -1791,6 +1842,230 @@ function ImageListEditor({
         ))}
       </div>
     </div>
+  );
+}
+
+function DiningExperienceEditor({
+  items,
+  onChange,
+}: {
+  items: JsonObject[];
+  onChange: (items: JsonObject[]) => void;
+}) {
+  return (
+    <VisualCardStack
+      title="Dining Experience Cards"
+      addLabel="Add Card"
+      items={items}
+      onChange={onChange}
+      blankItem={() => ({
+        slug: `venue-${Date.now()}`,
+        name: "New Venue",
+        cuisine: "Cuisine",
+        tagline: "",
+        shortDescription: "",
+        description: [],
+        hours: "",
+        dressCode: "",
+        location: "",
+        images: [emptyEditableImage("Dining venue")],
+        chef: {
+          name: "",
+          title: "",
+          bio: "",
+          image: emptyEditableImage("Chef"),
+        },
+        menu: [],
+      })}
+      renderCard={(item, _index, update) => {
+        const images = Array.isArray(item.images)
+          ? (item.images as EditableImage[])
+          : [emptyEditableImage()];
+        const cover = images[0] || emptyEditableImage();
+        return (
+          <div className="space-y-5">
+            <ImageEditor
+              label="Cover Image"
+              value={cover}
+              onChange={(next) =>
+                update({
+                  ...item,
+                  images: [next, ...images.slice(1)],
+                })
+              }
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                label="Title"
+                value={String(item.name || "")}
+                onChange={(name) => update({ ...item, name })}
+              />
+              <TextField
+                label="Subtitle / Cuisine"
+                value={String(item.cuisine || "")}
+                onChange={(cuisine) => update({ ...item, cuisine })}
+              />
+            </div>
+            <TextField
+              label="Description"
+              multiline
+              value={String(item.tagline || item.shortDescription || "")}
+              onChange={(tagline) =>
+                update({ ...item, tagline, shortDescription: tagline })
+              }
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                label="Hours"
+                value={String(item.hours || "")}
+                onChange={(hours) => update({ ...item, hours })}
+              />
+              <TextField
+                label="Location"
+                value={String(item.location || "")}
+                onChange={(location) => update({ ...item, location })}
+              />
+            </div>
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+function AttractionsCardsEditor({
+  items,
+  onChange,
+}: {
+  items: JsonObject[];
+  onChange: (items: JsonObject[]) => void;
+}) {
+  return (
+    <VisualCardStack
+      title="Nearby Attractions"
+      addLabel="Add Attraction"
+      items={items}
+      onChange={onChange}
+      blankItem={() => ({
+        name: "New Attraction",
+        distance: "",
+        description: "",
+        badge: "",
+        buttonText: "",
+        buttonLink: "",
+        image: emptyEditableImage("Attraction"),
+      })}
+      renderCard={(item, _index, update) => {
+        const image = isImage(item.image)
+          ? item.image
+          : emptyEditableImage("Attraction");
+        return (
+          <div className="space-y-5">
+            <ImageEditor
+              label="Cover Image"
+              value={image}
+              onChange={(next) => update({ ...item, image: next })}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                label="Badge"
+                value={String(item.badge || "")}
+                onChange={(badge) => update({ ...item, badge })}
+              />
+              <TextField
+                label="Distance"
+                value={String(item.distance || "")}
+                onChange={(distance) => update({ ...item, distance })}
+              />
+            </div>
+            <TextField
+              label="Title"
+              value={String(item.name || "")}
+              onChange={(name) => update({ ...item, name })}
+            />
+            <TextField
+              label="Description"
+              multiline
+              value={String(item.description || "")}
+              onChange={(description) => update({ ...item, description })}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                label="Button Text"
+                value={String(item.buttonText || "")}
+                onChange={(buttonText) => update({ ...item, buttonText })}
+              />
+              <TextField
+                label="Button Link"
+                value={String(item.buttonLink || "")}
+                onChange={(buttonLink) => update({ ...item, buttonLink })}
+              />
+            </div>
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+function OffersCardsEditor({
+  items,
+  onChange,
+}: {
+  items: JsonObject[];
+  onChange: (items: JsonObject[]) => void;
+}) {
+  return (
+    <VisualCardStack
+      title="Special Offers"
+      addLabel="Add Offer"
+      items={items}
+      onChange={onChange}
+      blankItem={() => ({
+        title: "New Offer",
+        description: "",
+        buttonText: "Learn More",
+        buttonLink: "/offers",
+        image: emptyEditableImage("Offer"),
+      })}
+      renderCard={(item, _index, update) => {
+        const image = isImage(item.image)
+          ? item.image
+          : emptyEditableImage("Offer");
+        return (
+          <div className="space-y-5">
+            <ImageEditor
+              label="Cover Image"
+              value={image}
+              onChange={(next) => update({ ...item, image: next })}
+            />
+            <TextField
+              label="Offer Name"
+              value={String(item.title || "")}
+              onChange={(title) => update({ ...item, title })}
+            />
+            <TextField
+              label="Description"
+              multiline
+              value={String(item.description || "")}
+              onChange={(description) => update({ ...item, description })}
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                label="Button"
+                value={String(item.buttonText || "")}
+                onChange={(buttonText) => update({ ...item, buttonText })}
+              />
+              <TextField
+                label="Link"
+                value={String(item.buttonLink || "")}
+                onChange={(buttonLink) => update({ ...item, buttonLink })}
+              />
+            </div>
+          </div>
+        );
+      }}
+    />
   );
 }
 
