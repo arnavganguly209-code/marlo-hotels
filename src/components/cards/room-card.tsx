@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowRight, Expand, Eye, Users } from "lucide-react";
+import { ArrowRight, Expand, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Room } from "@/types/content";
 import {
   BREAKFAST_PER_PERSON_PER_NIGHT,
+  formatOccupancyLabel,
   quoteFromDates,
 } from "@/lib/booking-pricing";
 import { formatCurrency } from "@/lib/utils";
@@ -39,8 +40,12 @@ export function RoomCard({
           children: search.children,
           rooms: search.rooms,
           breakfast: search.breakfast,
+          includedAdults: room.includedAdults,
+          includedChildren: room.includedChildren,
           breakfastPerPersonPerNight:
             room.breakfastPrice || BREAKFAST_PER_PERSON_PER_NIGHT,
+          extraAdultPerNight: room.extraAdultPrice,
+          extraChildPerNight: room.extraChildPrice,
         })
       : null;
 
@@ -54,7 +59,9 @@ export function RoomCard({
     if (search.breakfast) params.set("breakfast", "1");
     if (search.promo) params.set("promo", search.promo);
   }
-  const href = `/rooms/${room.slug}${params.toString() ? `?${params}` : ""}`;
+  const query = params.toString();
+  const detailsHref = `/rooms/${room.slug}${query ? `?${query}` : ""}`;
+  const bookHref = `/rooms/${room.slug}${query ? `?${query}` : ""}`;
 
   return (
     <article className="group shadow-luxury-sm hover:shadow-luxury relative flex h-full flex-col overflow-hidden rounded-xl bg-white transition-shadow duration-700">
@@ -69,7 +76,9 @@ export function RoomCard({
             unoptimized={cover.src.startsWith("/media/")}
             className="object-cover"
           />
-        ) : null}
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-forest-900 to-forest-950" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/45 to-transparent" />
         <span className="glass-dark absolute top-4 left-4 rounded-full px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase">
           {soldOut
@@ -80,7 +89,9 @@ export function RoomCard({
         </span>
         <span className="absolute right-4 bottom-4 text-right">
           <span className="block text-[9px] tracking-[0.28em] text-cream-200/80 uppercase">
-            {quote ? `${quote.nights} night${quote.nights > 1 ? "s" : ""}` : labels?.from ?? "From"}
+            {quote
+              ? `${quote.nights} night${quote.nights > 1 ? "s" : ""}`
+              : labels?.from ?? "From"}
           </span>
           <span className="font-display text-2xl font-medium text-ivory">
             {formatCurrency(quote ? quote.total : room.priceFrom, room.currency)}
@@ -88,20 +99,25 @@ export function RoomCard({
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col p-7">
+      <div className="relative z-10 flex flex-1 flex-col p-7">
         <h3 className="font-display text-2xl font-medium text-forest-950">
-          <Link href={href} className="after:absolute after:inset-0 focus-visible:outline-none">
+          <Link href={detailsHref} className="hover:text-gold-700">
             {room.name}
           </Link>
         </h3>
         <p className="mt-3 line-clamp-2 text-sm leading-relaxed font-light text-charcoal-900/60">
           {room.shortDescription}
         </p>
+        <p className="mt-3 flex items-center gap-2 text-xs font-light text-charcoal-900/70">
+          <Users className="size-3.5 text-gold-600" />
+          {formatOccupancyLabel(room.includedAdults, room.includedChildren)} included
+        </p>
         <p className="mt-3 text-[10px] font-medium tracking-[0.16em] text-gold-700 uppercase">
           Without Breakfast
         </p>
         <p className="mt-1 text-xs font-light text-charcoal-900/55">
-          Add Breakfast +{formatCurrency(room.breakfastPrice || 5, room.currency)} / person
+          Add Breakfast +
+          {formatCurrency(room.breakfastPrice || 5, room.currency)} / person
         </p>
         {quote ? (
           <dl className="mt-4 space-y-1.5 rounded-xl bg-cream-50 px-4 py-3 text-xs text-charcoal-900/70">
@@ -115,6 +131,12 @@ export function RoomCard({
               <div className="flex justify-between">
                 <dt>Extra adult (+{quote.extraAdults})</dt>
                 <dd>+{formatCurrency(quote.extraAdultCharge, room.currency)}</dd>
+              </div>
+            ) : null}
+            {quote.extraChildCharge > 0 ? (
+              <div className="flex justify-between">
+                <dt>Extra child (+{quote.extraChildren})</dt>
+                <dd>+{formatCurrency(quote.extraChildCharge, room.currency)}</dd>
               </div>
             ) : null}
             {quote.breakfastCharge > 0 ? (
@@ -142,16 +164,23 @@ export function RoomCard({
             <Users className="size-3.5 text-gold-600" />
             <dd>{room.occupancy}</dd>
           </div>
-          <div className="flex items-center gap-2">
-            <Eye className="size-3.5 text-gold-600" />
-            <dd>{room.view}</dd>
-          </div>
         </dl>
 
-        <span className="mt-6 inline-flex items-center gap-2 text-[10px] font-medium tracking-[0.3em] text-gold-600 uppercase transition-colors duration-300 group-hover:text-gold-500">
-          {labels?.details ?? "View Details"}
-          <ArrowRight className="size-3.5 transition-transform duration-500 group-hover:translate-x-1.5" />
-        </span>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href={bookHref}
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-gold-500 px-4 text-[10px] font-semibold tracking-[0.18em] text-charcoal-950 uppercase transition hover:bg-gold-400"
+          >
+            {room.buttonText || "Book Now"}
+          </Link>
+          <Link
+            href={detailsHref}
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-forest-800/15 px-4 text-[10px] font-semibold tracking-[0.18em] text-forest-950 uppercase transition hover:border-gold-500"
+          >
+            {labels?.details ?? "View Details"}
+            <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
       </div>
     </article>
   );

@@ -12,7 +12,7 @@ export function RoomsShowcase({
   content: HomepageContent["rooms"];
 }) {
   if (!content.enabled) return null;
-  const rooms = content.items.filter((room) => room.images[0]?.src);
+  const rooms = content.items;
 
   return (
     <section className="bg-cream-100 py-24 md:py-36">

@@ -16,6 +16,7 @@ import {
 } from "@/content/rooms";
 import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
+import { formatCurrency } from "@/lib/utils";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -168,12 +169,47 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
 
             <Reveal className="mt-14">
               <h3 className="font-display text-2xl font-medium text-forest-950">
+                Occupancy
+              </h3>
+              <p className="mt-4 text-sm leading-relaxed font-light text-charcoal-900/70">
+                Included in the room rate: {room.occupancy}. Extra adults or
+                children beyond this occupancy are charged{" "}
+                {formatCurrency(room.extraAdultPrice, room.currency)} per person
+                per night. Breakfast is optional at{" "}
+                {formatCurrency(room.breakfastPrice, room.currency)} per person
+                per night.
+              </p>
+            </Reveal>
+
+            <Reveal className="mt-14">
+              <h3 className="font-display text-2xl font-medium text-forest-950">
                 Policies
               </h3>
               <dl className="mt-6 divide-y divide-forest-800/10 border-y border-forest-800/10">
-                {roomPolicies.map((policy) => (
+                {[
+                  {
+                    title: "Check-in & Check-out",
+                    body: `Check-in from ${room.checkInTime || "2:00 PM"}. Check-out by ${room.checkOutTime || "12:00 PM"}.`,
+                  },
+                  {
+                    title: "Cancellation",
+                    body:
+                      room.cancellationPolicy ||
+                      roomPolicies.find((item) => item.title === "Cancellation")
+                        ?.body ||
+                      "",
+                  },
+                  ...(room.policies?.length
+                    ? room.policies.map((policy) => ({
+                        title: "House Policy",
+                        body: policy,
+                      }))
+                    : roomPolicies.filter(
+                        (item) => item.title === "Children & Extra Beds"
+                      )),
+                ].map((policy) => (
                   <div
-                    key={policy.title}
+                    key={`${policy.title}-${policy.body.slice(0, 24)}`}
                     className="grid gap-2 py-5 sm:grid-cols-[200px_1fr] sm:gap-8"
                   >
                     <dt className="text-[11px] font-medium tracking-[0.24em] text-forest-800 uppercase">

@@ -7,7 +7,9 @@ import {
 } from "@/components/orbit/operational-manager";
 import { PageStudioEditor } from "@/components/orbit/page-studio-editor";
 import { PasskeySettings } from "@/components/orbit/passkey-settings";
+import { RoomsStudioEditor } from "@/components/orbit/rooms-studio-editor";
 import { getDb } from "@/lib/db";
+import { getOrbitRoomEntries } from "@/content/rooms";
 import { getHomepageContent } from "@/lib/homepage-content";
 import {
   HOMEPAGE_SECTIONS,
@@ -392,6 +394,11 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
         readOnly
       />
     );
+  }
+
+  if (slug === "rooms") {
+    const roomEntries = await getOrbitRoomEntries();
+    return <RoomsStudioEditor initialEntries={roomEntries} />;
   }
 
   const studioSections = PAGE_STUDIO_SECTIONS[slug];

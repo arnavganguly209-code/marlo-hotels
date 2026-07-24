@@ -100,6 +100,10 @@ export async function POST(request: Request) {
   revalidatePath("/");
   revalidatePath("/", "layout");
   revalidatePath(`/orbit/${parsed.data.module}`);
+  if (parsed.data.module === "rooms") {
+    revalidatePath("/rooms");
+    if (parsed.data.slug) revalidatePath(`/rooms/${parsed.data.slug}`);
+  }
   const publicPath =
     parsed.data.module === "homepage"
       ? "/"

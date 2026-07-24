@@ -1,265 +1,243 @@
 import type { Room } from "@/types/content";
 import { getDb } from "@/lib/db";
+import {
+  ROOM_CATALOG,
+  catalogToRoom,
+  type RoomCatalogData,
+} from "@/lib/orbit/room-defaults";
+import { formatOccupancyLabel } from "@/lib/booking-pricing";
 
-const rooms: Room[] = [
-  {
-    slug: "standard-double-room",
-    name: "Standard Double Room",
-    category: "room",
-    tagline: "Comfortable double accommodation",
-    shortDescription:
-      "A well-appointed double room with essential comforts for a restful stay.",
-    description: [
-      "Our Standard Double Room offers a comfortable king or queen bed, en-suite bathroom, and thoughtful amenities for leisure and business travellers.",
-    ],
-    priceFrom: 22,
-    currency: "USD",
-    breakfastPrice: 5,
-    inventory: 6,
-    size: "22 m²",
-    occupancy: "2 adults",
-    bed: "Double",
-    view: "Hotel",
-    featured: false,
-    images: [],
-    amenities: ["Double bed", "En-suite bathroom", "Wi-Fi", "Daily housekeeping"],
-    features: ["Air conditioning", "Work desk"],
-  },
-  {
-    slug: "standard-twin-room",
-    name: "Standard Twin Room",
-    category: "room",
-    tagline: "Twin beds for flexible stays",
-    shortDescription:
-      "Twin bedding with the same reliable comfort as our double rooms.",
-    description: [
-      "The Standard Twin Room features two single beds, an en-suite bathroom, and all essential amenities for a comfortable stay.",
-    ],
-    priceFrom: 22,
-    currency: "USD",
-    breakfastPrice: 5,
-    inventory: 6,
-    size: "22 m²",
-    occupancy: "2 adults",
-    bed: "Twin",
-    view: "Hotel",
-    featured: false,
-    images: [],
-    amenities: ["Twin beds", "En-suite bathroom", "Wi-Fi", "Daily housekeeping"],
-    features: ["Air conditioning", "Work desk"],
-  },
-  {
-    slug: "standard-triple-room",
-    name: "Standard Triple Room",
-    category: "room",
-    tagline: "Space for three guests",
-    shortDescription:
-      "Extra space and bedding for three adults travelling together.",
-    description: [
-      "The Standard Triple Room accommodates three guests with flexible bedding and a private bathroom.",
-    ],
-    priceFrom: 27,
-    currency: "USD",
-    breakfastPrice: 5,
-    inventory: 3,
-    size: "28 m²",
-    occupancy: "3 adults",
-    bed: "Triple",
-    view: "Hotel",
-    featured: false,
-    images: [],
-    amenities: ["Triple bedding", "En-suite bathroom", "Wi-Fi", "Daily housekeeping"],
-    features: ["Air conditioning"],
-  },
-  {
-    slug: "standard-family-room",
-    name: "Standard Family Room",
-    category: "room",
-    tagline: "Family-ready comfort",
-    shortDescription:
-      "A family room designed for parents and children travelling together.",
-    description: [
-      "The Standard Family Room offers space for a family stay with practical amenities and a private bathroom.",
-    ],
-    priceFrom: 27,
-    currency: "USD",
-    breakfastPrice: 5,
-    inventory: 3,
-    size: "30 m²",
-    occupancy: "2 adults, 2 children",
-    bed: "Family",
-    view: "Hotel",
-    featured: false,
-    images: [],
-    amenities: ["Family bedding", "En-suite bathroom", "Wi-Fi", "Daily housekeeping"],
-    features: ["Air conditioning"],
-  },
-  {
-    slug: "premier-room",
-    name: "Premier Room",
-    category: "room",
-    tagline: "Elevated comfort",
-    shortDescription:
-      "A larger premier room with upgraded finishes and more space to unwind.",
-    description: [
-      "The Premier Room offers more space, upgraded amenities, and a refined stay experience.",
-    ],
-    priceFrom: 35,
-    currency: "USD",
-    breakfastPrice: 5,
-    inventory: 6,
-    size: "32 m²",
-    occupancy: "2 adults",
-    bed: "King or Twin",
-    view: "Hotel",
-    featured: true,
-    images: [],
-    amenities: ["King or twin beds", "En-suite bathroom", "Wi-Fi", "Minibar"],
-    features: ["Air conditioning", "Sitting area"],
-  },
-  {
-    slug: "premier-family-room",
-    name: "Premier Family Room",
-    category: "room",
-    tagline: "Premier space for families",
-    shortDescription:
-      "Premier-level comfort sized for family stays.",
-    description: [
-      "The Premier Family Room combines upgraded amenities with space for the whole family.",
-    ],
-    priceFrom: 35,
-    currency: "USD",
-    breakfastPrice: 5,
-    inventory: 6,
-    size: "36 m²",
-    occupancy: "2 adults, 2 children",
-    bed: "Family",
-    view: "Hotel",
-    featured: true,
-    images: [],
-    amenities: ["Family bedding", "En-suite bathroom", "Wi-Fi", "Minibar"],
-    features: ["Air conditioning", "Sitting area"],
-  },
-  {
-    slug: "suite-apartment",
-    name: "Suite Apartment",
-    category: "suite",
-    tagline: "Residential suite living",
-    shortDescription:
-      "A suite apartment with living space and elevated comfort for longer stays.",
-    description: [
-      "The Suite Apartment offers separate living space, premium amenities, and the comfort of a private residence.",
-    ],
-    priceFrom: 55,
-    currency: "USD",
-    breakfastPrice: 5,
-    inventory: 6,
-    size: "55 m²",
-    occupancy: "3 adults, or 2 adults & 2 children",
-    bed: "King",
-    view: "Hotel",
-    featured: true,
-    images: [],
-    amenities: ["King bed", "Living area", "En-suite bathroom", "Wi-Fi", "Kitchenette"],
-    features: ["Air conditioning", "Separate living room"],
-  },
-];
+const rooms: Room[] = ROOM_CATALOG.map(catalogToRoom);
+
+function mapEntryToRoom(entry: {
+  title: string;
+  slug: string | null;
+  key: string;
+  status: string;
+  data: unknown;
+}): Room {
+  const data = (entry.data || {}) as Partial<RoomCatalogData> &
+    Record<string, unknown>;
+  const text = (key: string, fallback = "") => {
+    const value = data[key];
+    return typeof value === "string" && value.trim() ? value.trim() : fallback;
+  };
+  const number = (key: string, fallback = 0) => {
+    const value = data[key];
+    return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  };
+  const lines = (key: string) =>
+    text(key)
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  const seed = ROOM_CATALOG.find(
+    (item) => item.slug === (entry.slug || entry.key) || item.key === entry.key
+  );
+  const defaults = seed?.data;
+
+  const includedAdults = number(
+    "includedAdults",
+    defaults?.includedAdults ?? 2
+  );
+  const includedChildren = number(
+    "includedChildren",
+    defaults?.includedChildren ?? 0
+  );
+
+  const galleryFromArray = Array.isArray(data.gallery)
+    ? (data.gallery as { src?: string; alt?: string; url?: string }[])
+        .map((item) => ({
+          src: String(item.src || item.url || "").trim(),
+          alt: String(item.alt || entry.title),
+        }))
+        .filter((item) => item.src)
+    : [];
+  const galleryFromUrls = lines("galleryUrls").map((src) => ({
+    src,
+    alt: entry.title,
+  }));
+  const gallery = [...galleryFromArray, ...galleryFromUrls];
+  const imageUrl = text("imageUrl") || gallery[0]?.src || "";
+  const shortDescription =
+    text("shortDescription") ||
+    text("description")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 220) ||
+    entry.title;
+  const descriptionRaw = text("description")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return {
+    slug: entry.slug ?? entry.key,
+    name: entry.title,
+    category:
+      text("roomType", defaults?.roomType || "Room").toLowerCase() === "suite"
+        ? "suite"
+        : "room",
+    tagline: text("subheading", defaults?.subheading || entry.title),
+    shortDescription,
+    description: descriptionRaw
+      ? [descriptionRaw]
+      : [defaults?.description || entry.title],
+    priceFrom: number("price", defaults?.price ?? 0),
+    currency: text("currency", defaults?.currency || "USD") || "USD",
+    breakfastPrice: number("breakfastPrice", defaults?.breakfastPrice ?? 5),
+    inventory: Math.max(0, number("inventory", defaults?.inventory ?? 0)),
+    includedAdults,
+    includedChildren,
+    extraAdultPrice: number(
+      "extraAdultPrice",
+      defaults?.extraAdultPrice ?? 5
+    ),
+    extraChildPrice: number(
+      "extraChildPrice",
+      defaults?.extraChildPrice ?? 5
+    ),
+    published: entry.status === "PUBLISHED" && data.available !== false,
+    sortOrder: number("sortOrder", defaults?.sortOrder ?? 100),
+    size: text("floorSize", defaults?.floorSize || "—"),
+    floor: text("floor", defaults?.floor || ""),
+    occupancy: formatOccupancyLabel(includedAdults, includedChildren),
+    bed: text("beds", defaults?.beds || "—"),
+    view: text("view", defaults?.view || "Hotel"),
+    featured: data.featured === true,
+    images: imageUrl
+      ? [{ src: imageUrl, alt: text("imageAlt", entry.title) }, ...gallery]
+      : gallery,
+    amenities: lines("amenities").length
+      ? lines("amenities")
+      : (defaults?.amenities || "")
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean),
+    features: lines("facilities").length
+      ? lines("facilities")
+      : lines("policies").length
+        ? lines("policies")
+        : (defaults?.facilities || "")
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean),
+    policies: lines("policies"),
+    cancellationPolicy: text(
+      "cancellationPolicy",
+      defaults?.cancellationPolicy || ""
+    ),
+    checkInTime: text("checkIn", defaults?.checkIn || "2:00 PM"),
+    checkOutTime: text("checkOut", defaults?.checkOut || "12:00 PM"),
+    buttonText: text("buttonText", defaults?.buttonText || "Book Now"),
+    buttonLink: text(
+      "buttonLink",
+      defaults?.buttonLink || `/rooms/${entry.slug ?? entry.key}`
+    ),
+  };
+}
 
 export async function getRooms(): Promise<Room[]> {
   const db = getDb();
   if (db) {
     try {
       const entries = await db.contentEntry.findMany({
-        where: { module: "rooms", status: "PUBLISHED" },
+        where: { module: "rooms" },
         orderBy: { updatedAt: "desc" },
       });
       const inventory = entries.filter(
         (entry) => entry.key !== "page-studio" && entry.slug
       );
       if (inventory.length) {
-        return inventory
-          .map((entry) => {
-            const data = (entry.data || {}) as Record<string, unknown>;
-            const text = (key: string, fallback = "") => {
-              const value = data[key];
-              return typeof value === "string" && value.trim()
-                ? value.trim()
-                : fallback;
-            };
-            const number = (key: string, fallback = 0) => {
-              const value = data[key];
-              return typeof value === "number" && Number.isFinite(value)
-                ? value
-                : fallback;
-            };
-            const lines = (key: string) =>
-              text(key)
-                .split("\n")
-                .map((item) => item.trim())
-                .filter(Boolean);
-            const description = text("description")
-              .replace(/<[^>]+>/g, " ")
-              .replace(/\s+/g, " ")
-              .trim();
-            const galleryFromArray = Array.isArray(data.gallery)
-              ? (data.gallery as { src?: string; alt?: string; url?: string }[])
-                  .map((item) => ({
-                    src: String(item.src || item.url || "").trim(),
-                    alt: String(item.alt || entry.title),
-                  }))
-                  .filter((item) => item.src)
-              : [];
-            const galleryFromUrls = lines("galleryUrls").map((src) => ({
-              src,
-              alt: entry.title,
-            }));
-            const gallery = [...galleryFromArray, ...galleryFromUrls];
-            const imageUrl = text("imageUrl") || gallery[0]?.src || "";
-            const published =
-              entry.status === "PUBLISHED" && data.available !== false;
-            return {
-              slug: entry.slug ?? entry.key,
-              name: entry.title,
-              category:
-                text("roomType", "Room").toLowerCase() === "suite"
-                  ? ("suite" as const)
-                  : ("room" as const),
-              tagline: text("subheading", entry.title),
-              shortDescription: description.slice(0, 220) || entry.title,
-              description: description ? [description] : [entry.title],
-              priceFrom: number("price", 0),
-              currency: text("currency", "USD") || "USD",
-              breakfastPrice: number("breakfastPrice", 5),
-              inventory: Math.max(0, number("inventory", 0)),
-              published,
-              sortOrder: number("sortOrder", 100),
-              size: text("floorSize", "—"),
-              occupancy: `${number("maxGuests", 2)} guests`,
-              bed: text("beds", "—"),
-              view: text("view", "Hotel"),
-              featured: data.featured === true,
-              images: imageUrl
-                ? [
-                    { src: imageUrl, alt: text("imageAlt", entry.title) },
-                    ...gallery,
-                  ]
-                : gallery,
-              amenities: lines("amenities"),
-              features: lines("policies"),
-            };
-          })
-          .filter((room) => room.published)
+        const mapped = inventory
+          .map(mapEntryToRoom)
+          .filter((room) => room.published !== false)
           .sort(
             (a, b) =>
               (a.sortOrder ?? 100) - (b.sortOrder ?? 100) ||
               a.name.localeCompare(b.name)
           );
+        if (mapped.length) return mapped;
       }
     } catch {
       // Static content remains the safe bootstrap until the first CMS publish.
     }
   }
   return rooms;
+}
+
+/** All catalog rooms for Orbit (includes drafts). */
+export async function getOrbitRoomEntries() {
+  const db = getDb();
+  if (!db) {
+    return ROOM_CATALOG.map((seed) => ({
+      id: seed.key,
+      module: "rooms",
+      key: seed.key,
+      title: seed.title,
+      slug: seed.slug,
+      status: seed.status as "PUBLISHED",
+      data: seed.data as Record<string, unknown>,
+      seo: null,
+      scheduledAt: null as string | null,
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+
+  const entries = await db.contentEntry.findMany({
+    where: { module: "rooms" },
+    orderBy: { updatedAt: "asc" },
+  });
+  const inventory = entries.filter((entry) => entry.key !== "page-studio");
+
+  // Seed any missing catalog rooms so Orbit always shows all 7.
+  const existingKeys = new Set(inventory.map((entry) => entry.key));
+  const existingSlugs = new Set(
+    inventory.map((entry) => entry.slug).filter(Boolean)
+  );
+  for (const seed of ROOM_CATALOG) {
+    if (existingKeys.has(seed.key) || existingSlugs.has(seed.slug)) continue;
+    await db.contentEntry.upsert({
+      where: { module_key: { module: "rooms", key: seed.key } },
+      create: {
+        module: "rooms",
+        key: seed.key,
+        title: seed.title,
+        slug: seed.slug,
+        status: "PUBLISHED",
+        data: seed.data,
+        publishedAt: new Date(),
+      },
+      update: {},
+    });
+  }
+
+  const refreshed = await db.contentEntry.findMany({
+    where: { module: "rooms" },
+    orderBy: { updatedAt: "asc" },
+  });
+
+  return refreshed
+    .filter((entry) => entry.key !== "page-studio" && entry.slug)
+    .map((entry) => ({
+      id: entry.id,
+      module: entry.module,
+      key: entry.key,
+      title: entry.title,
+      slug: entry.slug,
+      status: entry.status,
+      data: entry.data as Record<string, unknown>,
+      seo: entry.seo as Record<string, unknown> | null,
+      scheduledAt: entry.scheduledAt?.toISOString() ?? null,
+      updatedAt: entry.updatedAt.toISOString(),
+    }))
+    .sort((a, b) => {
+      const orderA = Number((a.data as { sortOrder?: number }).sortOrder ?? 100);
+      const orderB = Number((b.data as { sortOrder?: number }).sortOrder ?? 100);
+      return orderA - orderB || a.title.localeCompare(b.title);
+    });
 }
 
 export async function getRoomBySlug(slug: string): Promise<Room | undefined> {
@@ -285,6 +263,6 @@ export const roomPolicies = [
   },
   {
     title: "Children & Extra Beds",
-    body: "Children are welcome. Extra beds and cots can be arranged on request and may incur an additional charge.",
+    body: "Children are welcome. Extra beds and cots can be arranged on request and may incur an additional charge beyond included occupancy.",
   },
 ];

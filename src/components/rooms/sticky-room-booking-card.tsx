@@ -57,10 +57,27 @@ export function StickyRoomBookingCard({
         children,
         rooms,
         breakfast,
+        includedAdults: room.includedAdults,
+        includedChildren: room.includedChildren,
         breakfastPerPersonPerNight:
           room.breakfastPrice || BREAKFAST_PER_PERSON_PER_NIGHT,
+        extraAdultPerNight: room.extraAdultPrice,
+        extraChildPerNight: room.extraChildPrice,
       }),
-    [room.priceFrom, room.breakfastPrice, checkIn, checkOut, adults, children, rooms, breakfast]
+    [
+      room.priceFrom,
+      room.breakfastPrice,
+      room.includedAdults,
+      room.includedChildren,
+      room.extraAdultPrice,
+      room.extraChildPrice,
+      checkIn,
+      checkOut,
+      adults,
+      children,
+      rooms,
+      breakfast,
+    ]
   );
 
   const soldOut = room.inventory < rooms;
@@ -90,7 +107,9 @@ export function StickyRoomBookingCard({
         {formatCurrency(quote.total, room.currency)}
       </p>
       <p className="mt-1 text-xs text-charcoal-900/55">
-        {quote.nights} night{quote.nights > 1 ? "s" : ""} · Without Breakfast base
+        {quote.nights} night{quote.nights > 1 ? "s" : ""} ·{" "}
+        {room.includedAdults}A / {room.includedChildren}C included · Without
+        Breakfast base
       </p>
 
       <div className="mt-6 space-y-4">
@@ -188,8 +207,14 @@ export function StickyRoomBookingCard({
         </div>
         {quote.extraAdultCharge > 0 ? (
           <div className="flex justify-between">
-            <dt>Extra adults</dt>
+            <dt>Extra adults (+{quote.extraAdults})</dt>
             <dd>+{formatCurrency(quote.extraAdultCharge, room.currency)}</dd>
+          </div>
+        ) : null}
+        {quote.extraChildCharge > 0 ? (
+          <div className="flex justify-between">
+            <dt>Extra children (+{quote.extraChildren})</dt>
+            <dd>+{formatCurrency(quote.extraChildCharge, room.currency)}</dd>
           </div>
         ) : null}
         {quote.breakfastCharge > 0 ? (

@@ -287,7 +287,7 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
         view: "View",
         details: "View Details",
       },
-      items: rooms.filter((room) => room.category === "room").slice(0, 3),
+      items: rooms,
     },
     featuredSuites: {
       enabled: true,
@@ -519,7 +519,7 @@ export function mergeHomepageContent(
 export async function getHomepageContent(): Promise<HomepageContent> {
   let defaults = await getHomepageDefaults();
   const db = getDb();
-  if (!db) return defaults;
+  if (!db) return withLiveRooms(defaults);
 
   try {
     const placements = await db.mediaPlacement.findMany({
@@ -688,14 +688,36 @@ export async function getHomepageContent(): Promise<HomepageContent> {
         },
       };
     }
-    return await ensureOfficialHeroVideo(
-      stripDemoHeroMedia(normalizeAboutLinks(merged))
+    return withLiveRooms(
+      await ensureOfficialHeroVideo(
+        stripDemoHeroMedia(normalizeAboutLinks(merged))
+      )
     );
   } catch {
-    return await ensureOfficialHeroVideo(
-      stripDemoHeroMedia(normalizeAboutLinks(defaults))
+    return withLiveRooms(
+      await ensureOfficialHeroVideo(
+        stripDemoHeroMedia(normalizeAboutLinks(defaults))
+      )
     );
   }
+}
+
+/** Always show live Orbit room inventory on the homepage (all published rooms). */
+async function withLiveRooms(
+  content: HomepageContent
+): Promise<HomepageContent> {
+  const rooms = await getRooms();
+  return {
+    ...content,
+    rooms: {
+      ...content.rooms,
+      items: rooms,
+    },
+    featuredSuites: {
+      ...content.featuredSuites,
+      items: rooms.filter((room) => room.category === "suite" && room.featured),
+    },
+  };
 }
 
 /** Explore The Hotel must open /about (never the gallery). */

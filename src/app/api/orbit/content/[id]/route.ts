@@ -69,6 +69,10 @@ export async function PATCH(request: Request, { params }: Context) {
   revalidateTag("media");
   revalidatePath("/");
   revalidatePath(`/orbit/${entry.module}`);
+  if (entry.module === "rooms") {
+    revalidatePath("/rooms");
+    if (entry.slug) revalidatePath(`/rooms/${entry.slug}`);
+  }
   return NextResponse.json({ entry });
 }
 

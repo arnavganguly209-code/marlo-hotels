@@ -14,7 +14,13 @@ export type Room = {
   currency: string;
   breakfastPrice: number;
   inventory: number;
+  /** Guests included in the base rate (no extra charge). */
+  includedAdults: number;
+  includedChildren: number;
+  extraAdultPrice: number;
+  extraChildPrice: number;
   size: string;
+  floor?: string;
   occupancy: string;
   bed: string;
   view: string;
@@ -24,6 +30,12 @@ export type Room = {
   images: ImageAsset[];
   amenities: string[];
   features: string[];
+  policies?: string[];
+  cancellationPolicy?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  buttonText?: string;
+  buttonLink?: string;
 };
 
 export type MenuSection = {
