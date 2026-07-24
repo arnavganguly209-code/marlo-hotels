@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CounterField } from "@/components/ui/counter-field";
+import { DateField } from "@/components/ui/date-field";
 import type { HeroEditorContent } from "@/lib/homepage-content";
 import { buildRoomsSearchParams } from "@/lib/booking-pricing";
 import { siteConfig } from "@/lib/site";
@@ -57,10 +58,15 @@ export function BookingWidget({
     const update = () => {
       const rect = buttonRef.current?.getBoundingClientRect();
       if (!rect) return;
+      const width = Math.max(rect.width, 288);
+      let left = rect.left;
+      if (left + width > window.innerWidth - 12) {
+        left = Math.max(12, window.innerWidth - width - 12);
+      }
       setMenuPos({
         top: rect.bottom + 10,
-        left: rect.left,
-        width: Math.max(rect.width, 288),
+        left,
+        width,
       });
     };
     update();
@@ -115,7 +121,9 @@ export function BookingWidget({
       ? createPortal(
           <div
             id="orbit-guests-portal"
-            className="glass-dark shadow-luxury fixed z-[9999] space-y-4 rounded-xl border border-white/10 p-5"
+            role="dialog"
+            aria-label="Guests and rooms"
+            className="glass-dark shadow-luxury fixed z-[9999] max-h-[min(420px,calc(100dvh-1.5rem))] space-y-4 overflow-y-auto rounded-xl border border-white/10 p-5"
             style={{
               top: menuPos.top,
               left: menuPos.left,
@@ -153,46 +161,40 @@ export function BookingWidget({
       onSubmit={onSearch}
       aria-label="Check availability"
       className={cn(
-        "shadow-luxury relative z-30 grid grid-cols-2 gap-x-6 gap-y-5 overflow-visible rounded-2xl border border-white/10 bg-[rgb(10_24_20_/_0.72)] p-6 backdrop-blur-2xl md:p-7 lg:grid-cols-[1fr_1fr_1.2fr_1fr_auto] lg:items-end",
+        "shadow-luxury relative z-30 grid grid-cols-1 gap-x-6 gap-y-5 overflow-visible rounded-2xl border border-white/10 bg-[rgb(10_24_20_/_0.78)] p-5 backdrop-blur-2xl sm:grid-cols-2 sm:p-6 md:p-7 lg:grid-cols-[1fr_1fr_1.2fr_1fr_auto] lg:items-end",
         className
       )}
     >
-      <div>
-        <label htmlFor="widget-check-in" className={labelClass}>
-          <CalendarDays className="size-3.5" /> {content.checkInLabel}
-        </label>
-        <input
-          id="widget-check-in"
-          type="date"
-          required
-          min={toISODateString(today)}
-          value={checkIn}
-          onChange={(event) => {
-            setCheckIn(event.target.value);
-            if (event.target.value >= checkOut) {
-              setCheckOut(
-                toISODateString(addDays(new Date(event.target.value), 1))
-              );
-            }
-          }}
-          className="mt-2.5 w-full border-b border-ivory/25 bg-transparent pb-2 text-sm font-light text-ivory outline-none [color-scheme:dark] focus:border-gold-400"
-        />
-      </div>
+      <DateField
+        id="widget-check-in"
+        label={
+          <span className={labelClass}>
+            <CalendarDays className="size-3.5" /> {content.checkInLabel}
+          </span>
+        }
+        value={checkIn}
+        min={toISODateString(today)}
+        required
+        onChange={(next) => {
+          setCheckIn(next);
+          if (next >= checkOut) {
+            setCheckOut(toISODateString(addDays(new Date(next), 1)));
+          }
+        }}
+      />
 
-      <div>
-        <label htmlFor="widget-check-out" className={labelClass}>
-          <CalendarDays className="size-3.5" /> {content.checkOutLabel}
-        </label>
-        <input
-          id="widget-check-out"
-          type="date"
-          required
-          min={toISODateString(addDays(new Date(checkIn), 1))}
-          value={checkOut}
-          onChange={(event) => setCheckOut(event.target.value)}
-          className="mt-2.5 w-full border-b border-ivory/25 bg-transparent pb-2 text-sm font-light text-ivory outline-none [color-scheme:dark] focus:border-gold-400"
-        />
-      </div>
+      <DateField
+        id="widget-check-out"
+        label={
+          <span className={labelClass}>
+            <CalendarDays className="size-3.5" /> {content.checkOutLabel}
+          </span>
+        }
+        value={checkOut}
+        min={toISODateString(addDays(new Date(checkIn), 1))}
+        required
+        onChange={setCheckOut}
+      />
 
       <div ref={guestsRef} className="relative z-40 overflow-visible">
         <span className={labelClass}>
@@ -204,7 +206,7 @@ export function BookingWidget({
           onClick={() => setGuestsOpen((value) => !value)}
           aria-expanded={guestsOpen}
           aria-haspopup="dialog"
-          className="mt-2.5 flex w-full items-center justify-between border-b border-ivory/25 pb-2 text-sm font-light text-ivory transition-colors focus:border-gold-400"
+          className="mt-2.5 flex min-h-11 w-full items-center justify-between border-b border-ivory/25 pb-2 text-sm font-light text-ivory transition-colors focus-visible:border-gold-400 focus-visible:outline-none"
         >
           <span>
             {adults + children} Guest{adults + children > 1 ? "s" : ""}
@@ -230,13 +232,13 @@ export function BookingWidget({
           placeholder={content.promoPlaceholder}
           value={promo}
           onChange={(event) => setPromo(event.target.value)}
-          className="mt-2.5 w-full border-b border-ivory/25 bg-transparent pb-2 text-sm font-light tracking-widest text-ivory uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:text-cream-200/35 focus:border-gold-400"
+          className="mt-2.5 min-h-11 w-full border-b border-ivory/25 bg-transparent pb-2 text-sm font-light tracking-widest text-ivory uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:text-cream-200/35 focus:border-gold-400"
         />
       </div>
 
       <button
         type="submit"
-        className="shadow-gold col-span-2 flex h-13 items-center justify-center gap-3 rounded-lg bg-gold-500 px-8 text-[11px] font-semibold tracking-[0.24em] text-charcoal-950 uppercase transition-all duration-500 hover:-translate-y-0.5 hover:bg-gold-400 lg:col-span-1"
+        className="shadow-gold col-span-1 flex h-13 min-h-12 items-center justify-center gap-3 rounded-lg bg-gold-500 px-8 text-[11px] font-semibold tracking-[0.24em] text-charcoal-950 uppercase transition-all duration-500 hover:-translate-y-0.5 hover:bg-gold-400 focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:outline-none sm:col-span-2 lg:col-span-1"
       >
         <BedDouble className="size-4" />
         {content.submitLabel}

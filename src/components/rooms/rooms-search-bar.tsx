@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { DateField } from "@/components/ui/date-field";
 import { buildRoomsSearchParams } from "@/lib/booking-pricing";
 import { toISODateString } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -54,34 +55,42 @@ export function RoomsSearchBar({
     );
   }
 
+  const fieldLabel =
+    "text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase";
+
   return (
     <form
       onSubmit={onSubmit}
-      className="grid gap-3 rounded-2xl border border-forest-800/10 bg-white p-4 md:grid-cols-[repeat(6,minmax(0,1fr))_auto] md:items-end"
+      className="grid gap-3 overflow-visible rounded-2xl border border-forest-800/10 bg-white p-4 md:grid-cols-[repeat(6,minmax(0,1fr))_auto] md:items-end"
     >
-      <label className="text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
-        Check In
-        <input
-          type="date"
-          required
-          value={checkIn}
-          min={toISODateString(today)}
-          onChange={(event) => setCheckIn(event.target.value)}
-          className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
-        />
-      </label>
-      <label className="text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
-        Check Out
-        <input
-          type="date"
-          required
-          value={checkOut}
-          min={toISODateString(addDays(new Date(checkIn), 1))}
-          onChange={(event) => setCheckOut(event.target.value)}
-          className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
-        />
-      </label>
-      <label className="text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
+      <DateField
+        id="rooms-check-in"
+        tone="light"
+        label={<span className={fieldLabel}>Check In</span>}
+        value={checkIn}
+        min={toISODateString(today)}
+        required
+        onChange={(next) => {
+          setCheckIn(next);
+          if (next >= checkOut) {
+            setCheckOut(toISODateString(addDays(new Date(next), 1)));
+          }
+        }}
+        className="min-w-0"
+        buttonClassName="mt-1.5"
+      />
+      <DateField
+        id="rooms-check-out"
+        tone="light"
+        label={<span className={fieldLabel}>Check Out</span>}
+        value={checkOut}
+        min={toISODateString(addDays(new Date(checkIn), 1))}
+        required
+        onChange={setCheckOut}
+        className="min-w-0"
+        buttonClassName="mt-1.5"
+      />
+      <label className={fieldLabel}>
         Adults
         <input
           type="number"
@@ -92,7 +101,7 @@ export function RoomsSearchBar({
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>
-      <label className="text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
+      <label className={fieldLabel}>
         Children
         <input
           type="number"
@@ -103,7 +112,7 @@ export function RoomsSearchBar({
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>
-      <label className="text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
+      <label className={fieldLabel}>
         Rooms
         <input
           type="number"
@@ -114,12 +123,12 @@ export function RoomsSearchBar({
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>
-      <label className="text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
+      <label className={fieldLabel}>
         Promo
         <input
           value={promo}
           onChange={(event) => setPromo(event.target.value)}
-          className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm uppercase tracking-widest"
+          className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm tracking-widest uppercase"
           placeholder="Optional"
         />
       </label>

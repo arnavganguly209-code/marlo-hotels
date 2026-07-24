@@ -8,6 +8,7 @@ import {
   XIcon,
   YoutubeIcon,
 } from "@/components/shared/social-icons";
+import { PaymentMarks } from "@/components/shared/payment-marks";
 import type {
   FooterCtaEditorContent,
   FooterEditorContent,
@@ -20,6 +21,13 @@ const socialIcons = {
   "X (Twitter)": XIcon,
   YouTube: YoutubeIcon,
 };
+
+const legalLinks = [
+  { label: "Privacy Policy", href: "/legal#privacy" },
+  { label: "Terms & Conditions", href: "/legal#terms" },
+  { label: "Cancellation Policy", href: "/legal#cancellation" },
+  { label: "Cookie Settings", href: "/legal#cookies" },
+] as const;
 
 export function Footer({
   logoUrl,
@@ -165,10 +173,31 @@ export function Footer({
               </span>
             </li>
           </ul>
+          <PaymentMarks className="mt-6 flex flex-wrap items-center gap-2" />
         </div>
       </div>
 
       <div className="border-t border-ivory/10">
+        <nav
+          aria-label="Legal"
+          className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-3 gap-y-2 px-5 pt-6 pb-2 text-[10px] font-medium tracking-[0.16em] text-cream-200/55 uppercase md:px-8"
+        >
+          {legalLinks.map((link, index) => (
+            <span key={link.href} className="inline-flex items-center gap-3">
+              {index > 0 ? (
+                <span className="text-cream-200/25" aria-hidden>
+                  |
+                </span>
+              ) : null}
+              <Link
+                href={link.href}
+                className="min-h-10 inline-flex items-center transition-colors hover:text-gold-400"
+              >
+                {link.label}
+              </Link>
+            </span>
+          ))}
+        </nav>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 text-xs font-light tracking-wider text-cream-200/50 md:flex-row md:px-8">
           <p>
             © {new Date().getFullYear()}{" "}

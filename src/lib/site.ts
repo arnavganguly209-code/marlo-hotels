@@ -57,7 +57,7 @@ export const mainNav: NavItem[] = [
 
 export const footerNav = {
   hotel: [
-    { label: "About Marlo", href: "/#about" },
+    { label: "About Marlo", href: "/about" },
     { label: "Rooms & Suites", href: "/rooms" },
     { label: "Dining", href: "/dining" },
     { label: "Spa & Wellness", href: "/spa" },
@@ -67,7 +67,7 @@ export const footerNav = {
     { label: "Experiences", href: "/experiences" },
     { label: "Offers & Packages", href: "/offers" },
     { label: "The Journal", href: "/blog" },
-    { label: "Weddings & Events", href: "/#events" },
     { label: "Contact", href: "/contact" },
+    { label: "Legal", href: "/legal" },
   ],
 } as const;

@@ -75,6 +75,7 @@ export function hotelJsonLd() {
       { "@type": "LocationFeatureSpecification", name: "Airport Transfer" },
       { "@type": "LocationFeatureSpecification", name: "Free Wi-Fi" },
     ],
+    paymentAccepted: ["Visa", "MasterCard", "American Express", "UnionPay"],
     sameAs: Object.values(siteConfig.social),
   };
 }
