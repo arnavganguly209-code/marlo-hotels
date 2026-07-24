@@ -209,9 +209,7 @@ export function BookingWidget({
           className="mt-2.5 flex min-h-11 w-full items-center justify-between border-b border-ivory/25 pb-2 text-sm font-light text-ivory transition-colors focus-visible:border-gold-400 focus-visible:outline-none"
         >
           <span>
-            {adults + children} Guest{adults + children > 1 ? "s" : ""}
-            <span className="mx-1.5 text-gold-500">·</span>
-            {rooms} Room{rooms > 1 ? "s" : ""}
+            {`${adults + children} Guest${adults + children === 1 ? "" : "s"} · ${rooms} Room${rooms === 1 ? "" : "s"}`}
           </span>
           <ChevronDown
             className={cn(
