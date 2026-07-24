@@ -180,44 +180,76 @@ export async function getPosts(): Promise<Post[]> {
         orderBy: { publishedAt: "desc" },
       });
       if (entries.length) {
-        return entries.map((entry) => {
-          const data = entry.data as Record<string, unknown>;
-          const text = (key: string, fallback = "") =>
-            typeof data[key] === "string" ? String(data[key]) : fallback;
-          const html = text("content");
-          return {
-            slug: entry.slug ?? entry.key,
-            title: entry.title,
-            excerpt: text("excerpt", entry.title),
-            category: text("category", "Journal"),
-            date: (entry.publishedAt ?? entry.updatedAt)
-              .toISOString()
-              .slice(0, 10),
-            readingTime: text("readingTime", "5 min read"),
-            author: {
-              name: text("author", "Marlo Hotels"),
-              role: "Contributor",
-            },
-            image: {
-              src: text("imageUrl", "/images/brand/hero-reference.png"),
-              alt: text("imageAlt", entry.title),
-            },
-            content: [
-              {
-                paragraphs: [
-                  html
-                    .replace(/<\/(p|h2|li)>/gi, "\n")
-                    .replace(/<[^>]+>/g, "")
-                    .trim(),
-                ],
+        return entries
+          .filter((entry) => entry.key !== "blog-settings")
+          .map((entry) => {
+            const data = entry.data as Record<string, unknown>;
+            const text = (key: string, fallback = "") =>
+              typeof data[key] === "string" ? String(data[key]) : fallback;
+            const html =
+              text("html") ||
+              text("content") ||
+              (typeof data.content === "string" ? String(data.content) : "");
+            const hasHtml = html.includes("<") && html.includes(">");
+            const structured = Array.isArray(data.content)
+              ? (data.content as { heading?: string; paragraphs?: string[] }[])
+              : null;
+
+            const content = structured?.length
+              ? structured.map((section) => ({
+                  heading: section.heading,
+                  paragraphs: section.paragraphs ?? [],
+                }))
+              : hasHtml
+                ? []
+                : html
+                  ? [
+                      {
+                        paragraphs: [
+                          html
+                            .replace(/<\/(p|h2|li)>/gi, "\n")
+                            .replace(/<[^>]+>/g, "")
+                            .trim(),
+                        ],
+                      },
+                    ]
+                  : [{ paragraphs: [text("excerpt", entry.title)] }];
+
+            const tagsRaw = data.tags;
+            const tags = Array.isArray(tagsRaw)
+              ? (tagsRaw as string[]).filter(Boolean)
+              : text("tags")
+                  .split(",")
+                  .map((tag) => tag.trim())
+                  .filter(Boolean);
+
+            return {
+              slug: entry.slug ?? entry.key,
+              title: entry.title,
+              excerpt: text("excerpt", entry.title),
+              category: text("category", "Journal"),
+              date:
+                text("publishDate") ||
+                (entry.publishedAt ?? entry.updatedAt)
+                  .toISOString()
+                  .slice(0, 10),
+              readingTime: text("readingTime", "5 min read"),
+              author: {
+                name: text("authorName") || text("author", "Marlo Hotels"),
+                role: text("authorRole", "Contributor"),
               },
-            ],
-            tags: text("tags")
-              .split(",")
-              .map((tag) => tag.trim())
-              .filter(Boolean),
-          };
-        });
+              image: {
+                src:
+                  text("coverUrl") ||
+                  text("imageUrl", "/images/brand/hero-reference.png"),
+                alt:
+                  text("coverAlt") || text("imageAlt", entry.title),
+              },
+              content,
+              htmlBody: hasHtml ? html : undefined,
+              tags,
+            };
+          });
       }
     } catch {
       // Static editorial content bootstraps the site before CMS publication.

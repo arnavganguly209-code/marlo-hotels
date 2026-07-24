@@ -17,10 +17,15 @@ export const HOMEPAGE_SECTIONS: {
   { key: "rooms", label: "Rooms", description: "All room category cards.", itemLabel: "Room" },
   {
     key: "breakfast",
-    label: "Restaurant",
-    description: "Breakfast & restaurant preview.",
+    label: "Breakfast & Restaurant",
+    description: "Breakfast hours and restaurant preview.",
   },
-  { key: "dining", label: "Dining Cards", description: "Restaurant venue cards.", itemLabel: "Restaurant" },
+  {
+    key: "dining",
+    label: "Dining Experience",
+    description: "Restaurant venue cards.",
+    itemLabel: "Restaurant",
+  },
   { key: "wellness", label: "Spa", description: "Spa & wellness preview.", itemLabel: "Treatment" },
   {
     key: "facilities",
@@ -54,7 +59,7 @@ export const HOMEPAGE_SECTIONS: {
   },
   {
     key: "offers",
-    label: "Offers",
+    label: "Special Offers",
     description: "Special offers preview.",
     itemLabel: "Offer",
   },
@@ -64,8 +69,8 @@ export const HOMEPAGE_SECTIONS: {
     label: "Location",
     description: "Address, map and directions.",
   },
-  { key: "footerCta", label: "Newsletter", description: "Newsletter call to action." },
-  { key: "footer", label: "Footer CTA", description: "Footer labels and contact." },
+  { key: "footerCta", label: "Footer CTA", description: "Newsletter call to action." },
+  { key: "footer", label: "Footer", description: "Footer labels and contact." },
 ];
 
 /** Legacy keys kept in content JSON but hidden from the primary Orbit nav. */

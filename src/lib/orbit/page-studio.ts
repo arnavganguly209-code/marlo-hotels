@@ -188,9 +188,11 @@ export const PAGE_STUDIO_SECTIONS: Record<string, PageSectionDef[]> = {
     { key: "seo", label: "SEO", description: "Metadata.", fields: ["seo"] },
   ],
   contact: [
-    { key: "hero", label: "Contact Hero", description: "Contact hero.", fields: ["image"] },
+    // Contact uses ContactStudioEditor — kept for reference only.
+    { key: "hero", label: "Cover Banner", description: "Contact cover.", fields: ["image"] },
     { key: "details", label: "Contact Details", description: "Address, phone, email.", fields: ["hours"] },
     { key: "form", label: "Contact Form", description: "Form labels." },
+    { key: "map", label: "Google Map", description: "Map coordinates." },
     { key: "seo", label: "SEO", description: "Metadata.", fields: ["seo"] },
   ],
   footer: [

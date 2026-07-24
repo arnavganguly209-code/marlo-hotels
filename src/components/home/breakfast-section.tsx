@@ -31,7 +31,16 @@ export function BreakfastSection({
               }}
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-forest-900 to-forest-950" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-forest-900 via-forest-950 to-[#0a1a14] px-8 text-center">
+              <div className="h-px w-16 bg-gold-500/50" />
+              <p className="font-display text-2xl font-medium text-cream-100/90">
+                Image coming soon
+              </p>
+              <p className="max-w-xs text-sm font-light text-cream-200/55">
+                Upload a breakfast or restaurant photograph in Orbit.
+              </p>
+              <div className="h-px w-16 bg-gold-500/50" />
+            </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/50 via-transparent to-transparent" />
         </Reveal>

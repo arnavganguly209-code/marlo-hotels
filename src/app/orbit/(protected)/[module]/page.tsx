@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { BlogStudioEditor } from "@/components/orbit/blog-studio-editor";
+import { ContactStudioEditor } from "@/components/orbit/contact-studio-editor";
 import { ContentManager } from "@/components/orbit/content-manager";
 import { HomepageVisualEditor } from "@/components/orbit/homepage-visual-editor";
 import { MediaManager } from "@/components/orbit/media-manager";
@@ -11,6 +13,7 @@ import { RoomsStudioEditor } from "@/components/orbit/rooms-studio-editor";
 import { SiteSettingsStudio } from "@/components/orbit/site-settings-studio";
 import { getDb } from "@/lib/db";
 import { getOrbitRoomEntries } from "@/content/rooms";
+import { getContactContent } from "@/lib/contact-content";
 import { getHomepageContent } from "@/lib/homepage-content";
 import {
   HOMEPAGE_SECTIONS,
@@ -402,6 +405,37 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
   if (slug === "rooms") {
     const roomEntries = await getOrbitRoomEntries();
     return <RoomsStudioEditor initialEntries={roomEntries} />;
+  }
+
+  if (slug === "blog") {
+    const entries = db
+      ? await db.contentEntry.findMany({
+          where: { module: "blog" },
+          orderBy: { updatedAt: "desc" },
+        })
+      : [];
+    return (
+      <BlogStudioEditor
+        initialEntries={entries.map((entry) => ({
+          id: entry.id,
+          module: entry.module,
+          key: entry.key,
+          title: entry.title,
+          slug: entry.slug,
+          status: entry.status,
+          data: entry.data as Record<string, unknown>,
+          seo: entry.seo as Record<string, unknown> | null,
+          scheduledAt: entry.scheduledAt?.toISOString() ?? null,
+          updatedAt: entry.updatedAt.toISOString(),
+        }))}
+      />
+    );
+  }
+
+  if (slug === "contact") {
+    return (
+      <ContactStudioEditor initialContent={await getContactContent()} />
+    );
   }
 
   if (slug === "site-settings") {

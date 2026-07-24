@@ -349,65 +349,152 @@ export function HomepageVisualEditor({
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="orbit-scrollbar max-h-[40vh] space-y-2 overflow-y-auto border-b border-[var(--orbit-border)] bg-[#f6f7f4] p-4 lg:max-h-none lg:border-r lg:border-b-0 lg:p-5">
-          <p className="mb-3 px-1 text-[9px] font-semibold tracking-[0.22em] text-[#a67a30] uppercase">
-            Sections
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[360px_minmax(0,1fr)]">
+        <aside className="orbit-scrollbar max-h-[45vh] space-y-4 overflow-y-auto border-b border-[var(--orbit-border)] bg-[#f3f4f0] p-4 lg:max-h-none lg:border-r lg:border-b-0 lg:p-5">
+          <p className="mb-1 px-1 text-[9px] font-semibold tracking-[0.22em] text-[#a67a30] uppercase">
+            Homepage Sections
           </p>
-          {orderedSections.map((section) => {
+          {orderedSections.map((section, index) => {
             const Icon = SECTION_ICONS[section.key] || LayoutTemplate;
             const isActive = active === section.key;
-            const enabled =
-              (content[section.key] as { enabled?: boolean } | undefined)
-                ?.enabled !== false;
+            const sectionData = content[section.key] as unknown as JsonObject;
+            const enabled = sectionData?.enabled !== false;
+            const thumb = sectionThumbnail(sectionData || {});
             return (
-              <button
+              <div
                 key={section.key}
-                type="button"
-                onClick={() => selectSection(section.key)}
                 className={cn(
-                  "flex w-full items-start gap-3 rounded-2xl border p-4 text-left transition",
+                  "overflow-hidden rounded-2xl border transition",
                   isActive
-                    ? "border-[#123429] bg-[#123429] text-[#f0d999] shadow-lg"
-                    : "border-transparent bg-white text-[#294138] hover:border-[#c4943c]/35"
+                    ? "border-[#123429] bg-[#123429] shadow-xl"
+                    : "border-[#17362b]/8 bg-white hover:border-[#c4943c]/40"
                 )}
               >
-                <span
+                <button
+                  type="button"
+                  onClick={() => selectSection(section.key)}
+                  className="w-full text-left"
+                >
+                  <div className="relative aspect-[16/10] bg-gradient-to-br from-[#e7ece8] to-[#d4ddd6]">
+                    {thumb ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={thumb}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className={cn(
+                          "grid h-full place-items-center",
+                          isActive ? "text-[#e4c784]/55" : "text-[#8b9892]"
+                        )}
+                      >
+                        <Icon className="size-9" />
+                      </div>
+                    )}
+                    <span className="absolute top-3 left-3 grid size-8 place-items-center rounded-lg bg-black/45 text-white">
+                      <GripVertical className="size-4" />
+                    </span>
+                    <span
+                      className={cn(
+                        "absolute top-3 right-3 rounded-full px-2.5 py-1 text-[8px] font-semibold tracking-[0.12em] uppercase",
+                        enabled
+                          ? "bg-emerald-500/90 text-white"
+                          : "bg-black/50 text-white/80"
+                      )}
+                    >
+                      {enabled ? "Visible" : "Hidden"}
+                    </span>
+                  </div>
+                  <div
+                    className={cn(
+                      "space-y-2 p-4",
+                      isActive ? "text-[#f0d999]" : "text-[#294138]"
+                    )}
+                  >
+                    <p className="text-base font-semibold">{section.label}</p>
+                    <p
+                      className={cn(
+                        "text-[12px] leading-snug",
+                        isActive ? "text-[#e4c784]/75" : "text-[#7b8982]"
+                      )}
+                    >
+                      {section.description}
+                    </p>
+                  </div>
+                </button>
+                <div
                   className={cn(
-                    "mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl",
-                    isActive ? "bg-white/10" : "bg-[#edf1ed]"
+                    "flex flex-wrap gap-2 border-t px-4 py-3",
+                    isActive
+                      ? "border-white/10"
+                      : "border-[#17362b]/8 bg-[#fafaf7]"
                   )}
                 >
-                  <Icon className="size-4" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold">
-                    {section.label}
-                  </span>
-                  <span
+                  <button
+                    type="button"
+                    onClick={() => selectSection(section.key)}
                     className={cn(
-                      "mt-1 block text-[11px] leading-snug",
-                      isActive ? "text-[#e4c784]/75" : "text-[#7b8982]"
+                      "rounded-lg px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] uppercase",
+                      isActive
+                        ? "bg-[#e4c784]/20 text-[#f0d999]"
+                        : "bg-[#123429] text-[#e4c784]"
                     )}
                   >
-                    {section.description}
-                  </span>
-                  <span
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = content[section.key] as {
+                        enabled?: boolean;
+                      } & Record<string, unknown>;
+                      setContent(
+                        (doc) =>
+                          ({
+                            ...doc,
+                            [section.key]: {
+                              ...current,
+                              enabled: current.enabled === false,
+                            },
+                          }) as HomepageContent
+                      );
+                      setDirty(true);
+                    }}
                     className={cn(
-                      "mt-2 inline-block rounded-full px-2 py-0.5 text-[8px] font-semibold tracking-[0.14em] uppercase",
-                      enabled
-                        ? isActive
-                          ? "bg-[#e4c784]/20 text-[#f0d999]"
-                          : "bg-emerald-50 text-emerald-800"
-                        : isActive
-                          ? "bg-white/10 text-[#e4c784]/70"
-                          : "bg-[#f0f1ee] text-[#8a968f]"
+                      "rounded-lg px-3 py-1.5 text-[9px] font-semibold tracking-[0.12em] uppercase",
+                      isActive
+                        ? "text-[#e4c784]/80 hover:bg-white/5"
+                        : "text-[#53675e] hover:bg-white"
                     )}
                   >
-                    {enabled ? "Visible" : "Hidden"}
-                  </span>
-                </span>
-              </button>
+                    {enabled ? "Hide" : "Show"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === 0}
+                    onClick={() => moveSection(section.key, -1)}
+                    className={cn(
+                      "rounded-lg px-2 py-1.5 text-[9px] font-semibold uppercase disabled:opacity-30",
+                      isActive ? "text-[#e4c784]/80" : "text-[#53675e]"
+                    )}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    disabled={index === orderedSections.length - 1}
+                    onClick={() => moveSection(section.key, 1)}
+                    className={cn(
+                      "rounded-lg px-2 py-1.5 text-[9px] font-semibold uppercase disabled:opacity-30",
+                      isActive ? "text-[#e4c784]/80" : "text-[#53675e]"
+                    )}
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
             );
           })}
         </aside>
@@ -780,9 +867,23 @@ function SectionForm({
 
       {Array.isArray(value.images) ? (
         <ImageListEditor
-          label={sectionKey === "gallery" ? "Gallery Images" : "Section Images"}
+          label={
+            sectionKey === "breakfast"
+              ? "Breakfast & Restaurant Image"
+              : sectionKey === "gallery"
+                ? "Gallery Images"
+                : "Section Images"
+          }
           images={value.images as EditableImage[]}
           onChange={(next) => set("images", next)}
+        />
+      ) : null}
+
+      {sectionKey === "breakfast" && Array.isArray(value.timings) ? (
+        <CollectionEditor
+          label="Dining Hours"
+          items={value.timings as JsonObject[]}
+          onChange={(next) => set("timings", next)}
         />
       ) : null}
 
@@ -1403,8 +1504,14 @@ function ImageEditor({
               }}
             />
           ) : (
-            <div className="grid h-full place-items-center">
-              <ImageIcon className="size-8 text-[#8b9892]" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#eef2ee] via-[#e4ebe5] to-[#d7e0d9] px-6 text-center">
+              <ImageIcon className="size-10 text-[#7d8c84]" />
+              <p className="text-sm font-semibold text-[#3d5248]">
+                No image uploaded
+              </p>
+              <p className="text-xs text-[#6d7c74]">
+                Upload or replace below to preview this media
+              </p>
             </div>
           )}
         </div>
@@ -1572,6 +1679,34 @@ function ImageListEditor({
         </button>
       </div>
       <div className="space-y-4">
+        {!images.length ? (
+          <div className="rounded-2xl border border-dashed border-[#17362b]/20 bg-gradient-to-br from-[#f4f6f3] to-[#e8eee9] p-8 text-center">
+            <ImageIcon className="mx-auto size-10 text-[#7d8c84]" />
+            <p className="mt-3 text-sm font-semibold text-[#3d5248]">
+              No image yet
+            </p>
+            <p className="mt-1 text-xs text-[#6d7c74]">
+              Add a cover image to preview this section media
+            </p>
+            <button
+              type="button"
+              onClick={() =>
+                onChange([
+                  {
+                    src: "",
+                    alt: "New image",
+                    title: "New image",
+                    focalX: 50,
+                    focalY: 50,
+                  },
+                ])
+              }
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#123429] px-4 py-2.5 text-[10px] font-semibold tracking-[0.14em] text-[#e4c784] uppercase"
+            >
+              <Plus className="size-3.5" /> Upload Image
+            </button>
+          </div>
+        ) : null}
         {images.map((item, index) => (
           <div
             key={`${item.src}-${index}`}
@@ -1645,9 +1780,8 @@ function ImageListEditor({
               />
               <button
                 type="button"
-                disabled={images.length <= 1}
                 onClick={() => onChange(images.filter((_, itemIndex) => itemIndex !== index))}
-                className="grid size-9 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600 disabled:cursor-not-allowed disabled:opacity-35"
+                className="grid size-9 place-items-center rounded-lg border border-red-200 bg-red-50 text-red-600"
                 aria-label="Delete image"
               >
                 <Trash2 className="size-4" />

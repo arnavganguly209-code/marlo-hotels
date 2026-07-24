@@ -134,8 +134,17 @@ export const orbitModules: OrbitModule[] = [
     singular: "article",
     icon: "notebook-pen",
     group: "Website",
-    description: "Editorial CMS with drafting, scheduling and SEO.",
-    capabilities: ["Rich text", "Categories", "Authors", "Preview", "SEO"],
+    description: "Full blogging system with drafts, SEO, media and scheduling.",
+    capabilities: [
+      "Posts",
+      "Categories",
+      "Tags",
+      "Media",
+      "SEO",
+      "Drafts",
+      "Publish",
+      "Schedule",
+    ],
   },
   {
     slug: "testimonials",
@@ -152,8 +161,15 @@ export const orbitModules: OrbitModule[] = [
     singular: "contact page",
     icon: "messages-square",
     group: "Website",
-    description: "Contact page hero, details, form and SEO.",
-    capabilities: ["Hero", "Details", "Form", "SEO"],
+    description:
+      "Visual Contact page editor — cover, details, form, map and SEO.",
+    capabilities: [
+      "Cover Banner",
+      "Contact Details",
+      "Contact Form",
+      "Google Map",
+      "SEO",
+    ],
   },
   {
     slug: "footer",

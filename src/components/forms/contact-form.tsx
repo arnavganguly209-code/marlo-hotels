@@ -11,7 +11,19 @@ import { contactSchema, type ContactInput } from "@/lib/validators";
 const fieldClass =
   "border-forest-800/20 text-forest-950 placeholder:text-forest-900/35";
 
-export function ContactForm({ defaultSubject }: { defaultSubject?: string }) {
+export function ContactForm({
+  defaultSubject,
+  buttonText = "Send Message",
+  successTitle = "Thank you for writing",
+  successMessage = "Your message has reached our team. A member of the concierge desk will reply within one working day.",
+  errorMessage = "Something went wrong sending your message. Please try again, or email us directly.",
+}: {
+  defaultSubject?: string;
+  buttonText?: string;
+  successTitle?: string;
+  successMessage?: string;
+  errorMessage?: string;
+}) {
   const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">(
     "idle"
   );
@@ -26,12 +38,16 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: string }) {
 
   async function onSubmit(data: ContactInput) {
     setStatus("sending");
-    const response = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    setStatus(response.ok ? "done" : "error");
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      setStatus(response.ok ? "done" : "error");
+    } catch {
+      setStatus("error");
+    }
   }
 
   if (status === "done") {
@@ -41,11 +57,10 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: string }) {
           <Check className="size-6" />
         </span>
         <h3 className="font-display text-3xl font-medium text-forest-950">
-          Thank you for writing
+          {successTitle}
         </h3>
         <p className="max-w-sm text-sm font-light text-charcoal-900/65">
-          Your message has reached our team. A member of the concierge desk
-          will reply within one working day.
+          {successMessage}
         </p>
       </div>
     );
@@ -125,9 +140,11 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: string }) {
       </div>
 
       {status === "error" ? (
-        <p role="alert" className="text-sm font-light text-red-500">
-          Something went wrong sending your message. Please try again, or
-          email us directly.
+        <p
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-light text-red-700"
+        >
+          {errorMessage}
         </p>
       ) : null}
 
@@ -138,7 +155,7 @@ export function ContactForm({ defaultSubject }: { defaultSubject?: string }) {
         disabled={status === "sending"}
         className="w-full sm:w-auto"
       >
-        {status === "sending" ? "Sending…" : "Send Message"}
+        {status === "sending" ? "Sending…" : buttonText}
         <Send />
       </Button>
     </form>

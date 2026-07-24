@@ -99,23 +99,32 @@ export default async function BlogPostPage({ params }: PageProps) {
               {post.excerpt}
             </p>
 
-            {post.content.map((section) => (
-              <section key={section.heading ?? section.paragraphs[0].slice(0, 40)}>
-                {section.heading ? (
-                  <h2 className="font-display mt-12 text-3xl font-medium text-forest-950">
-                    {section.heading}
-                  </h2>
-                ) : null}
-                {section.paragraphs.map((paragraph) => (
-                  <p
-                    key={paragraph.slice(0, 40)}
-                    className="mt-6 text-[15px] leading-[1.9] font-light text-charcoal-900/75"
-                  >
-                    {paragraph}
-                  </p>
-                ))}
-              </section>
-            ))}
+            {post.htmlBody ? (
+              <div
+                className="prose prose-forest mt-10 max-w-none prose-headings:font-display prose-headings:font-medium prose-headings:text-forest-950 prose-p:font-light prose-p:leading-[1.9] prose-p:text-charcoal-900/75 prose-a:text-gold-600 prose-blockquote:border-gold-500 prose-blockquote:font-light prose-li:font-light"
+                dangerouslySetInnerHTML={{ __html: post.htmlBody }}
+              />
+            ) : (
+              post.content.map((section) => (
+                <section
+                  key={section.heading ?? section.paragraphs[0]?.slice(0, 40)}
+                >
+                  {section.heading ? (
+                    <h2 className="font-display mt-12 text-3xl font-medium text-forest-950">
+                      {section.heading}
+                    </h2>
+                  ) : null}
+                  {section.paragraphs.map((paragraph) => (
+                    <p
+                      key={paragraph.slice(0, 40)}
+                      className="mt-6 text-[15px] leading-[1.9] font-light text-charcoal-900/75"
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </section>
+              ))
+            )}
           </Reveal>
 
           <Reveal className="mt-14 flex flex-wrap items-center justify-between gap-6 border-t border-forest-800/10 pt-8">

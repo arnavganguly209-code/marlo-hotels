@@ -115,6 +115,8 @@ export type Post = {
   image: ImageAsset;
   content: { heading?: string; paragraphs: string[] }[];
   tags: string[];
+  /** Rich HTML body from CMS when available */
+  htmlBody?: string;
 };
 
 export type GalleryImage = ImageAsset & {
@@ -140,4 +142,7 @@ export type Attraction = {
   distance: string;
   description: string;
   image: ImageAsset;
+  badge?: string;
+  buttonText?: string;
+  buttonLink?: string;
 };

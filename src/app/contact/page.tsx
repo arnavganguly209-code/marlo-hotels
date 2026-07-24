@@ -3,74 +3,78 @@ import type { Metadata } from "next";
 import { ContactForm } from "@/components/forms/contact-form";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
-import { resolveSiteImage } from "@/lib/orbit/resolve-image";
+import { getContactContent } from "@/lib/contact-content";
 import { buildMetadata } from "@/lib/seo";
-import { siteConfig } from "@/lib/site";
-
-export const metadata: Metadata = buildMetadata({
-  title: "Contact",
-  description:
-    "Reach Marlo Hotels — Durbar Marg, Kathmandu. Reservations, events, dining and concierge enquiries by phone, WhatsApp, email or our contact form.",
-  path: "/contact",
-});
 
 type PageProps = {
   searchParams: Promise<{ subject?: string }>;
 };
 
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getContactContent();
+  return buildMetadata({
+    title: content.seo.title || "Contact",
+    description: content.seo.description,
+    path: "/contact",
+  });
+}
+
 export default async function ContactPage({ searchParams }: PageProps) {
-  const [{ subject }, hero] = await Promise.all([
+  const [{ subject }, content] = await Promise.all([
     searchParams,
-    resolveSiteImage("page.contact.hero", {
-      src: "https://images.unsplash.com/photo-1455587734955-081b22074882?q=80&w=2400&auto=format&fit=crop",
-      alt: "The warm lights of the Marlo lobby at evening",
-    }),
+    getContactContent(),
   ]);
 
   const channels = [
     {
       Icon: Phone,
       title: "Telephone",
-      lines: [siteConfig.contact.phone, siteConfig.contact.reservations],
-      href: `tel:${siteConfig.contact.phone.replace(/\s/g, "")}`,
+      lines: [content.details.phone, content.details.reservationsPhone],
+      href: `tel:${content.details.phone.replace(/\s/g, "")}`,
       action: "Call us",
     },
     {
       Icon: MessageCircle,
       title: "WhatsApp",
-      lines: ["Concierge, instantly", "Available 6 AM – 11 PM"],
-      href: `https://wa.me/${siteConfig.contact.whatsapp.replace(/\D/g, "")}`,
+      lines: ["Concierge, instantly", content.details.conciergeHours],
+      href: `https://wa.me/${content.details.whatsapp.replace(/\D/g, "")}`,
       action: "Message us",
     },
     {
       Icon: Mail,
       title: "Email",
-      lines: [siteConfig.contact.email, siteConfig.contact.reservationsEmail],
-      href: `mailto:${siteConfig.contact.email}`,
+      lines: [content.details.generalEmail, content.details.reservationsEmail],
+      href: `mailto:${content.details.generalEmail}`,
       action: "Write to us",
     },
     {
       Icon: Clock,
       title: "Hours",
-      lines: [
-        `Front desk · ${siteConfig.hours.frontDesk}`,
-        `Concierge · ${siteConfig.hours.concierge}`,
-      ],
-      href: "/booking",
-      action: "Reserve a stay",
+      lines: content.details.businessHours
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+      href: content.cover.buttonLink || "/booking",
+      action: content.cover.buttonText || "Reserve a stay",
     },
   ];
+
+  const span = Math.max(0.004, 0.08 / Math.max(1, content.map.zoom / 5));
 
   return (
     <>
       <PageHero
-        eyebrow="Contact"
-        title="We are at your service"
-        description="Reservations, celebrations, dining or a question about the valley — the concierge desk answers around the clock."
+        eyebrow={content.cover.eyebrow}
+        title={content.cover.headline}
+        description={
+          content.cover.subheading
+            ? `${content.cover.subheading}\n\n${content.cover.description}`
+            : content.cover.description
+        }
         image={{
-          src: hero.src,
-          alt: hero.alt,
-          objectPosition: hero.objectPosition,
+          src: content.cover.image.src,
+          alt: content.cover.image.alt,
+          objectPosition: `${content.cover.image.focalX ?? 50}% ${content.cover.image.focalY ?? 50}%`,
         }}
         crumbs={[
           { label: "Home", href: "/" },
@@ -78,7 +82,6 @@ export default async function ContactPage({ searchParams }: PageProps) {
         ]}
       />
 
-      {/* Channels */}
       <section className="bg-ivory py-20 md:py-24">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Stagger className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
@@ -112,26 +115,30 @@ export default async function ContactPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* Form + map */}
       <section className="bg-cream-100 py-24 md:py-32">
         <div className="mx-auto grid max-w-7xl gap-14 px-5 md:px-8 lg:grid-cols-2">
           <Reveal>
-            <p className="eyebrow">Write To Us</p>
+            <p className="eyebrow">{content.form.eyebrow}</p>
             <h2 className="font-display mt-4 text-4xl font-medium text-forest-950">
-              Begin the conversation
+              {content.form.heading}
             </h2>
             <p className="mt-4 mb-10 text-[15px] leading-relaxed font-light text-charcoal-900/65">
-              Tell us about your stay, your celebration or your question —
-              a member of our team replies within one working day.
+              {content.form.description}
             </p>
-            <ContactForm defaultSubject={subject} />
+            <ContactForm
+              defaultSubject={subject}
+              buttonText={content.form.buttonText}
+              successTitle={content.form.successTitle}
+              successMessage={content.form.successMessage}
+              errorMessage={content.form.errorMessage}
+            />
           </Reveal>
 
           <Reveal direction="left" delay={0.15}>
             <div className="shadow-luxury h-full min-h-[480px] overflow-hidden rounded-xl">
               <iframe
-                title="Map — Marlo Hotels, Durbar Marg, Kathmandu"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${siteConfig.contact.geo.lng - 0.01}%2C${siteConfig.contact.geo.lat - 0.007}%2C${siteConfig.contact.geo.lng + 0.01}%2C${siteConfig.contact.geo.lat + 0.007}&layer=mapnik&marker=${siteConfig.contact.geo.lat}%2C${siteConfig.contact.geo.lng}`}
+                title={`Map — ${content.details.hotelName}`}
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${content.map.lng - span}%2C${content.map.lat - span * 0.7}%2C${content.map.lng + span}%2C${content.map.lat + span * 0.7}&layer=mapnik&marker=${content.map.lat}%2C${content.map.lng}`}
                 className="h-full w-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
@@ -139,9 +146,9 @@ export default async function ContactPage({ searchParams }: PageProps) {
             </div>
             <p className="mt-4 flex items-center gap-2.5 text-sm font-light text-charcoal-900/65">
               <MapPin className="size-4 text-gold-600" />
-              {siteConfig.contact.address}
+              {content.details.address}
               <a
-                href={siteConfig.contact.mapUrl}
+                href={content.map.mapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="link-underline ml-auto text-[10px] font-medium tracking-[0.26em] text-gold-600 uppercase"
