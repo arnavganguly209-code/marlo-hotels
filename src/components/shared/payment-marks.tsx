@@ -51,7 +51,7 @@ export function PaymentMarks({
     <ul
       className={
         className ??
-        "mt-6 grid w-full max-w-[28rem] grid-cols-5 gap-2 sm:max-w-md sm:gap-2.5"
+        "mt-6 grid w-full max-w-[34rem] grid-cols-5 gap-2.5 sm:max-w-xl sm:gap-3"
       }
       aria-label="Accepted payment methods"
     >
@@ -61,13 +61,13 @@ export function PaymentMarks({
           <li key={mark.key} className="min-w-0">
             <span
               title={mark.label}
-              className="flex aspect-[1.55/1] w-full items-center justify-center overflow-hidden rounded-[10px] border border-white/25 bg-white shadow-[0_1px_2px_rgb(0_0_0_/_0.08),0_4px_12px_rgb(0_0_0_/_0.12)]"
+              className="flex aspect-[1.65/1] w-full items-center justify-center overflow-hidden rounded-[10px] border border-white/25 bg-white p-[6%] shadow-[0_1px_2px_rgb(0_0_0_/_0.08),0_4px_12px_rgb(0_0_0_/_0.12)]"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={src}
                 alt={mark.label}
-                className="h-[88%] w-[90%] object-contain"
+                className="h-full w-full object-contain"
                 loading="lazy"
                 decoding="async"
               />
