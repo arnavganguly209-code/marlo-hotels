@@ -12,6 +12,7 @@ type PageHeroProps = {
   title: string;
   description?: string;
   image: { src: string; alt: string; objectPosition?: string };
+  videoUrl?: string;
   crumbs: Crumb[];
 };
 
@@ -20,6 +21,7 @@ export function PageHero({
   title,
   description,
   image,
+  videoUrl,
   crumbs,
 }: PageHeroProps) {
   return (
@@ -29,7 +31,17 @@ export function PageHero({
           crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href }))
         )}
       />
-      {image.src ? (
+      {videoUrl ? (
+        <video
+          src={videoUrl}
+          className="absolute inset-0 h-full w-full object-cover opacity-70"
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={image.src || undefined}
+        />
+      ) : image.src ? (
         <Image
           src={image.src}
           alt={image.alt}
@@ -42,7 +54,7 @@ export function PageHero({
           unoptimized={image.src.startsWith("/media/")}
         />
       ) : (
-        <div className="absolute inset-0 bg-forest-950" />
+        <div className="absolute inset-0 bg-gradient-to-br from-forest-900 via-forest-950 to-charcoal-950" />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/90 via-charcoal-950/35 to-charcoal-950/45" />
 

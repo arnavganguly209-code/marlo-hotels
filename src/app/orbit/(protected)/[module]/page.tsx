@@ -20,7 +20,8 @@ import {
   moduleBySlug,
   PAGE_PUBLIC_PATH,
 } from "@/lib/orbit/modules";
-import { PAGE_STUDIO_SECTIONS } from "@/lib/orbit/page-studio";
+import { PAGE_STUDIO_SECTIONS, type StudioSectionData } from "@/lib/orbit/page-studio";
+import { getStudioDefaults } from "@/lib/orbit/page-studio-defaults";
 import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -412,23 +413,32 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
           },
         })
       : null;
-    const initialDocument =
+    const defaults = getStudioDefaults(slug);
+    const saved =
       studioEntry?.data && typeof studioEntry.data === "object"
-        ? (studioEntry.data as Record<
-            string,
-            {
-              enabled: boolean;
-              eyebrow: string;
-              heading: string;
-              description: string;
-              buttonText: string;
-              buttonLink: string;
-              image: { assetId?: string | null; src: string; alt: string };
-              seoTitle: string;
-              seoDescription: string;
-            }
-          >)
+        ? (studioEntry.data as Record<string, Partial<StudioSectionData>>)
         : null;
+    const initialDocument: Record<string, StudioSectionData> = {};
+    for (const section of studioSections) {
+      const base = defaults[section.key];
+      const patch = saved?.[section.key];
+      initialDocument[section.key] = {
+        ...base,
+        ...patch,
+        image: {
+          assetId: patch?.image?.assetId ?? null,
+          src: String(patch?.image?.src || ""),
+          alt: String(patch?.image?.alt || base.image.alt || section.label),
+        },
+        gallery: Array.isArray(patch?.gallery) ? patch.gallery : [],
+        videoUrl: String(patch?.videoUrl || ""),
+        videoAssetId: patch?.videoAssetId ?? null,
+        hours: String(patch?.hours ?? base.hours ?? ""),
+        features: String(patch?.features ?? base.features ?? ""),
+        faq: String(patch?.faq ?? base.faq ?? ""),
+        items: String(patch?.items ?? base.items ?? ""),
+      };
+    }
 
     return (
       <PageStudioEditor

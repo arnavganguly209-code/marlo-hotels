@@ -6,22 +6,32 @@ import type { Offer } from "@/types/content";
 export function OfferCard({ offer }: { offer: Offer }) {
   return (
     <article className="group shadow-luxury-sm hover:shadow-luxury relative flex h-full flex-col overflow-hidden rounded-xl bg-white transition-shadow duration-700">
-      <div className="img-hover-frame relative aspect-[16/10]">
-        <Image
-          src={offer.image.src}
-          alt={offer.image.alt}
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          className="object-cover"
-          unoptimized={offer.image.src.startsWith("/media/")}
-        />
+      <div className="img-hover-frame relative aspect-[16/10] bg-forest-950">
+        {offer.image.src ? (
+          <Image
+            src={offer.image.src}
+            alt={offer.image.alt}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            className="object-cover"
+            unoptimized={offer.image.src.startsWith("/media/")}
+          />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-forest-900 to-forest-950">
+            <p className="text-[10px] tracking-[0.28em] text-cream-200/35 uppercase">
+              Image coming soon
+            </p>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/50 to-transparent" />
         <span className="glass-dark absolute top-4 left-4 rounded-full px-4 py-1.5 text-[9px] font-medium tracking-[0.28em] text-gold-300 uppercase">
           {offer.category}
         </span>
-        <span className="font-display absolute bottom-4 left-4 text-xl font-medium text-gold-300 italic">
-          {offer.discount}
-        </span>
+        {offer.discount ? (
+          <span className="font-display absolute bottom-4 left-4 text-xl font-medium text-gold-300 italic">
+            {offer.discount}
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col p-7">

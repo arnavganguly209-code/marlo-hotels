@@ -17,15 +17,15 @@ const restaurants: Restaurant[] = [
     dressCode: "Smart elegant",
     location: "Lobby level, garden wing",
     images: [
-      { src: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1920&auto=format&fit=crop", alt: "Amaya dining room at night" },
-      { src: "https://images.unsplash.com/photo-1551218808-94e220e084d2?q=80&w=1920&auto=format&fit=crop", alt: "Signature tasting course at Amaya" },
-      { src: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1920&auto=format&fit=crop", alt: "Candlelit tables at Amaya" },
+      { src: "", alt: "Amaya dining room at night" },
+      { src: "", alt: "Signature tasting course at Amaya" },
+      { src: "", alt: "Candlelit tables at Amaya" },
     ],
     chef: {
       name: "Chef Kiran Rana",
       title: "Executive Chef",
       bio: "Trained in Lyon and seasoned in the kitchens of Singapore and Copenhagen, Chef Kiran returned home to cook the food of his childhood with the precision of the world's great restaurants. His tasting menu at Amaya has been called a love letter to the Himalaya.",
-      image: { src: "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?q=80&w=1200&auto=format&fit=crop", alt: "Chef Kiran Rana plating a dish" },
+      image: { src: "", alt: "Chef Kiran Rana plating a dish" },
     },
     menu: [
       {
@@ -69,15 +69,15 @@ const restaurants: Restaurant[] = [
     dressCode: "Resort casual",
     location: "Pool deck, level 3",
     images: [
-      { src: "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?q=80&w=1920&auto=format&fit=crop", alt: "The Terrace set for lunch" },
-      { src: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1920&auto=format&fit=crop", alt: "Mediterranean dishes at The Terrace" },
-      { src: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1920&auto=format&fit=crop", alt: "Poolside table at golden hour" },
+      { src: "", alt: "The Terrace set for lunch" },
+      { src: "", alt: "Mediterranean dishes at The Terrace" },
+      { src: "", alt: "Poolside table at golden hour" },
     ],
     chef: {
       name: "Chef Elena Moretti",
       title: "Chef de Cuisine",
       bio: "Elena grew up between Puglia and the Amalfi coast, and brings the generosity of southern Italian cooking to the Himalayan foothills — handmade pasta, wood-fire vegetables and olive oil she still imports from her family's grove.",
-      image: { src: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1200&auto=format&fit=crop", alt: "Chef Elena Moretti in the kitchen" },
+      image: { src: "", alt: "Chef Elena Moretti in the kitchen" },
     },
     menu: [
       {
@@ -119,15 +119,15 @@ const restaurants: Restaurant[] = [
     dressCode: "Smart casual",
     location: "Lobby level, west salon",
     images: [
-      { src: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=1920&auto=format&fit=crop", alt: "Cocktails at Bar 1959" },
-      { src: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1920&auto=format&fit=crop", alt: "Candlelit interior of Bar 1959" },
-      { src: "https://images.unsplash.com/photo-1547595628-c61a29f496f0?q=80&w=1920&auto=format&fit=crop", alt: "Sommelier pouring a rare vintage" },
+      { src: "", alt: "Cocktails at Bar 1959" },
+      { src: "", alt: "Candlelit interior of Bar 1959" },
+      { src: "", alt: "Sommelier pouring a rare vintage" },
     ],
     chef: {
       name: "Aarav Shrestha",
       title: "Head Bartender",
       bio: "A collector of forgotten recipes and mountain botanicals, Aarav has bartended in Tokyo and London before building the 1959 programme. His rhododendron negroni has become the hotel's quiet legend.",
-      image: { src: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=1200&auto=format&fit=crop", alt: "Head bartender at work" },
+      image: { src: "", alt: "Head bartender at work" },
     },
     menu: [
       {
@@ -158,15 +158,16 @@ export async function getRestaurants(): Promise<Restaurant[]> {
         where: { module: "dining", status: "PUBLISHED" },
         orderBy: { updatedAt: "desc" },
       });
-      if (entries.length) {
-        return entries.map((entry) => {
+      const inventory = entries.filter((entry) => entry.key !== "page-studio");
+      if (inventory.length) {
+        return inventory.map((entry) => {
           const data = entry.data as Record<string, unknown>;
           const text = (key: string, fallback = "") =>
             typeof data[key] === "string" ? String(data[key]) : fallback;
           const plain = (key: string, fallback = "") =>
             text(key, fallback).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
           const image = {
-            src: text("imageUrl", "/images/brand/hero-reference.png"),
+            src: text("imageUrl", ""),
             alt: text("imageAlt", entry.title),
           };
           return {

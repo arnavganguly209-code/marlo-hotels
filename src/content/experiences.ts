@@ -11,7 +11,7 @@ const experiences: Experience[] = [
     description:
       "Depart before dawn for the most celebrated hour in aviation — a private flight along the Himalayan range as sunrise gilds Everest, Lhotse and Ama Dablam. Our concierge arranges window seating for every guest, and a champagne breakfast awaits on the Terrace upon your return.",
     highlights: ["Private charter with guaranteed window seats", "Everest, Lhotse & Ama Dablam views", "Champagne breakfast on return", "Flight certificate & keepsake photography"],
-    image: { src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1600&auto=format&fit=crop", alt: "Himalayan peaks at sunrise" },
+    image: { src: "", alt: "Himalayan peaks at sunrise" },
   },
   {
     slug: "kathmandu-heritage-walk",
@@ -22,7 +22,7 @@ const experiences: Experience[] = [
     description:
       "With a royal-court historian as your guide, trace seven centuries through Durbar Square's palaces, the hidden bahals known only to locals, and workshops where the city's craft dynasties still work. The walk ends with butter tea in a restored Rana-era mansion.",
     highlights: ["Private historian guide", "UNESCO palace squares & hidden courtyards", "Living craft workshop visits", "Butter tea in a Rana-era mansion"],
-    image: { src: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?q=80&w=1600&auto=format&fit=crop", alt: "Ancient temple architecture in Kathmandu" },
+    image: { src: "", alt: "Ancient temple architecture in Kathmandu" },
   },
   {
     slug: "private-momo-masterclass",
@@ -33,7 +33,7 @@ const experiences: Experience[] = [
     description:
       "Join Chef Kiran Rana in Amaya's private kitchen to master Nepal's most beloved dish — from milling the timur-chilli achar to the twelve-pleat fold. The class ends around the chef's table with your creations, paired wines and stories from the mountain kitchens.",
     highlights: ["Private session with the executive chef", "Market visit for spices, on request", "Chef's table lunch with wine pairing", "Marlo apron & recipe folio to keep"],
-    image: { src: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=1600&auto=format&fit=crop", alt: "Hands at work in a professional kitchen" },
+    image: { src: "", alt: "Hands at work in a professional kitchen" },
   },
   {
     slug: "nagarkot-sunset-drive",
@@ -44,7 +44,7 @@ const experiences: Experience[] = [
     description:
       "Leave the city behind for the pine ridges of Nagarkot, where the Himalayan panorama unfolds from Annapurna to Everest on clear evenings. Our team sets a private picnic of Amaya's making at a secluded viewpoint as the range turns rose and gold.",
     highlights: ["Private chauffeured Land Cruiser", "Secluded ridge-top picnic by Amaya", "Sunset over the high Himalaya", "Blankets, lanterns & warm rum punch"],
-    image: { src: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1600&auto=format&fit=crop", alt: "Sunset over mountain ridges" },
+    image: { src: "", alt: "Sunset over mountain ridges" },
   },
   {
     slug: "morning-with-the-monks",
@@ -55,7 +55,7 @@ const experiences: Experience[] = [
     description:
       "Arrive at a hillside monastery as the first horns sound and butter lamps are lit. After observing morning prayers, sit with a senior lama for a private meditation and conversation on mindfulness, closed with tea in the monastery garden overlooking the valley.",
     highlights: ["Dawn prayer ceremony access", "Private meditation with a senior lama", "Monastery garden tea ceremony", "Optional prayer-flag blessing"],
-    image: { src: "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?q=80&w=1600&auto=format&fit=crop", alt: "Monastery at dawn with prayer flags" },
+    image: { src: "", alt: "Monastery at dawn with prayer flags" },
   },
   {
     slug: "artisan-gold-atelier",
@@ -66,7 +66,7 @@ const experiences: Experience[] = [
     description:
       "Behind an unmarked door in the old city, one family has worked gold filigree for nine generations. Watch masters at the bench, learn the language of Newari ornament, and — should you wish — commission a piece of your own over tea with the family patriarch.",
     highlights: ["Nine-generation family atelier", "Live filigree demonstration", "Private commission consultation", "Tea with the master goldsmith"],
-    image: { src: "https://images.unsplash.com/photo-1524230572899-a752b3835840?q=80&w=1600&auto=format&fit=crop", alt: "Artisan detail work in warm light" },
+    image: { src: "", alt: "Artisan detail work in warm light" },
   },
 ];
 
@@ -78,8 +78,9 @@ export async function getExperiences(): Promise<Experience[]> {
         where: { module: "experiences", status: "PUBLISHED" },
         orderBy: { updatedAt: "desc" },
       });
-      if (entries.length) {
-        return entries.map((entry) => {
+      const inventory = entries.filter((entry) => entry.key !== "page-studio");
+      if (inventory.length) {
+        return inventory.map((entry) => {
           const data = entry.data as Record<string, unknown>;
           const text = (key: string, fallback = "") =>
             typeof data[key] === "string" ? String(data[key]) : fallback;
@@ -100,7 +101,7 @@ export async function getExperiences(): Promise<Experience[]> {
               .map((item) => item.trim())
               .filter(Boolean),
             image: {
-              src: text("imageUrl", "/images/brand/hero-reference.png"),
+              src: text("imageUrl", ""),
               alt: text("imageAlt", entry.title),
             },
           };

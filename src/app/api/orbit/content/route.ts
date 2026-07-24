@@ -8,7 +8,7 @@ import {
   getOrbitSession,
   writeAuditLog,
 } from "@/lib/orbit/auth";
-import { moduleBySlug } from "@/lib/orbit/modules";
+import { PAGE_PUBLIC_PATH, moduleBySlug } from "@/lib/orbit/modules";
 
 const contentSchema = z.object({
   module: z.string().min(1).max(80),
@@ -105,9 +105,7 @@ export async function POST(request: Request) {
     if (parsed.data.slug) revalidatePath(`/rooms/${parsed.data.slug}`);
   }
   const publicPath =
-    parsed.data.module === "homepage"
-      ? "/"
-      : `/${parsed.data.module === "contact" ? "contact" : parsed.data.module}`;
+    PAGE_PUBLIC_PATH[parsed.data.module] || `/${parsed.data.module}`;
   revalidatePath(publicPath);
   return NextResponse.json({
     entry,
