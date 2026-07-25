@@ -59,11 +59,16 @@ type DateFieldProps = {
   buttonClassName?: string;
   /** Dark glass (hero) or light surface (rooms) */
   tone?: "dark" | "light";
+  /**
+   * Desktop (lg+) calendar placement. Mobile always opens downward
+   * so existing mobile layouts stay unchanged.
+   */
+  desktopPlacement?: "above" | "below" | "auto";
 };
 
 /**
- * Premium date field — calendar always opens downward via a body portal
- * so parent overflow never clips it.
+ * Premium date field — calendar opens via a body portal so parent
+ * overflow never clips it. Desktop can open above the trigger.
  */
 export function DateField({
   id,
@@ -76,13 +81,17 @@ export function DateField({
   className,
   buttonClassName,
   tone = "dark",
+  desktopPlacement = "below",
 }: DateFieldProps) {
   const dark = tone === "dark";
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(
-    null
-  );
+  const [pos, setPos] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+    width: number;
+  } | null>(null);
   const selected = parseISODate(value) || startOfDay(new Date());
   const [view, setView] = useState(
     () => new Date(selected.getFullYear(), selected.getMonth(), 1)
@@ -116,12 +125,41 @@ export function DateField({
       if (left + width > window.innerWidth - 12) {
         left = Math.max(12, window.innerWidth - width - 12);
       }
-      // Always open downward from the trigger.
-      setPos({
-        top: rect.bottom + 10,
-        left,
-        width,
-      });
+
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      const estimatedHeight = panelRef.current?.offsetHeight || 320;
+      const gap = 10;
+      const spaceBelow = window.innerHeight - rect.bottom - gap;
+      const spaceAbove = rect.top - gap;
+
+      let openAbove = false;
+      if (isDesktop) {
+        if (desktopPlacement === "above") {
+          openAbove = true;
+        } else if (desktopPlacement === "auto") {
+          openAbove =
+            spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
+        }
+        // "below" keeps openAbove false
+      }
+      // Mobile: always downward (unchanged)
+
+      if (openAbove) {
+        // Prefer bottom-anchored so height growth stays above the trigger
+        const bottom = window.innerHeight - rect.top + gap;
+        // If panel would clip the top of the viewport, fall back to top=12
+        if (rect.top - gap - estimatedHeight < 12) {
+          setPos({ top: 12, left, width });
+        } else {
+          setPos({ bottom, left, width });
+        }
+      } else {
+        setPos({
+          top: rect.bottom + gap,
+          left,
+          width,
+        });
+      }
     };
     update();
     window.addEventListener("resize", update);
@@ -130,7 +168,7 @@ export function DateField({
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [open]);
+  }, [open, desktopPlacement]);
 
   useEffect(() => {
     if (!open) return;
@@ -169,7 +207,12 @@ export function DateField({
                 ? "border-white/10 bg-[rgb(10_24_20_/_0.96)]"
                 : "border-forest-800/12 bg-white"
             )}
-            style={{ top: pos.top, left: pos.left, width: pos.width }}
+            style={{
+              top: pos.top,
+              bottom: pos.bottom,
+              left: pos.left,
+              width: pos.width,
+            }}
           >
             <div className="mb-3 flex items-center justify-between">
               <button
@@ -315,3 +358,4 @@ export function DateField({
     </div>
   );
 }
+

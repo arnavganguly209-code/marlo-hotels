@@ -23,6 +23,10 @@ function addDays(date: Date, days: number) {
   return next;
 }
 
+function isDesktopViewport() {
+  return typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+}
+
 export function BookingWidget({
   className,
   content,
@@ -40,7 +44,8 @@ export function BookingWidget({
   const [promo, setPromo] = useState("");
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{
-    top: number;
+    top?: number;
+    bottom?: number;
     left: number;
     width: number;
   } | null>(null);
@@ -63,11 +68,20 @@ export function BookingWidget({
       if (left + width > window.innerWidth - 12) {
         left = Math.max(12, window.innerWidth - width - 12);
       }
-      setMenuPos({
-        top: rect.bottom + 10,
-        left,
-        width,
-      });
+      // Desktop: open upward above the booking bar. Mobile: unchanged (down).
+      if (isDesktopViewport()) {
+        setMenuPos({
+          bottom: window.innerHeight - rect.top + 10,
+          left,
+          width,
+        });
+      } else {
+        setMenuPos({
+          top: rect.bottom + 10,
+          left,
+          width,
+        });
+      }
     };
     update();
     window.addEventListener("resize", update);
@@ -114,7 +128,10 @@ export function BookingWidget({
   }
 
   const labelClass =
-    "flex items-center gap-2 text-[9px] font-medium tracking-[0.3em] uppercase text-gold-400";
+    "flex items-center gap-2 text-[9px] font-medium tracking-[0.3em] uppercase text-gold-400 lg:text-[8px] lg:tracking-[0.26em]";
+
+  const fieldUnderline =
+    "mt-2.5 flex min-h-11 w-full items-center justify-between border-b border-ivory/25 pb-2 text-sm font-light text-ivory transition-colors focus-visible:border-gold-400 focus-visible:outline-none lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]";
 
   const dropdown =
     mounted && guestsOpen && menuPos
@@ -126,6 +143,7 @@ export function BookingWidget({
             className="glass-dark shadow-luxury fixed z-[9999] max-h-[min(420px,calc(100dvh-1.5rem))] space-y-4 overflow-y-auto rounded-xl border border-white/10 p-5"
             style={{
               top: menuPos.top,
+              bottom: menuPos.bottom,
               left: menuPos.left,
               width: menuPos.width,
             }}
@@ -161,20 +179,25 @@ export function BookingWidget({
       onSubmit={onSearch}
       aria-label="Check availability"
       className={cn(
-        "shadow-luxury relative z-30 grid grid-cols-1 gap-x-6 gap-y-5 overflow-visible rounded-2xl border border-white/10 bg-[rgb(10_24_20_/_0.78)] p-5 backdrop-blur-2xl sm:grid-cols-2 sm:p-6 md:p-7 lg:grid-cols-[1fr_1fr_1.2fr_1fr_auto] lg:items-end",
+        // Mobile / tablet — keep existing proportions
+        "shadow-luxury relative z-30 grid grid-cols-1 gap-x-6 gap-y-5 overflow-visible rounded-2xl border border-white/10 bg-[rgb(10_24_20_/_0.78)] p-5 backdrop-blur-2xl sm:grid-cols-2 sm:p-6 md:p-7",
+        // Desktop — slim luxury glass bar (≈40–50% shorter)
+        "lg:grid-cols-[1fr_1fr_1.15fr_1fr_auto] lg:items-center lg:gap-x-5 lg:gap-y-0 lg:rounded-xl lg:border lg:border-gold-400/20 lg:bg-[rgb(10_24_20_/_0.62)] lg:p-3 lg:shadow-[0_18px_50px_-20px_rgb(0_0_0_/_0.55),inset_0_1px_0_0_rgb(255_255_255_/_0.08)] lg:backdrop-blur-2xl lg:backdrop-saturate-150",
         className
       )}
     >
       <DateField
         id="widget-check-in"
+        desktopPlacement="above"
         label={
           <span className={labelClass}>
-            <CalendarDays className="size-3.5" /> {content.checkInLabel}
+            <CalendarDays className="size-3.5 lg:size-3" /> {content.checkInLabel}
           </span>
         }
         value={checkIn}
         min={toISODateString(today)}
         required
+        buttonClassName="lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]"
         onChange={(next) => {
           setCheckIn(next);
           if (next >= checkOut) {
@@ -185,20 +208,22 @@ export function BookingWidget({
 
       <DateField
         id="widget-check-out"
+        desktopPlacement="above"
         label={
           <span className={labelClass}>
-            <CalendarDays className="size-3.5" /> {content.checkOutLabel}
+            <CalendarDays className="size-3.5 lg:size-3" /> {content.checkOutLabel}
           </span>
         }
         value={checkOut}
         min={toISODateString(addDays(new Date(checkIn), 1))}
         required
+        buttonClassName="lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]"
         onChange={setCheckOut}
       />
 
       <div ref={guestsRef} className="relative z-40 overflow-visible">
         <span className={labelClass}>
-          <Users className="size-3.5" /> {content.guestsLabel}
+          <Users className="size-3.5 lg:size-3" /> {content.guestsLabel}
         </span>
         <button
           ref={buttonRef}
@@ -206,14 +231,14 @@ export function BookingWidget({
           onClick={() => setGuestsOpen((value) => !value)}
           aria-expanded={guestsOpen}
           aria-haspopup="dialog"
-          className="mt-2.5 flex min-h-11 w-full items-center justify-between border-b border-ivory/25 pb-2 text-sm font-light text-ivory transition-colors focus-visible:border-gold-400 focus-visible:outline-none"
+          className={fieldUnderline}
         >
           <span>
             {`${adults + children} Guest${adults + children === 1 ? "" : "s"} · ${rooms} Room${rooms === 1 ? "" : "s"}`}
           </span>
           <ChevronDown
             className={cn(
-              "size-4 text-gold-400 transition-transform duration-300",
+              "size-4 text-gold-400 transition-transform duration-300 lg:size-3.5",
               guestsOpen && "rotate-180"
             )}
           />
@@ -222,7 +247,7 @@ export function BookingWidget({
 
       <div>
         <label htmlFor="widget-promo" className={labelClass}>
-          <Sparkles className="size-3.5" /> {content.promoLabel}
+          <Sparkles className="size-3.5 lg:size-3" /> {content.promoLabel}
         </label>
         <input
           id="widget-promo"
@@ -230,15 +255,15 @@ export function BookingWidget({
           placeholder={content.promoPlaceholder}
           value={promo}
           onChange={(event) => setPromo(event.target.value)}
-          className="mt-2.5 min-h-11 w-full border-b border-ivory/25 bg-transparent pb-2 text-sm font-light tracking-widest text-ivory uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:text-cream-200/35 focus:border-gold-400"
+          className="mt-2.5 min-h-11 w-full border-b border-ivory/25 bg-transparent pb-2 text-sm font-light tracking-widest text-ivory uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:text-cream-200/35 focus:border-gold-400 lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]"
         />
       </div>
 
       <button
         type="submit"
-        className="shadow-gold col-span-1 flex h-13 min-h-12 items-center justify-center gap-3 rounded-lg bg-gold-500 px-8 text-[11px] font-semibold tracking-[0.24em] text-charcoal-950 uppercase transition-all duration-500 hover:-translate-y-0.5 hover:bg-gold-400 focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:outline-none sm:col-span-2 lg:col-span-1"
+        className="shadow-gold col-span-1 flex h-13 min-h-12 items-center justify-center gap-3 rounded-lg bg-gold-500 px-8 text-[11px] font-semibold tracking-[0.24em] text-charcoal-950 uppercase transition-all duration-500 hover:-translate-y-0.5 hover:bg-gold-400 focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:outline-none sm:col-span-2 lg:col-span-1 lg:h-10 lg:min-h-10 lg:gap-2 lg:rounded-md lg:px-6 lg:text-[10px] lg:tracking-[0.2em] lg:hover:translate-y-0"
       >
-        <BedDouble className="size-4" />
+        <BedDouble className="size-4 lg:size-3.5" />
         {content.submitLabel}
       </button>
       {dropdown}

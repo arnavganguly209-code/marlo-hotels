@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEventHandler } from "react";
 import { cn } from "@/lib/utils";
 
 export type LogoDisplaySettings = {
@@ -17,6 +17,7 @@ type LogoProps = {
   className?: string;
   src?: string;
   display?: LogoDisplaySettings;
+  onClick?: MouseEventHandler<HTMLAnchorElement>;
 };
 
 export function LogoMark({
@@ -58,11 +59,12 @@ export function LogoMark({
   );
 }
 
-export function Logo({ className, src, display }: LogoProps) {
+export function Logo({ className, src, display, onClick }: LogoProps) {
   return (
     <Link
       href="/"
       aria-label="Marlo Hotels — Home"
+      onClick={onClick}
       className={cn("group inline-flex items-center gap-3", className)}
     >
       <LogoMark

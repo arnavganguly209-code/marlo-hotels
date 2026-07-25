@@ -34,11 +34,34 @@ export function Header({
     window.location.href = `/rooms?q=${encodeURIComponent(q)}`;
   }
 
+  function onLogoClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    const onHome = pathname === "/" || pathname === "";
+    if (!onHome) return;
+    event.preventDefault();
+    const scrollTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    scrollTop();
+    // Ensure we land at the absolute top even if a late layout pass moves scroll.
+    window.requestAnimationFrame(scrollTop);
+    window.setTimeout(scrollTop, 350);
+    if (window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }
+
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-30 border-b border-white/10 bg-[rgb(10_24_20_/_0.72)] shadow-[0_18px_50px_-28px_rgb(0_0_0_/_0.65)] backdrop-blur-2xl">
         <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-4 px-4 sm:px-6 lg:px-8">
-          <Logo tone="light" src={logoUrl} display={logoDisplay} />
+          <Logo
+            tone="light"
+            src={logoUrl}
+            display={logoDisplay}
+            onClick={onLogoClick}
+          />
 
           <nav
             aria-label="Primary"
