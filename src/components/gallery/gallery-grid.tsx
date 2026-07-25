@@ -6,14 +6,29 @@ import { useState } from "react";
 import { galleryCategories, galleryImages } from "@/content/gallery";
 import { cn } from "@/lib/utils";
 
-export function GalleryGrid() {
-  const [category, setCategory] =
-    useState<(typeof galleryCategories)[number]>("All");
+type GalleryGridImage = {
+  src: string;
+  alt: string;
+  category: string;
+};
+
+export function GalleryGrid({
+  images,
+  categories,
+}: {
+  images?: GalleryGridImage[];
+  categories?: string[];
+}) {
+  const items: GalleryGridImage[] =
+    images && images.length ? images : galleryImages;
+  const cats = categories && categories.length ? categories : [...galleryCategories];
+
+  const [category, setCategory] = useState<string>(cats[0] || "All");
 
   const filtered =
     category === "All"
-      ? galleryImages
-      : galleryImages.filter((image) => image.category === category);
+      ? items
+      : items.filter((image) => image.category === category);
 
   return (
     <div>
@@ -22,7 +37,7 @@ export function GalleryGrid() {
         aria-label="Filter gallery by category"
         className="flex flex-wrap justify-center gap-3"
       >
-        {galleryCategories.map((item) => (
+        {cats.map((item) => (
           <button
             key={item}
             type="button"
@@ -43,9 +58,9 @@ export function GalleryGrid() {
 
       <motion.div layout className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         <AnimatePresence mode="popLayout">
-          {filtered.map((image) => (
+          {filtered.map((image, index) => (
             <motion.figure
-              key={image.src}
+              key={`${image.src}-${index}`}
               layout
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}

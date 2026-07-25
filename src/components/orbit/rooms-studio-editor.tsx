@@ -15,9 +15,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MediaField, MediaPicker } from "@/components/orbit/media-picker";
 import {
+  PageCoverEditor,
+  syncPageCoverPlacement,
+  type PageCoverValue,
+} from "@/components/orbit/page-cover-editor";
+import {
   ROOM_CATALOG,
   type RoomCatalogData,
 } from "@/lib/orbit/room-defaults";
+import type { RoomsPageContent } from "@/lib/rooms-page-content";
 import { cn, formatCurrency } from "@/lib/utils";
 
 type Entry = {
@@ -105,10 +111,22 @@ function asData(entry: Entry): RoomCatalogData {
 
 export function RoomsStudioEditor({
   initialEntries,
+  initialPageContent,
 }: {
   initialEntries: Entry[];
+  initialPageContent: RoomsPageContent;
 }) {
   const [entries, setEntries] = useState(initialEntries);
+  const [pageCover, setPageCover] = useState<PageCoverValue>({
+    src: initialPageContent.cover.src,
+    alt: initialPageContent.cover.alt,
+    assetId: initialPageContent.cover.assetId ?? null,
+    eyebrow: initialPageContent.cover.eyebrow,
+    title: initialPageContent.cover.title,
+    description: initialPageContent.cover.description,
+  });
+  const [coverSaving, setCoverSaving] = useState(false);
+  const [coverSaved, setCoverSaved] = useState(false);
   const [selectedId, setSelectedId] = useState(initialEntries[0]?.id || "");
   const selected = entries.find((entry) => entry.id === selectedId) || entries[0];
   const [title, setTitle] = useState(selected?.title || "");
@@ -197,6 +215,36 @@ export function RoomsStudioEditor({
     }
   }
 
+  async function saveCover() {
+    setCoverSaving(true);
+    setCoverSaved(false);
+    try {
+      const response = await fetch("/api/orbit/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          module: "rooms",
+          key: "page-content",
+          title: "Rooms Page",
+          status: "PUBLISHED",
+          data: { cover: pageCover },
+        }),
+      });
+      if (!response.ok) {
+        setCoverSaving(false);
+        return;
+      }
+      await syncPageCoverPlacement({
+        key: "page.rooms.hero",
+        label: "Rooms Page Hero",
+        cover: pageCover,
+      });
+      setCoverSaved(true);
+    } finally {
+      setCoverSaving(false);
+    }
+  }
+
   async function createRoom() {
     const key = `room-${Date.now()}`;
     const response = await fetch("/api/orbit/content", {
@@ -260,23 +308,99 @@ export function RoomsStudioEditor({
     patchData({ gallery: next });
   }
 
+  const coverPanel = (
+    <section className="border-b border-[var(--orbit-border)] bg-white px-5 py-6 sm:px-8">
+      <div className="mx-auto max-w-5xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.28em] text-[#a67a30] uppercase">
+              Rooms CMS
+            </p>
+            <h1 className="font-display text-2xl font-semibold text-[#10251e]">
+              Rooms Page Cover
+            </h1>
+            <p className="mt-1 text-sm text-[#62716b]">
+              The cover image and copy guests see at the top of{" "}
+              <span className="font-medium">/rooms</span>.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/rooms"
+              target="_blank"
+              className="flex h-11 items-center rounded-xl border border-[#17362b]/12 bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase"
+            >
+              Preview page
+            </Link>
+            <button
+              type="button"
+              disabled={coverSaving}
+              onClick={() => void saveCover()}
+              className="orbit-gold-button flex h-11 items-center gap-2 rounded-xl px-5 text-[10px] font-semibold tracking-[0.16em] uppercase disabled:opacity-60"
+            >
+              {coverSaving ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : coverSaved ? (
+                <Check className="size-3.5" />
+              ) : (
+                <Save className="size-3.5" />
+              )}
+              {coverSaving
+                ? "Saving…"
+                : coverSaved
+                  ? "Saved"
+                  : "Save Cover & Publish"}
+            </button>
+          </div>
+        </div>
+        <PageCoverEditor
+          label="Rooms Listing Page Cover"
+          value={pageCover}
+          onChange={(next) => {
+            setPageCover(next);
+            setCoverSaved(false);
+          }}
+        />
+      </div>
+    </section>
+  );
+
+  const categoriesLabel = (
+    <div className="border-b border-[var(--orbit-border)] bg-[#f7f8f5] px-5 py-3 sm:px-8">
+      <p className="text-[10px] font-semibold tracking-[0.24em] text-[#a67a30] uppercase">
+        Room Categories
+      </p>
+      <p className="mt-0.5 text-xs text-[#7b8982]">
+        Individual rooms and suites — each with its own cover, pricing and
+        publish state.
+      </p>
+    </div>
+  );
+
   if (!selected) {
     return (
-      <div className="p-8">
-        <p className="text-sm text-[#62716b]">No rooms yet.</p>
-        <button
-          type="button"
-          onClick={() => void createRoom()}
-          className="orbit-gold-button mt-4 h-11 rounded-xl px-5 text-[10px] font-semibold tracking-[0.16em] uppercase"
-        >
-          Create first room
-        </button>
+      <div className="orbit-scrollbar h-[calc(100vh-4rem)] min-h-[640px] overflow-y-auto">
+        {coverPanel}
+        {categoriesLabel}
+        <div className="p-8">
+          <p className="text-sm text-[#62716b]">No rooms yet.</p>
+          <button
+            type="button"
+            onClick={() => void createRoom()}
+            className="orbit-gold-button mt-4 h-11 rounded-xl px-5 text-[10px] font-semibold tracking-[0.16em] uppercase"
+          >
+            Create first room
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] min-h-[640px] flex-col">
+    <div className="orbit-scrollbar flex h-[calc(100vh-4rem)] min-h-[640px] flex-col overflow-y-auto">
+      {coverPanel}
+      {categoriesLabel}
+
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--orbit-border)] bg-white px-5 py-4">
         <div>
           <p className="text-[10px] font-semibold tracking-[0.28em] text-[#a67a30] uppercase">
@@ -333,7 +457,7 @@ export function RoomsStudioEditor({
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="grid h-[78vh] min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside className="orbit-scrollbar overflow-y-auto border-r border-[var(--orbit-border)] bg-[#f7f8f5]">
           <div className="p-3">
             {sorted.map((entry) => {
@@ -345,28 +469,41 @@ export function RoomsStudioEditor({
                   type="button"
                   onClick={() => setSelectedId(entry.id)}
                   className={cn(
-                    "mb-2 flex w-full gap-3 rounded-xl border p-3 text-left transition",
+                    "mb-3 block w-full overflow-hidden rounded-2xl border text-left transition",
                     active
                       ? "border-[#123429] bg-[#123429] text-[#f0d999]"
                       : "border-transparent bg-white text-[#294138] hover:border-[#c4943c]/40"
                   )}
                 >
-                  <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-[#e8ebe6]">
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-[#e8ebe6]">
                     {preview.imageUrl ? (
                       <Image
                         src={preview.imageUrl}
                         alt=""
                         fill
+                        sizes="320px"
                         className="object-cover"
                         unoptimized={preview.imageUrl.startsWith("/media/")}
                       />
                     ) : (
                       <div className="grid h-full place-items-center text-[#a8b0ac]">
-                        <ImagePlus className="size-4" />
+                        <ImagePlus className="size-6" />
                       </div>
                     )}
+                    <span
+                      className={cn(
+                        "absolute top-2 right-2 rounded-full px-2 py-0.5 text-[8px] font-semibold tracking-[0.1em] uppercase",
+                        entry.status === "PUBLISHED"
+                          ? "bg-emerald-50 text-emerald-800"
+                          : entry.status === "ARCHIVED"
+                            ? "bg-amber-50 text-amber-800"
+                            : "bg-white/90 text-[#5c6b63]"
+                      )}
+                    >
+                      {entry.status}
+                    </span>
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 p-3">
                     <p className="truncate text-sm font-semibold">{entry.title}</p>
                     <p
                       className={cn(
@@ -375,7 +512,7 @@ export function RoomsStudioEditor({
                       )}
                     >
                       {formatCurrency(preview.price, preview.currency)} ·{" "}
-                      {entry.status}
+                      {preview.roomType}
                     </p>
                     <p
                       className={cn(

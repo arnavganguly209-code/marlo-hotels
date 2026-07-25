@@ -1,8 +1,11 @@
 import { notFound } from "next/navigation";
 import { BlogStudioEditor } from "@/components/orbit/blog-studio-editor";
+import { BookingStudioEditor } from "@/components/orbit/booking-studio-editor";
 import { ContactStudioEditor } from "@/components/orbit/contact-studio-editor";
 import { ContentManager } from "@/components/orbit/content-manager";
+import { GalleryStudioEditor } from "@/components/orbit/gallery-studio-editor";
 import { HomepageVisualEditor } from "@/components/orbit/homepage-visual-editor";
+import { LegalStudioEditor } from "@/components/orbit/legal-studio-editor";
 import { MediaManager } from "@/components/orbit/media-manager";
 import {
   OperationalManager,
@@ -13,7 +16,11 @@ import { RoomsStudioEditor } from "@/components/orbit/rooms-studio-editor";
 import { SiteSettingsStudio } from "@/components/orbit/site-settings-studio";
 import { getDb } from "@/lib/db";
 import { getOrbitRoomEntries } from "@/content/rooms";
+import { getBookingPageContent } from "@/lib/booking-page-content";
 import { getContactContent } from "@/lib/contact-content";
+import { getGalleryContent } from "@/lib/gallery-content";
+import { getLegalContent } from "@/lib/legal-content";
+import { getRoomsPageContent } from "@/lib/rooms-page-content";
 import { getHomepageContent } from "@/lib/homepage-content";
 import {
   HOMEPAGE_SECTIONS,
@@ -403,8 +410,16 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
   }
 
   if (slug === "rooms") {
-    const roomEntries = await getOrbitRoomEntries();
-    return <RoomsStudioEditor initialEntries={roomEntries} />;
+    const [roomEntries, initialPageContent] = await Promise.all([
+      getOrbitRoomEntries(),
+      getRoomsPageContent(),
+    ]);
+    return (
+      <RoomsStudioEditor
+        initialEntries={roomEntries}
+        initialPageContent={initialPageContent}
+      />
+    );
   }
 
   if (slug === "blog") {
@@ -435,6 +450,22 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
   if (slug === "contact") {
     return (
       <ContactStudioEditor initialContent={await getContactContent()} />
+    );
+  }
+
+  if (slug === "gallery") {
+    return (
+      <GalleryStudioEditor initialContent={await getGalleryContent()} />
+    );
+  }
+
+  if (slug === "legal") {
+    return <LegalStudioEditor initialContent={await getLegalContent()} />;
+  }
+
+  if (slug === "booking") {
+    return (
+      <BookingStudioEditor initialContent={await getBookingPageContent()} />
     );
   }
 

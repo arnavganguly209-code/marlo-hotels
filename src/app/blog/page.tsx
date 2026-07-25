@@ -4,7 +4,7 @@ import { PostCard } from "@/components/cards/post-card";
 import { PageHero } from "@/components/shared/page-hero";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
 import { getPostCategories, getPosts } from "@/content/blog";
-import { resolveSiteImage } from "@/lib/orbit/resolve-image";
+import { getBlogPageSettings } from "@/lib/blog-page-content";
 import { buildMetadata } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -21,14 +21,12 @@ type PageProps = {
 
 export default async function BlogPage({ searchParams }: PageProps) {
   const { category } = await searchParams;
-  const [posts, categories, hero] = await Promise.all([
+  const [posts, categories, pageSettings] = await Promise.all([
     getPosts(),
     getPostCategories(),
-    resolveSiteImage("page.blog.hero", {
-      src: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2400&auto=format&fit=crop",
-      alt: "Sunrise over the valley rim",
-    }),
+    getBlogPageSettings(),
   ]);
+  const { cover } = pageSettings;
 
   const active =
     category && categories.includes(category) ? category : "All";
@@ -38,13 +36,12 @@ export default async function BlogPage({ searchParams }: PageProps) {
   return (
     <>
       <PageHero
-        eyebrow="The Journal"
-        title="Dispatches from the valley"
-        description="Itineraries, craft, kitchens and rituals — written by the people who make Marlo what it is."
+        eyebrow={cover.eyebrow}
+        title={cover.title}
+        description={cover.description}
         image={{
-          src: hero.src,
-          alt: hero.alt,
-          objectPosition: hero.objectPosition,
+          src: cover.src,
+          alt: cover.alt,
         }}
         crumbs={[
           { label: "Home", href: "/" },

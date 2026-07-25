@@ -20,6 +20,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { MediaField, MediaPicker } from "@/components/orbit/media-picker";
+import {
+  PageCoverEditor,
+  syncPageCoverPlacement,
+  type PageCoverValue,
+} from "@/components/orbit/page-cover-editor";
 import { RichTextEditor } from "@/components/orbit/rich-text-editor";
 import { useToast } from "@/components/orbit/toast";
 import { withMediaCacheBust } from "@/lib/media-cache";
@@ -93,7 +98,17 @@ type BlogSettings = {
 
 type DashboardTab = "posts" | "categories" | "tags" | "media" | "seo";
 
-const RESERVED_KEYS = new Set(["blog-settings", "page-studio"]);
+const RESERVED_KEYS = new Set(["blog-settings", "page-studio", "page-settings"]);
+
+const DEFAULT_COVER: PageCoverValue = {
+  src: "",
+  alt: "Sunrise over the valley rim",
+  assetId: null,
+  eyebrow: "The Journal",
+  title: "Dispatches from the valley",
+  description:
+    "Itineraries, craft, kitchens and rituals — written by the people who make Marlo what it is.",
+};
 
 const DEFAULT_CATEGORIES = [
   "Destination",
@@ -353,6 +368,19 @@ function parseSettings(entry?: BlogEntry): BlogSettings {
   };
 }
 
+function parsePageCover(entry?: BlogEntry): PageCoverValue {
+  const data = (entry?.data || {}) as { cover?: Partial<PageCoverValue> };
+  const cover = data.cover || {};
+  return {
+    src: text(cover.src),
+    alt: text(cover.alt, DEFAULT_COVER.alt),
+    assetId: typeof cover.assetId === "string" ? cover.assetId : null,
+    eyebrow: text(cover.eyebrow, DEFAULT_COVER.eyebrow),
+    title: text(cover.title, DEFAULT_COVER.title),
+    description: text(cover.description, DEFAULT_COVER.description),
+  };
+}
+
 export function BlogStudioEditor({
   initialEntries,
 }: {
@@ -360,6 +388,7 @@ export function BlogStudioEditor({
 }) {
   const { push } = useToast();
   const settingsEntry = initialEntries.find((e) => e.key === "blog-settings");
+  const pageCoverEntry = initialEntries.find((e) => e.key === "page-settings");
   const postEntries = initialEntries.filter(
     (e) => !RESERVED_KEYS.has(e.key)
   );
@@ -369,6 +398,11 @@ export function BlogStudioEditor({
   const [savedSettings, setSavedSettings] = useState(() =>
     parseSettings(settingsEntry)
   );
+  const [pageCover, setPageCover] = useState<PageCoverValue>(() =>
+    parsePageCover(pageCoverEntry)
+  );
+  const [coverSaving, setCoverSaving] = useState(false);
+  const [coverSaved, setCoverSaved] = useState(false);
   const [tab, setTab] = useState<DashboardTab>("posts");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -527,6 +561,37 @@ export function BlogStudioEditor({
     push("Blog settings saved", "success");
   }
 
+  async function saveCover() {
+    setCoverSaving(true);
+    try {
+      const response = await fetch("/api/orbit/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          module: "blog",
+          key: "page-settings",
+          title: "Blog Page Settings",
+          status: "PUBLISHED",
+          data: { cover: pageCover },
+        }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        push(result.error ?? "Cover save failed", "error");
+        return;
+      }
+      await syncPageCoverPlacement({
+        key: "page.blog.hero",
+        label: "Blog Page Hero",
+        cover: pageCover,
+      });
+      setCoverSaved(true);
+      push("Blog cover saved", "success");
+    } finally {
+      setCoverSaving(false);
+    }
+  }
+
   async function remove(entry: BlogEntry) {
     if (!window.confirm(`Delete "${entry.title}"? This cannot be undone.`))
       return;
@@ -614,6 +679,51 @@ export function BlogStudioEditor({
           </button>
         ))}
       </div>
+
+      {tab === "posts" ? (
+        <section className="orbit-panel mt-7 space-y-5 rounded-2xl p-6 sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold tracking-[0.24em] text-[#a67a30] uppercase">
+                Blog Index
+              </p>
+              <h3 className="font-display mt-1 text-2xl font-semibold text-[#10251e]">
+                Journal Cover
+              </h3>
+              <p className="mt-1 text-sm text-[#62716b]">
+                The cover image and copy guests see at the top of{" "}
+                <span className="font-medium">/blog</span>.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/blog"
+                target="_blank"
+                className="flex h-11 items-center rounded-xl border border-[#17362b]/12 bg-white px-4 text-[10px] font-semibold tracking-[0.14em] uppercase"
+              >
+                <ExternalLink className="mr-1.5 size-3.5" /> Preview
+              </Link>
+              <button
+                type="button"
+                disabled={coverSaving}
+                onClick={() => void saveCover()}
+                className="orbit-gold-button flex h-11 items-center gap-2 rounded-xl px-5 text-[10px] font-semibold tracking-[0.16em] uppercase disabled:opacity-50"
+              >
+                <Save className="size-3.5" />
+                {coverSaving ? "Saving…" : coverSaved ? "Saved" : "Save Cover & Publish"}
+              </button>
+            </div>
+          </div>
+          <PageCoverEditor
+            label="Blog Listing Page Cover"
+            value={pageCover}
+            onChange={(next) => {
+              setPageCover(next);
+              setCoverSaved(false);
+            }}
+          />
+        </section>
+      ) : null}
 
       {tab === "posts" ? (
         <section className="orbit-panel mt-7 overflow-hidden rounded-2xl">

@@ -4,8 +4,8 @@ import { PageHero } from "@/components/shared/page-hero";
 import { RoomsSearchBar } from "@/components/rooms/rooms-search-bar";
 import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { getBookingPageContent } from "@/lib/booking-page-content";
 import { getRooms } from "@/content/rooms";
-import { resolveSiteImage } from "@/lib/orbit/resolve-image";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -33,13 +33,10 @@ function toInt(value: string | undefined, fallback: number) {
 }
 
 export default async function BookingPage({ searchParams }: PageProps) {
-  const [params, allRooms, hero] = await Promise.all([
+  const [params, allRooms, bookingContent] = await Promise.all([
     searchParams,
     getRooms(),
-    resolveSiteImage("page.booking.hero", {
-      src: "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=2400&auto=format&fit=crop",
-      alt: "A Marlo room prepared for arrival",
-    }),
+    getBookingPageContent(),
   ]);
 
   const search =
@@ -62,17 +59,18 @@ export default async function BookingPage({ searchParams }: PageProps) {
   return (
     <>
       <PageHero
-        eyebrow="Reservations"
-        title={search ? "Choose your room" : "Reserve your stay"}
+        eyebrow={bookingContent.cover.eyebrow || "Reservations"}
+        title={
+          search ? "Choose your room" : bookingContent.cover.title || "Reserve your stay"
+        }
         description={
           search
             ? `${search.checkIn} → ${search.checkOut} · ${search.adults} adult${search.adults > 1 ? "s" : ""} · ${search.rooms} room${search.rooms > 1 ? "s" : ""} · ${search.breakfast ? "With breakfast" : "Without breakfast"}`
-            : "Direct bookings enjoy our best available rate — select dates, meal plan and room, then complete guest details and payment."
+            : bookingContent.cover.description
         }
         image={{
-          src: hero.src,
-          alt: hero.alt,
-          objectPosition: hero.objectPosition,
+          src: bookingContent.cover.src,
+          alt: bookingContent.cover.alt,
         }}
         crumbs={[
           { label: "Home", href: "/" },

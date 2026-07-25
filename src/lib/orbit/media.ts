@@ -199,6 +199,7 @@ export const SITE_PLACEMENTS = [
   { key: "page.blog.hero", label: "Blog Page Hero" },
   { key: "page.contact.hero", label: "Contact Page Hero" },
   { key: "page.booking.hero", label: "Booking Page Hero" },
+  { key: "page.legal.hero", label: "Legal Page Hero" },
   { key: "brand.logo", label: "Primary Logo" },
   { key: "brand.footerLogo", label: "Footer Logo" },
   { key: "brand.favicon", label: "Favicon" },

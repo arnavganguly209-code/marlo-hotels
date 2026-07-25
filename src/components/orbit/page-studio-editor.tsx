@@ -18,6 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MediaField, MediaPicker } from "@/components/orbit/media-picker";
+import { syncPageCoverPlacement } from "@/components/orbit/page-cover-editor";
 import { useToast } from "@/components/orbit/toast";
 import { withMediaCacheBust } from "@/lib/media-cache";
 import {
@@ -29,6 +30,14 @@ import {
 import { cn } from "@/lib/utils";
 
 type PreviewMode = "desktop" | "tablet" | "mobile" | "landscape";
+
+/** Modules whose Page Studio hero also drives a public media placement. */
+const HERO_PLACEMENT_KEYS: Record<string, string> = {
+  dining: "page.dining.hero",
+  spa: "page.spa.hero",
+  experiences: "page.experiences.hero",
+  offers: "page.offers.hero",
+};
 
 function normalizeSection(
   partial?: Partial<StudioSectionData> | null,
@@ -132,6 +141,20 @@ export function PageStudioEditor({
       setSaved(structuredClone(doc));
       setDirty(false);
       push(result.message || "Saved Successfully · Published", "success");
+
+      const placementKey = HERO_PLACEMENT_KEYS[moduleSlug];
+      const heroImage = doc.hero?.image;
+      if (placementKey && heroImage && (heroImage.assetId || heroImage.src)) {
+        await syncPageCoverPlacement({
+          key: placementKey,
+          label: `${moduleLabel} Page Hero`,
+          cover: {
+            src: heroImage.src,
+            alt: heroImage.alt,
+            assetId: heroImage.assetId ?? null,
+          },
+        });
+      }
     } catch {
       push("Network Error", "error");
     } finally {
@@ -281,6 +304,32 @@ export function PageStudioEditor({
                   {activeMeta?.description}
                 </p>
               </div>
+
+              {active === "hero" && fields.has("image") ? (
+                <div className="relative aspect-video min-h-[240px] w-full overflow-hidden rounded-2xl border border-[var(--orbit-border)] bg-[#eef1ee]">
+                  {value.image.src ? (
+                    <Image
+                      key={value.image.src}
+                      src={value.image.src}
+                      alt={value.image.alt || value.heading || moduleLabel}
+                      fill
+                      sizes="900px"
+                      className="object-cover"
+                      unoptimized={value.image.src.startsWith("/media/")}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#eef2ee] via-[#e4ebe5] to-[#d7e0d9] text-center">
+                      <ImagePlus className="size-9 text-[#7d8c84]" />
+                      <p className="text-sm font-semibold text-[#3d5248]">
+                        No hero image yet
+                      </p>
+                      <p className="text-xs text-[#6d7c74]">
+                        Upload below to set the {moduleLabel} page cover.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
 
               <label className="flex items-center justify-between rounded-xl border border-[var(--orbit-border)] bg-white px-4 py-3">
                 <span className="text-sm font-semibold">Visible on website</span>

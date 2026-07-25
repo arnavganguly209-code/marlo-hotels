@@ -5,7 +5,7 @@ import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { RoomsSearchBar } from "@/components/rooms/rooms-search-bar";
 import { getRooms } from "@/content/rooms";
-import { resolveSiteImage } from "@/lib/orbit/resolve-image";
+import { getRoomsPageContent } from "@/lib/rooms-page-content";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -33,14 +33,12 @@ function toInt(value: string | undefined, fallback: number) {
 }
 
 export default async function RoomsPage({ searchParams }: PageProps) {
-  const [params, allRooms, hero] = await Promise.all([
+  const [params, allRooms, pageContent] = await Promise.all([
     searchParams,
     getRooms(),
-    resolveSiteImage("page.rooms.hero", {
-      src: "",
-      alt: "Marlo Hotels rooms",
-    }),
+    getRoomsPageContent(),
   ]);
+  const { cover } = pageContent;
 
   const search =
     params.checkIn && params.checkOut
@@ -62,17 +60,16 @@ export default async function RoomsPage({ searchParams }: PageProps) {
   return (
     <>
       <PageHero
-        eyebrow="Rooms & Suites"
-        title={search ? "Available rooms for your dates" : "Quarters of quiet grandeur"}
+        eyebrow={cover.eyebrow}
+        title={search ? "Available rooms for your dates" : cover.title}
         description={
           search
             ? `${search.checkIn} → ${search.checkOut} · ${search.adults} adult${search.adults > 1 ? "s" : ""} · ${search.rooms} room${search.rooms > 1 ? "s" : ""}`
-            : "Every room at Marlo is an argument for staying in — mountain light, hand-loomed textiles and beds you will write home about."
+            : cover.description
         }
         image={{
-          src: hero.src,
-          alt: hero.alt,
-          objectPosition: hero.objectPosition,
+          src: cover.src,
+          alt: cover.alt,
         }}
         crumbs={[
           { label: "Home", href: "/" },

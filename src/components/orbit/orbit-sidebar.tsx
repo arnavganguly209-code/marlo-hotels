@@ -60,36 +60,20 @@ const icons: Record<string, LucideIcon> = {
   "scroll-text": ScrollText,
 };
 
-/** Flat page list — no Website / Homepage nesting. */
 const PRIMARY_NAV: { slug: string; label: string; icon: string }[] = [
   { slug: "homepage", label: "Homepage", icon: "layout-template" },
-  { slug: "about", label: "About", icon: "book-open" },
   { slug: "rooms", label: "Rooms", icon: "bed-double" },
   { slug: "dining", label: "Dining", icon: "utensils" },
   { slug: "spa", label: "Spa", icon: "flower-2" },
   { slug: "gallery", label: "Gallery", icon: "images" },
-  { slug: "offers", label: "Offers", icon: "badge-percent" },
   { slug: "experiences", label: "Experiences", icon: "compass" },
-  { slug: "wedding", label: "Wedding", icon: "heart-handshake" },
-  { slug: "meetings", label: "Meetings", icon: "presentation" },
-  { slug: "blog", label: "Blog", icon: "notebook-pen" },
+  { slug: "offers", label: "Offers", icon: "badge-percent" },
+  { slug: "booking", label: "Booking", icon: "calendar-check" },
   { slug: "contact", label: "Contact", icon: "messages-square" },
-  { slug: "footer", label: "Footer", icon: "menu-square" },
+  { slug: "blog", label: "Blog", icon: "notebook-pen" },
+  { slug: "legal", label: "Legal", icon: "scroll-text" },
   { slug: "media-library", label: "Media Library", icon: "folder-image" },
-  { slug: "seo", label: "SEO", icon: "search-check" },
   { slug: "site-settings", label: "Settings", icon: "settings-2" },
-];
-
-const ADMIN_NAV: { slug: string; label: string; icon: string }[] = [
-  { slug: "testimonials", label: "Testimonials", icon: "quote" },
-  { slug: "bookings", label: "Bookings", icon: "calendar-check" },
-  { slug: "contact-messages", label: "Messages", icon: "messages-square" },
-  { slug: "newsletter", label: "Newsletter", icon: "mail-plus" },
-  { slug: "reviews", label: "Reviews", icon: "star" },
-  { slug: "users", label: "Users", icon: "users-round" },
-  { slug: "security", label: "Security", icon: "shield-check" },
-  { slug: "backup", label: "Backup", icon: "database-backup" },
-  { slug: "system-logs", label: "Logs", icon: "scroll-text" },
 ];
 
 function NavLink({
@@ -172,28 +156,6 @@ export function OrbitSidebar({ logoUrl }: { logoUrl?: string }) {
 
         <ul className="space-y-0.5">
           {PRIMARY_NAV.map((item) => {
-            const href = `/orbit/${item.slug}`;
-            const active =
-              pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <li key={item.slug}>
-                <NavLink
-                  href={href}
-                  label={item.label}
-                  icon={item.icon}
-                  active={active}
-                  onClick={() => setOpen(false)}
-                />
-              </li>
-            );
-          })}
-        </ul>
-
-        <p className="mt-8 mb-2 px-4 text-[9px] font-semibold tracking-[0.3em] text-white/25 uppercase">
-          Admin
-        </p>
-        <ul className="space-y-0.5">
-          {ADMIN_NAV.map((item) => {
             const href = `/orbit/${item.slug}`;
             const active =
               pathname === href || pathname.startsWith(`${href}/`);

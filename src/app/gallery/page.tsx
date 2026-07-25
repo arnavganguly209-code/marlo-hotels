@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { GalleryGrid } from "@/components/gallery/gallery-grid";
 import { PageHero } from "@/components/shared/page-hero";
-import { resolveSiteImage } from "@/lib/orbit/resolve-image";
+import { getGalleryContent } from "@/lib/gallery-content";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -12,21 +12,17 @@ export const metadata: Metadata = buildMetadata({
 });
 
 export default async function GalleryPage() {
-  const hero = await resolveSiteImage("page.gallery.hero", {
-    src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2400&auto=format&fit=crop",
-    alt: "Marlo Hotels architecture and pool",
-  });
+  const content = await getGalleryContent();
 
   return (
     <>
       <PageHero
-        eyebrow="Gallery"
-        title="Marlo, framed"
-        description="Rooms, tables, rituals and the architecture that holds them — a portrait of life at Marlo Hotels."
+        eyebrow={content.cover.eyebrow || "Gallery"}
+        title={content.cover.title || "Marlo, framed"}
+        description={content.cover.description}
         image={{
-          src: hero.src,
-          alt: hero.alt,
-          objectPosition: hero.objectPosition,
+          src: content.cover.src,
+          alt: content.cover.alt,
         }}
         crumbs={[
           { label: "Home", href: "/" },
@@ -36,7 +32,14 @@ export default async function GalleryPage() {
 
       <section className="bg-ivory py-24 md:py-32">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <GalleryGrid />
+          <GalleryGrid
+            images={content.images.map((image) => ({
+              src: image.src,
+              alt: image.alt,
+              category: image.category,
+            }))}
+            categories={content.categories}
+          />
         </div>
       </section>
     </>
