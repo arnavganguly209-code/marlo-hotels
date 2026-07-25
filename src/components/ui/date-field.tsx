@@ -57,8 +57,12 @@ type DateFieldProps = {
   onChange: (value: string) => void;
   className?: string;
   buttonClassName?: string;
-  /** Dark glass (hero) or light surface (rooms) */
-  tone?: "dark" | "light";
+  /**
+   * dark — ivory text on dark glass (legacy)
+   * light — solid light surface (rooms)
+   * frost — underline field on light frosted glass (hero booking bar)
+   */
+  tone?: "dark" | "light" | "frost";
   /**
    * Desktop (lg+) calendar placement. Mobile always opens downward
    * so existing mobile layouts stay unchanged.
@@ -84,6 +88,7 @@ export function DateField({
   desktopPlacement = "below",
 }: DateFieldProps) {
   const dark = tone === "dark";
+  const frost = tone === "frost";
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [pos, setPos] = useState<{
@@ -205,7 +210,9 @@ export function DateField({
               "shadow-luxury fixed z-[9999] max-h-[min(360px,calc(100dvh-1.5rem))] overflow-y-auto rounded-xl border p-4 backdrop-blur-2xl",
               dark
                 ? "border-white/10 bg-[rgb(10_24_20_/_0.96)]"
-                : "border-forest-800/12 bg-white"
+                : frost
+                  ? "border-[rgb(201_150_63_/_0.28)] bg-[rgb(245_243_236_/_0.92)] shadow-[0_20px_50px_-18px_rgb(12_26_24_/_0.35),inset_0_1px_0_0_rgb(255_255_255_/_0.65)]"
+                  : "border-forest-800/12 bg-white"
             )}
             style={{
               top: pos.top,
@@ -340,7 +347,9 @@ export function DateField({
           "mt-2.5 flex min-h-11 w-full items-center justify-between text-left text-sm font-light outline-none transition-colors focus-visible:ring-2 focus-visible:ring-gold-400/50",
           dark
             ? "border-b border-ivory/25 pb-2 text-ivory focus:border-gold-400"
-            : "rounded-xl border border-forest-800/15 bg-white px-3 text-forest-950",
+            : frost
+              ? "border-b border-[rgb(169_122_48_/_0.28)] pb-2 text-forest-900 focus:border-gold-600"
+              : "rounded-xl border border-forest-800/15 bg-white px-3 text-forest-950",
           buttonClassName
         )}
       >
