@@ -211,7 +211,7 @@ export function DateField({
               dark
                 ? "border-white/10 bg-[rgb(10_24_20_/_0.96)]"
                 : frost
-                  ? "border-[rgb(201_150_63_/_0.28)] bg-[rgb(245_243_236_/_0.92)] shadow-[0_20px_50px_-18px_rgb(12_26_24_/_0.35),inset_0_1px_0_0_rgb(255_255_255_/_0.65)]"
+                  ? "border-white/20 bg-[rgb(18_32_28_/_0.92)] shadow-[0_20px_50px_-18px_rgb(0_0_0_/_0.45),inset_0_1px_0_0_rgb(255_255_255_/_0.14)]"
                   : "border-forest-800/12 bg-white"
             )}
             style={{
@@ -236,8 +236,8 @@ export function DateField({
                 }}
                 className={cn(
                   "grid size-9 place-items-center rounded-lg transition",
-                  dark
-                    ? "text-cream-200/80 hover:bg-white/10 hover:text-gold-400"
+                  dark || frost
+                    ? "text-cream-200/80 hover:bg-white/10 hover:text-[#D9B46B]"
                     : "text-forest-800 hover:bg-forest-50 hover:text-gold-700"
                 )}
               >
@@ -246,7 +246,7 @@ export function DateField({
               <p
                 className={cn(
                   "font-display text-base",
-                  dark ? "text-ivory" : "text-forest-950"
+                  dark || frost ? "text-[#F8F4EC]" : "text-forest-950"
                 )}
               >
                 {view.toLocaleDateString("en-US", {
@@ -268,8 +268,8 @@ export function DateField({
                 }}
                 className={cn(
                   "grid size-9 place-items-center rounded-lg transition",
-                  dark
-                    ? "text-cream-200/80 hover:bg-white/10 hover:text-gold-400"
+                  dark || frost
+                    ? "text-cream-200/80 hover:bg-white/10 hover:text-[#D9B46B]"
                     : "text-forest-800 hover:bg-forest-50 hover:text-gold-700"
                 )}
               >
@@ -282,7 +282,7 @@ export function DateField({
                   key={day}
                   className={cn(
                     "pb-2 text-[9px] font-medium tracking-[0.2em] uppercase",
-                    dark ? "text-cream-200/45" : "text-charcoal-900/45"
+                    dark || frost ? "text-cream-200/45" : "text-charcoal-900/45"
                   )}
                 >
                   {day}
@@ -308,16 +308,16 @@ export function DateField({
                     className={cn(
                       "mx-auto flex size-9 items-center justify-center rounded-full text-sm transition",
                       disabled &&
-                        (dark
+                        (dark || frost
                           ? "cursor-not-allowed text-cream-200/25"
                           : "cursor-not-allowed text-charcoal-900/25"),
                       !disabled &&
                         !isSelected &&
-                        (dark
-                          ? "text-cream-200/85 hover:bg-gold-500/20 hover:text-gold-300"
+                        (dark || frost
+                          ? "text-[#F8F4EC]/85 hover:bg-[#D9B46B]/20 hover:text-[#D9B46B]"
                           : "text-forest-950 hover:bg-gold-500/15 hover:text-gold-700"),
                       isSelected &&
-                        "bg-gold-500 font-medium text-charcoal-950"
+                        "bg-[#D8A53F] font-medium text-charcoal-950"
                     )}
                   >
                     {day.getDate()}
@@ -348,7 +348,7 @@ export function DateField({
           dark
             ? "border-b border-ivory/25 pb-2 text-ivory focus:border-gold-400"
             : frost
-              ? "border-b border-[rgb(169_122_48_/_0.28)] pb-2 text-forest-900 focus:border-gold-600"
+              ? "border-b border-white/[0.18] pb-2 font-medium text-[#F8F4EC] focus:border-white/40"
               : "rounded-xl border border-forest-800/15 bg-white px-3 text-forest-950",
           buttonClassName
         )}

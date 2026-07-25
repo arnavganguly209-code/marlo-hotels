@@ -128,10 +128,10 @@ export function BookingWidget({
   }
 
   const labelClass =
-    "flex items-center gap-2 text-[9px] font-medium tracking-[0.3em] uppercase text-gold-600 lg:text-[8px] lg:tracking-[0.26em]";
+    "flex items-center gap-2 text-[9px] font-semibold tracking-[0.3em] uppercase text-[#D9B46B] lg:text-[8px] lg:tracking-[0.26em]";
 
   const fieldUnderline =
-    "mt-2.5 flex min-h-11 w-full items-center justify-between border-b border-[rgb(169_122_48_/_0.28)] pb-2 text-sm font-light text-forest-900 transition-colors focus-visible:border-gold-600 focus-visible:outline-none lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]";
+    "mt-2.5 flex min-h-11 w-full items-center justify-between border-b border-white/[0.18] pb-2 text-sm font-medium text-[#F8F4EC] transition-colors focus-visible:border-white/40 focus-visible:outline-none lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]";
 
   const dropdown =
     mounted && guestsOpen && menuPos
@@ -140,7 +140,7 @@ export function BookingWidget({
             id="orbit-guests-portal"
             role="dialog"
             aria-label="Guests and rooms"
-            className="fixed z-[9999] max-h-[min(420px,calc(100dvh-1.5rem))] space-y-4 overflow-y-auto rounded-xl border border-[rgb(201_150_63_/_0.28)] bg-[rgb(245_243_236_/_0.92)] p-5 shadow-[0_20px_50px_-18px_rgb(12_26_24_/_0.35),inset_0_1px_0_0_rgb(255_255_255_/_0.65)] backdrop-blur-2xl"
+            className="fixed z-[9999] max-h-[min(420px,calc(100dvh-1.5rem))] space-y-4 overflow-y-auto rounded-xl border border-white/20 bg-[rgb(18_32_28_/_0.88)] p-5 shadow-[0_20px_50px_-18px_rgb(0_0_0_/_0.45),inset_0_1px_0_0_rgb(255_255_255_/_0.12)] backdrop-blur-[22px]"
             style={{
               top: menuPos.top,
               bottom: menuPos.bottom,
@@ -154,7 +154,7 @@ export function BookingWidget({
               min={1}
               max={siteConfig.booking.maxAdults}
               onChange={setAdults}
-              tone="dark"
+              tone="light"
             />
             <CounterField
               label={content.childrenLabel}
@@ -162,7 +162,7 @@ export function BookingWidget({
               min={0}
               max={siteConfig.booking.maxChildren}
               onChange={setChildren}
-              tone="dark"
+              tone="light"
             />
             <CounterField
               label={content.roomsLabel}
@@ -170,7 +170,7 @@ export function BookingWidget({
               min={1}
               max={siteConfig.booking.maxRooms}
               onChange={setRooms}
-              tone="dark"
+              tone="light"
             />
           </div>,
           document.body
@@ -182,9 +182,9 @@ export function BookingWidget({
       onSubmit={onSearch}
       aria-label="Check availability"
       className={cn(
-        // Layout / sizing unchanged — color & glass only
-        "relative z-30 grid grid-cols-1 gap-x-6 gap-y-5 overflow-visible rounded-2xl border border-[rgb(201_150_63_/_0.32)] bg-gradient-to-b from-[rgb(245_243_236_/_0.34)] to-[rgb(236_242_235_/_0.22)] p-5 shadow-[0_22px_55px_-22px_rgb(12_26_24_/_0.45),inset_0_1px_0_0_rgb(255_255_255_/_0.55)] backdrop-blur-[22px] backdrop-saturate-150 sm:grid-cols-2 sm:p-6 md:p-7",
-        "lg:grid-cols-[1fr_1fr_1.15fr_1fr_auto] lg:items-center lg:gap-x-5 lg:gap-y-0 lg:rounded-xl lg:border-[rgb(201_150_63_/_0.28)] lg:p-3 lg:shadow-[0_18px_48px_-20px_rgb(12_26_24_/_0.42),inset_0_1px_0_0_rgb(255_255_255_/_0.6)] lg:backdrop-blur-[24px]",
+        // Layout / sizing unchanged — visual polish only
+        "booking-bar-enter relative z-30 grid grid-cols-1 gap-x-6 gap-y-5 overflow-visible rounded-2xl border border-white/25 bg-gradient-to-b from-[rgb(245_240_228_/_0.22)] via-[rgb(236_242_235_/_0.16)] to-[rgb(228_236_230_/_0.12)] p-5 shadow-[0_22px_55px_-22px_rgb(0_0_0_/_0.45),inset_0_1px_0_0_rgb(255_255_255_/_0.45)] backdrop-blur-[22px] backdrop-saturate-150 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:rounded-t-2xl before:bg-gradient-to-r before:from-transparent before:via-white/50 before:to-transparent sm:grid-cols-2 sm:p-6 md:p-7",
+        "lg:grid-cols-[1fr_1fr_1.15fr_1fr_auto] lg:items-center lg:gap-x-5 lg:gap-y-0 lg:rounded-xl lg:border-white/20 lg:p-3 lg:shadow-[0_18px_48px_-20px_rgb(0_0_0_/_0.42),inset_0_1px_0_0_rgb(255_255_255_/_0.4)] lg:backdrop-blur-[24px] lg:before:rounded-t-xl",
         className
       )}
     >
@@ -194,14 +194,14 @@ export function BookingWidget({
         desktopPlacement="above"
         label={
           <span className={labelClass}>
-            <CalendarDays className="size-3.5 text-gold-600 lg:size-3" />{" "}
+            <CalendarDays className="size-3.5 text-[#D9B46B] lg:size-3" />{" "}
             {content.checkInLabel}
           </span>
         }
         value={checkIn}
         min={toISODateString(today)}
         required
-        buttonClassName="lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]"
+        buttonClassName="lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px] lg:font-medium"
         onChange={(next) => {
           setCheckIn(next);
           if (next >= checkOut) {
@@ -216,20 +216,20 @@ export function BookingWidget({
         desktopPlacement="above"
         label={
           <span className={labelClass}>
-            <CalendarDays className="size-3.5 text-gold-600 lg:size-3" />{" "}
+            <CalendarDays className="size-3.5 text-[#D9B46B] lg:size-3" />{" "}
             {content.checkOutLabel}
           </span>
         }
         value={checkOut}
         min={toISODateString(addDays(new Date(checkIn), 1))}
         required
-        buttonClassName="lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]"
+        buttonClassName="lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px] lg:font-medium"
         onChange={setCheckOut}
       />
 
       <div ref={guestsRef} className="relative z-40 overflow-visible">
         <span className={labelClass}>
-          <Users className="size-3.5 text-gold-600 lg:size-3" />{" "}
+          <Users className="size-3.5 text-[#D9B46B] lg:size-3" />{" "}
           {content.guestsLabel}
         </span>
         <button
@@ -245,7 +245,7 @@ export function BookingWidget({
           </span>
           <ChevronDown
             className={cn(
-              "size-4 text-gold-600 transition-transform duration-300 lg:size-3.5",
+              "size-4 text-[#D9B46B] transition-transform duration-300 lg:size-3.5",
               guestsOpen && "rotate-180"
             )}
           />
@@ -254,7 +254,7 @@ export function BookingWidget({
 
       <div>
         <label htmlFor="widget-promo" className={labelClass}>
-          <Sparkles className="size-3.5 text-gold-600 lg:size-3" />{" "}
+          <Sparkles className="size-3.5 text-[#D9B46B] lg:size-3" />{" "}
           {content.promoLabel}
         </label>
         <input
@@ -263,13 +263,13 @@ export function BookingWidget({
           placeholder={content.promoPlaceholder}
           value={promo}
           onChange={(event) => setPromo(event.target.value)}
-          className="mt-2.5 min-h-11 w-full border-b border-[rgb(169_122_48_/_0.28)] bg-transparent pb-2 text-sm font-light tracking-widest text-forest-900 uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:text-forest-800/40 focus:border-gold-600 lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]"
+          className="mt-2.5 min-h-11 w-full border-b border-white/[0.18] bg-transparent pb-2 text-sm font-medium tracking-widest text-[#F8F4EC] uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:text-white/55 focus:border-white/40 lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]"
         />
       </div>
 
       <button
         type="submit"
-        className="col-span-1 flex h-13 min-h-12 items-center justify-center gap-3 rounded-lg bg-gradient-to-b from-gold-400 via-gold-500 to-gold-600 px-8 text-[11px] font-semibold tracking-[0.24em] text-charcoal-950 uppercase shadow-[0_14px_36px_-10px_rgb(169_122_48_/_0.55),inset_0_1px_0_0_rgb(255_255_255_/_0.35)] transition-all duration-500 hover:-translate-y-0.5 hover:from-gold-300 hover:via-gold-400 hover:to-gold-500 hover:shadow-[0_18px_40px_-10px_rgb(169_122_48_/_0.65)] focus-visible:ring-2 focus-visible:ring-gold-300 focus-visible:outline-none sm:col-span-2 lg:col-span-1 lg:h-10 lg:min-h-10 lg:gap-2 lg:rounded-md lg:px-6 lg:text-[10px] lg:tracking-[0.2em] lg:hover:translate-y-0"
+        className="col-span-1 flex h-13 min-h-12 items-center justify-center gap-3 rounded-lg bg-gradient-to-b from-[#D8A53F] to-[#C9922A] px-8 text-[11px] font-semibold tracking-[0.24em] text-charcoal-950 uppercase shadow-[0_14px_36px_-10px_rgb(201_146_42_/_0.55),inset_0_1px_0_0_rgb(255_255_255_/_0.35)] transition-all duration-300 hover:brightness-110 hover:shadow-[0_18px_40px_-10px_rgb(201_146_42_/_0.65)] focus-visible:ring-2 focus-visible:ring-[#D9B46B]/60 focus-visible:outline-none sm:col-span-2 lg:col-span-1 lg:h-10 lg:min-h-10 lg:gap-2 lg:rounded-md lg:px-6 lg:text-[10px] lg:tracking-[0.2em]"
       >
         <BedDouble className="size-4 lg:size-3.5" />
         {content.submitLabel}

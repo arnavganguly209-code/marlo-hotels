@@ -148,6 +148,21 @@ body {
   animation: kenburns 8s var(--ease-luxury) both;
 }
 
+/* Hero booking bar — soft luxury entrance (visual only) */
+@keyframes booking-bar-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.booking-bar-enter {
+  animation: booking-bar-in 300ms ease-out both;
+}
+
 /* Scroll indicator pulse */
 @keyframes scroll-dot {
   0% {
