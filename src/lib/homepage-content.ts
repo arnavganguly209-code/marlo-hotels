@@ -642,12 +642,60 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
   };
 }
 
+/** True for EditableImage-shaped objects — anything carrying both `src` and `alt`. */
+function isEditableImageLike(
+  value: unknown
+): value is Record<string, unknown> {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      "src" in (value as Record<string, unknown>) &&
+      "alt" in (value as Record<string, unknown>)
+  );
+}
+
 function mergeCurrent<T>(defaults: T, saved: unknown): T {
   if (Array.isArray(defaults)) {
-    return (Array.isArray(saved) && saved.length ? saved : defaults) as T;
+    // Merge item-by-item so nested fields inherit defaults while still
+    // allowing intentionally empty/cleared values to persist.
+    if (!Array.isArray(saved)) return defaults as T;
+    if (!saved.length) return defaults as T;
+    return saved.map((savedItem, index) =>
+      index < defaults.length
+        ? mergeCurrent(defaults[index], savedItem)
+        : savedItem
+    ) as T;
   }
+
+  // Editable images: empty saved src means intentional delete — keep blank.
+  if (isEditableImageLike(defaults) || isEditableImageLike(saved)) {
+    const base = isEditableImageLike(defaults)
+      ? { ...(defaults as Record<string, unknown>) }
+      : {};
+    const source = isEditableImageLike(saved)
+      ? (saved as Record<string, unknown>)
+      : {};
+    const hasSrcKey = Object.prototype.hasOwnProperty.call(source, "src");
+    const savedSrc =
+      typeof source.src === "string" ? source.src.trim() : "";
+    const result: Record<string, unknown> = { ...base, ...source };
+    if (hasSrcKey && !savedSrc) {
+      result.src = "";
+      result.assetId = source.assetId ?? null;
+    } else if (!savedSrc && typeof base.src === "string" && base.src) {
+      result.src = base.src;
+      if (result.assetId == null && base.assetId != null) {
+        result.assetId = base.assetId;
+      }
+    }
+    return result as T;
+  }
+
   if (defaults && typeof defaults === "object") {
-    const result: Record<string, unknown> = { ...(defaults as Record<string, unknown>) };
+    const result: Record<string, unknown> = {
+      ...(defaults as Record<string, unknown>),
+    };
     const source =
       saved && typeof saved === "object"
         ? (saved as Record<string, unknown>)

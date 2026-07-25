@@ -45,9 +45,10 @@ export function BookingCheckoutForm({
       rooms: Number(params.get("rooms") || 1),
       breakfast: params.get("breakfast") === "1",
       promo: params.get("promo") || "",
+      roomName: params.get("roomName") || room?.name || "Room",
       total,
     }),
-    [params, total]
+    [params, total, room?.name]
   );
 
   function onSubmit(event: React.FormEvent) {
@@ -58,10 +59,13 @@ export function BookingCheckoutForm({
       !form.guestPhone.trim() ||
       !form.whatsapp.trim() ||
       !form.country.trim() ||
-      !form.arrivalTime.trim() ||
-      !form.notes.trim()
+      !form.arrivalTime.trim()
     ) {
       setError("Please complete every required field.");
+      return;
+    }
+    if (!summary.checkIn || !summary.checkOut || !roomSlug) {
+      setError("Missing stay details. Please return to booking and select a room.");
       return;
     }
     const next = new URLSearchParams(params.toString());
@@ -71,7 +75,8 @@ export function BookingCheckoutForm({
     next.set("whatsapp", form.whatsapp.trim());
     next.set("country", form.country.trim());
     next.set("arrivalTime", form.arrivalTime.trim());
-    next.set("notes", form.notes.trim());
+    next.set("notes", form.notes.trim() || "None");
+    next.set("roomName", summary.roomName);
     router.push(`/booking/payment?${next.toString()}`);
   }
 
@@ -82,14 +87,14 @@ export function BookingCheckoutForm({
           Guest details
         </h1>
         <p className="text-sm text-charcoal-900/60">
-          All fields are required to continue to payment.
+          Tell us who is arriving — then continue to secure payment.
         </p>
         {(
           [
             ["guestName", "Full Name", "text"],
             ["guestEmail", "Email", "email"],
-            ["guestPhone", "Mobile Number", "tel"],
-            ["whatsapp", "WhatsApp Number", "tel"],
+            ["guestPhone", "Phone", "tel"],
+            ["whatsapp", "WhatsApp", "tel"],
             ["country", "Country", "text"],
             ["arrivalTime", "Arrival Time", "text"],
           ] as const
@@ -110,9 +115,9 @@ export function BookingCheckoutForm({
         <label className="block text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
           Special Request
           <textarea
-            required
             rows={4}
             value={form.notes}
+            placeholder="Optional"
             onChange={(event) =>
               setForm((current) => ({ ...current, notes: event.target.value }))
             }
@@ -124,7 +129,7 @@ export function BookingCheckoutForm({
           type="submit"
           className="mt-2 h-12 w-full rounded-xl bg-gold-500 text-[11px] font-semibold tracking-[0.2em] text-charcoal-950 uppercase"
         >
-          Continue to Payment
+          Continue
         </button>
       </form>
 
@@ -133,7 +138,7 @@ export function BookingCheckoutForm({
           Stay summary
         </p>
         <h2 className="font-display mt-2 text-2xl text-forest-950">
-          {room?.name || "Room"}
+          {summary.roomName}
         </h2>
         <dl className="mt-5 space-y-2 text-sm text-charcoal-900/70">
           <div className="flex justify-between">
@@ -151,7 +156,7 @@ export function BookingCheckoutForm({
             </dd>
           </div>
           <div className="flex justify-between">
-            <dt>Breakfast</dt>
+            <dt>Meal plan</dt>
             <dd>{summary.breakfast ? "With Breakfast" : "Without Breakfast"}</dd>
           </div>
           <div className="flex justify-between border-t border-forest-800/10 pt-3 text-base font-semibold text-forest-950">

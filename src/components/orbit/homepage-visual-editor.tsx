@@ -118,6 +118,32 @@ function labelFor(key: string) {
     .replace(/^./, (value) => value.toUpperCase());
 }
 
+function truncate(value: string, max: number): string {
+  const trimmed = value.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1).trimEnd()}…`;
+}
+
+/** Live copy shown on each sidebar card so editors see real CMS content, not just the schema blurb. */
+function sectionLivePreview(section: JsonObject): {
+  heading: string;
+  description: string;
+  buttonText: string;
+  schedule: string;
+} {
+  const heading = String(section.heading || section.title || "");
+  const description = truncate(String(section.description || ""), 96);
+  const buttonText = String(section.buttonText || "");
+  let schedule = "";
+  if (Array.isArray(section.timings) && section.timings.length) {
+    const first = section.timings[0] as { label?: string; hours?: string };
+    if (first?.label || first?.hours) {
+      schedule = [first.label, first.hours].filter(Boolean).join(" · ");
+    }
+  }
+  return { heading, description, buttonText, schedule };
+}
+
 function sectionThumbnail(section: JsonObject): string | null {
   if (isImage(section.image) && section.image.src) return section.image.src;
   if (isImage(section.poster) && section.poster.src) return section.poster.src;
@@ -365,6 +391,7 @@ export function HomepageVisualEditor({
             const sectionData = content[section.key] as unknown as JsonObject;
             const enabled = sectionData?.enabled !== false;
             const thumb = sectionThumbnail(sectionData || {});
+            const live = sectionLivePreview(sectionData || {});
             return (
               <div
                 key={section.key}
@@ -414,19 +441,51 @@ export function HomepageVisualEditor({
                   </div>
                   <div
                     className={cn(
-                      "space-y-2 p-4",
+                      "space-y-1.5 p-4",
                       isActive ? "text-[#f0d999]" : "text-[#294138]"
                     )}
                   >
                     <p className="text-base font-semibold">{section.label}</p>
                     <p
                       className={cn(
-                        "text-[12px] leading-snug",
-                        isActive ? "text-[#e4c784]/75" : "text-[#7b8982]"
+                        "truncate text-[12px] font-medium",
+                        isActive ? "text-[#f0d999]/90" : "text-[#3f5a4d]"
                       )}
                     >
-                      {section.description}
+                      {live.heading || section.description}
                     </p>
+                    {live.heading && live.description ? (
+                      <p
+                        className={cn(
+                          "text-[11px] leading-snug",
+                          isActive ? "text-[#e4c784]/70" : "text-[#7b8982]"
+                        )}
+                      >
+                        {live.description}
+                      </p>
+                    ) : null}
+                    {live.schedule ? (
+                      <p
+                        className={cn(
+                          "text-[10px] font-semibold tracking-[0.08em]",
+                          isActive ? "text-[#e4c784]/80" : "text-[#a67a30]"
+                        )}
+                      >
+                        {live.schedule}
+                      </p>
+                    ) : null}
+                    {live.buttonText ? (
+                      <span
+                        className={cn(
+                          "mt-1 inline-block rounded-md border px-2 py-1 text-[9px] font-semibold tracking-[0.1em] uppercase",
+                          isActive
+                            ? "border-[#e4c784]/50 text-[#f0d999]"
+                            : "border-[#c4943c]/50 text-[#a67a30]"
+                        )}
+                      >
+                        {live.buttonText}
+                      </span>
+                    ) : null}
                   </div>
                 </button>
                 <div
@@ -1653,9 +1712,17 @@ function ImageEditor({
         </Link>
         <button
           type="button"
-          onClick={() =>
-            onChange({ ...value, assetId: null, src: "", title: "" })
-          }
+          onClick={() => {
+            if (!window.confirm("Delete permanently?")) return;
+            const assetId = value.assetId;
+            // Clear the local preview immediately — never leave a stale image showing.
+            onChange({ ...value, assetId: null, src: "", title: "" });
+            if (assetId) {
+              void fetch(`/api/orbit/media/${assetId}?hard=1`, {
+                method: "DELETE",
+              }).catch(() => undefined);
+            }
+          }}
           className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[9px] font-semibold tracking-[0.12em] text-red-600 uppercase"
         >
           Delete

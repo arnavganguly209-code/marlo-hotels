@@ -86,6 +86,7 @@ export function StickyRoomBookingCard({
     if (soldOut) return;
     const params = new URLSearchParams({
       room: room.slug,
+      roomName: room.name,
       checkIn,
       checkOut,
       adults: String(adults),

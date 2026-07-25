@@ -27,12 +27,14 @@ export const bookingRequestSchema = z
     whatsapp: z.string().min(5, "Please enter a WhatsApp number"),
     country: z.string().min(2, "Please enter your country"),
     arrivalTime: z.string().min(1, "Please enter arrival time"),
-    notes: z.string().min(2, "Please add a special request"),
+    notes: z.string().optional().default("None"),
     breakfast: z.boolean().optional(),
     totalAmount: z.number().optional(),
     billingName: z.string().optional(),
     billingCountry: z.string().optional(),
     billingAddress: z.string().optional(),
+    billingCity: z.string().optional(),
+    billingPostalCode: z.string().optional(),
     paymentIntent: z.string().optional(),
   })
   .refine(

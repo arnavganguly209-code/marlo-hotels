@@ -52,6 +52,7 @@ export function VisualCardStack({
           const name =
             String(item.name || item.title || item.heading || "") ||
             `${title} ${index + 1}`;
+          const thumb = coverThumbnail(item);
           const isOpen = openIndex === index;
           return (
             <article
@@ -82,6 +83,18 @@ export function VisualCardStack({
                 className="flex w-full items-center gap-3 px-5 py-4 text-left"
               >
                 <GripVertical className="size-4 shrink-0 text-[#8b9892]" />
+                <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#e7ece8]">
+                  {thumb ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={bustImage(thumb)}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="size-4 rounded-full bg-[#c8d1cb]" />
+                  )}
+                </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-[#243c32]">
                     Card {index + 1} · {name}
@@ -134,6 +147,7 @@ export function VisualCardStack({
                     <button
                       type="button"
                       onClick={() => {
+                        if (!window.confirm("Delete this card permanently?")) return;
                         onChange(items.filter((_, itemIndex) => itemIndex !== index));
                         setOpenIndex(Math.max(0, index - 1));
                       }}
@@ -150,6 +164,20 @@ export function VisualCardStack({
       </div>
     </div>
   );
+}
+
+/** Cover thumbnail for a card's collapsed header — prefers `image.src`, falls back to `images[0].src`. */
+function coverThumbnail(item: Record<string, unknown>): string {
+  const image = item.image as EditableImage | undefined;
+  if (image && typeof image.src === "string" && image.src.trim()) {
+    return image.src;
+  }
+  const images = item.images as EditableImage[] | undefined;
+  const first = Array.isArray(images) ? images[0] : undefined;
+  if (first && typeof first.src === "string" && first.src.trim()) {
+    return first.src;
+  }
+  return "";
 }
 
 export function emptyEditableImage(alt = ""): EditableImage {

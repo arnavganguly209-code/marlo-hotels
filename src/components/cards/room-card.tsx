@@ -15,6 +15,7 @@ export function RoomCard({
   room,
   labels,
   search,
+  bookToCheckout = false,
 }: {
   room: Room;
   labels?: Record<string, string>;
@@ -27,6 +28,8 @@ export function RoomCard({
     breakfast: boolean;
     promo?: string;
   };
+  /** When true and search dates exist, Book Now goes straight to guest checkout. */
+  bookToCheckout?: boolean;
 }) {
   const cover = room.images[0];
   const soldOut = room.inventory <= 0;
@@ -61,7 +64,23 @@ export function RoomCard({
   }
   const query = params.toString();
   const detailsHref = `/rooms/${room.slug}${query ? `?${query}` : ""}`;
-  const bookHref = `/rooms/${room.slug}${query ? `?${query}` : ""}`;
+
+  let bookHref = detailsHref;
+  if (bookToCheckout && search && quote && !soldOut) {
+    const checkout = new URLSearchParams({
+      room: room.slug,
+      checkIn: search.checkIn,
+      checkOut: search.checkOut,
+      adults: String(search.adults),
+      children: String(search.children),
+      rooms: String(search.rooms),
+      breakfast: search.breakfast ? "1" : "0",
+      total: String(quote.total),
+      roomName: room.name,
+    });
+    if (search.promo) checkout.set("promo", search.promo);
+    bookHref = `/booking/checkout?${checkout.toString()}`;
+  }
 
   return (
     <article className="group shadow-luxury-sm hover:shadow-luxury relative flex h-full flex-col overflow-hidden rounded-xl bg-white transition-shadow duration-700">
@@ -168,10 +187,18 @@ export function RoomCard({
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href={bookHref}
-            className="inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-gold-500 px-4 text-[10px] font-semibold tracking-[0.18em] text-charcoal-950 uppercase transition hover:bg-gold-400"
+            href={soldOut ? detailsHref : bookHref}
+            aria-disabled={soldOut}
+            className={
+              soldOut
+                ? "inline-flex h-11 flex-1 cursor-not-allowed items-center justify-center rounded-xl bg-charcoal-900/20 px-4 text-[10px] font-semibold tracking-[0.18em] text-charcoal-900/45 uppercase"
+                : "inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-gold-500 px-4 text-[10px] font-semibold tracking-[0.18em] text-charcoal-950 uppercase transition hover:bg-gold-400"
+            }
+            onClick={(event) => {
+              if (soldOut) event.preventDefault();
+            }}
           >
-            {room.buttonText || "Book Now"}
+            {soldOut ? "Sold Out" : room.buttonText || "Book Now"}
           </Link>
           <Link
             href={detailsHref}

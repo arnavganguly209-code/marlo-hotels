@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRoomBySlug } from "@/content/rooms";
 import { generateMarloBookingId } from "@/lib/booking-id";
+import { sendBookingEmails } from "@/lib/booking-mail";
 import { getDb } from "@/lib/db";
 import { bookingRequestSchema } from "@/lib/validators";
 
@@ -32,15 +33,16 @@ export async function POST(request: Request) {
   const checkIn = new Date(parsed.data.checkIn);
   const checkOut = new Date(parsed.data.checkOut);
   const roomsRequested = Math.max(1, parsed.data.rooms);
+  const notesText = (parsed.data.notes || "").trim() || "None";
 
   const notesPayload = [
-    parsed.data.notes,
+    notesText,
     `WhatsApp: ${parsed.data.whatsapp}`,
     `Country: ${parsed.data.country}`,
     `Arrival: ${parsed.data.arrivalTime}`,
     `Breakfast: ${parsed.data.breakfast ? "Yes" : "No"}`,
     parsed.data.billingName
-      ? `Billing: ${parsed.data.billingName}, ${parsed.data.billingCountry}, ${parsed.data.billingAddress}`
+      ? `Billing: ${parsed.data.billingName}, ${parsed.data.billingCountry}, ${parsed.data.billingCity || ""} ${parsed.data.billingPostalCode || ""}, ${parsed.data.billingAddress}`
       : null,
     parsed.data.paymentIntent
       ? `Payment: ${parsed.data.paymentIntent}`
@@ -121,6 +123,25 @@ export async function POST(request: Request) {
       },
     });
   }
+
+  await sendBookingEmails({
+    reference,
+    guestName: parsed.data.guestName,
+    guestEmail: parsed.data.guestEmail,
+    guestPhone: parsed.data.guestPhone,
+    whatsapp: parsed.data.whatsapp,
+    country: parsed.data.country,
+    arrivalTime: parsed.data.arrivalTime,
+    notes: notesText,
+    roomName: room.name,
+    checkIn: parsed.data.checkIn,
+    checkOut: parsed.data.checkOut,
+    adults: parsed.data.adults,
+    children: parsed.data.children,
+    rooms: roomsRequested,
+    breakfast: Boolean(parsed.data.breakfast),
+    totalAmount: parsed.data.totalAmount,
+  });
 
   return NextResponse.json({ ok: true, reference });
 }

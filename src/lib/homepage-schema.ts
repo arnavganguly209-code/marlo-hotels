@@ -14,7 +14,12 @@ export const HOMEPAGE_SECTIONS: {
 }[] = [
   { key: "hero", label: "Hero", description: "Cinematic video or cover image." },
   { key: "about", label: "About", description: "Hotel story and imagery." },
-  { key: "rooms", label: "Rooms", description: "All room category cards.", itemLabel: "Room" },
+  {
+    key: "rooms",
+    label: "Rooms & Suites",
+    description: "All room category cards.",
+    itemLabel: "Room",
+  },
   {
     key: "breakfast",
     label: "Breakfast & Restaurant",

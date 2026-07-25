@@ -17,7 +17,10 @@ const restaurants: Restaurant[] = [
     dressCode: "Smart elegant",
     location: "Lobby level, garden wing",
     images: [
-      { src: "", alt: "Amaya dining room at night" },
+      {
+        src: "https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?q=80&w=1600&auto=format&fit=crop",
+        alt: "Amaya dining room at night",
+      },
       { src: "", alt: "Signature tasting course at Amaya" },
       { src: "", alt: "Candlelit tables at Amaya" },
     ],
@@ -25,7 +28,10 @@ const restaurants: Restaurant[] = [
       name: "Chef Kiran Rana",
       title: "Executive Chef",
       bio: "Trained in Lyon and seasoned in the kitchens of Singapore and Copenhagen, Chef Kiran returned home to cook the food of his childhood with the precision of the world's great restaurants. His tasting menu at Amaya has been called a love letter to the Himalaya.",
-      image: { src: "", alt: "Chef Kiran Rana plating a dish" },
+      image: {
+        src: "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?q=80&w=1200&auto=format&fit=crop",
+        alt: "Chef Kiran Rana plating a dish",
+      },
     },
     menu: [
       {
@@ -69,7 +75,10 @@ const restaurants: Restaurant[] = [
     dressCode: "Resort casual",
     location: "Pool deck, level 3",
     images: [
-      { src: "", alt: "The Terrace set for lunch" },
+      {
+        src: "https://images.unsplash.com/photo-1521017432531-fbd92d768814?q=80&w=1600&auto=format&fit=crop",
+        alt: "The Terrace set for lunch",
+      },
       { src: "", alt: "Mediterranean dishes at The Terrace" },
       { src: "", alt: "Poolside table at golden hour" },
     ],
@@ -77,7 +86,10 @@ const restaurants: Restaurant[] = [
       name: "Chef Elena Moretti",
       title: "Chef de Cuisine",
       bio: "Elena grew up between Puglia and the Amalfi coast, and brings the generosity of southern Italian cooking to the Himalayan foothills — handmade pasta, wood-fire vegetables and olive oil she still imports from her family's grove.",
-      image: { src: "", alt: "Chef Elena Moretti in the kitchen" },
+      image: {
+        src: "https://images.unsplash.com/photo-1551218808-94e220e084d2?q=80&w=1200&auto=format&fit=crop",
+        alt: "Chef Elena Moretti in the kitchen",
+      },
     },
     menu: [
       {
@@ -119,7 +131,10 @@ const restaurants: Restaurant[] = [
     dressCode: "Smart casual",
     location: "Lobby level, west salon",
     images: [
-      { src: "", alt: "Cocktails at Bar 1959" },
+      {
+        src: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=1600&auto=format&fit=crop",
+        alt: "Cocktails at Bar 1959",
+      },
       { src: "", alt: "Candlelit interior of Bar 1959" },
       { src: "", alt: "Sommelier pouring a rare vintage" },
     ],
@@ -127,7 +142,10 @@ const restaurants: Restaurant[] = [
       name: "Aarav Shrestha",
       title: "Head Bartender",
       bio: "A collector of forgotten recipes and mountain botanicals, Aarav has bartended in Tokyo and London before building the 1959 programme. His rhododendron negroni has become the hotel's quiet legend.",
-      image: { src: "", alt: "Head bartender at work" },
+      image: {
+        src: "https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=1200&auto=format&fit=crop",
+        alt: "Head bartender at work",
+      },
     },
     menu: [
       {

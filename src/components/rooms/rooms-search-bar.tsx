@@ -15,6 +15,8 @@ function addDays(date: Date, days: number) {
 
 export function RoomsSearchBar({
   initial,
+  actionPath = "/rooms",
+  submitLabel = "Check Availability",
 }: {
   initial?: {
     checkIn: string;
@@ -25,6 +27,8 @@ export function RoomsSearchBar({
     breakfast: boolean;
     promo?: string;
   };
+  actionPath?: string;
+  submitLabel?: string;
 }) {
   const router = useRouter();
   const today = new Date();
@@ -43,7 +47,7 @@ export function RoomsSearchBar({
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     router.push(
-      `/rooms?${buildRoomsSearchParams({
+      `${actionPath}?${buildRoomsSearchParams({
         checkIn,
         checkOut,
         adults,
@@ -163,7 +167,7 @@ export function RoomsSearchBar({
           type="submit"
           className="h-11 rounded-xl bg-gold-500 px-5 text-[10px] font-semibold tracking-[0.16em] text-charcoal-950 uppercase"
         >
-          Check Availability
+          {submitLabel}
         </button>
       </div>
     </form>
