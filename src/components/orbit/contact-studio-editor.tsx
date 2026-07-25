@@ -375,7 +375,8 @@ export function ContactStudioEditor({
                       },
                     })
                   }
-                  onClear={() =>
+                  onClear={() => {
+                    const assetId = content.cover.image.assetId;
                     patch("cover", {
                       ...content.cover,
                       image: {
@@ -383,8 +384,13 @@ export function ContactStudioEditor({
                         src: "",
                         assetId: null,
                       },
-                    })
-                  }
+                    });
+                    if (assetId) {
+                      void fetch(`/api/orbit/media/${assetId}?hard=1`, {
+                        method: "DELETE",
+                      }).catch(() => undefined);
+                    }
+                  }}
                 />
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field
@@ -598,7 +604,8 @@ export function ContactStudioEditor({
                       },
                     })
                   }
-                  onClear={() =>
+                  onClear={() => {
+                    const assetId = content.map.previewImage.assetId;
                     patch("map", {
                       ...content.map,
                       previewImage: {
@@ -606,8 +613,13 @@ export function ContactStudioEditor({
                         src: "",
                         assetId: null,
                       },
-                    })
-                  }
+                    });
+                    if (assetId) {
+                      void fetch(`/api/orbit/media/${assetId}?hard=1`, {
+                        method: "DELETE",
+                      }).catch(() => undefined);
+                    }
+                  }}
                 />
                 <div className="grid gap-5 sm:grid-cols-3">
                   <Field

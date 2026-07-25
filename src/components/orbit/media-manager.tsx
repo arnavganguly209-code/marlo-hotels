@@ -23,6 +23,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ImageCropper } from "@/components/orbit/image-cropper";
 import { useToast } from "@/components/orbit/toast";
 import { withMediaCacheBust } from "@/lib/media-cache";
+import { SITE_PAGE_MEDIA_FILTERS } from "@/lib/orbit/site-page-media";
 import { cn } from "@/lib/utils";
 
 type Asset = {
@@ -73,10 +74,12 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
   const [assets, setAssets] = useState(initialAssets);
   const [query, setQuery] = useState("");
   const [folder, setFolder] = useState("all");
+  const [sitePage, setSitePage] = useState("all");
   const [kind, setKind] = useState("ALL");
   const [sort, setSort] = useState("newest");
   const [unused, setUnused] = useState(false);
   const [trash, setTrash] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [folders, setFolders] = useState<string[]>([]);
@@ -129,6 +132,7 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
       sort,
     });
     if (folder !== "all") params.set("folder", folder);
+    if (sitePage !== "all") params.set("sitePage", sitePage);
     if (kind !== "ALL") params.set("kind", kind);
     if (query.trim()) params.set("query", query.trim());
     if (unused) params.set("unused", "1");
@@ -148,11 +152,22 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
     setFolders(result.folders);
     setTotalPages(result.totalPages);
     setDuplicates(result.duplicateChecksums || []);
-  }, [folder, kind, page, query, sort, trash, unused, push]);
+  }, [folder, kind, page, query, sitePage, sort, trash, unused, push]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    // Auto-import site-used images once when Media Library opens.
+    void fetch("/api/orbit/media/sync-site", { method: "POST" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        await load();
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
 
   function updateJob(id: string, patch: Partial<UploadJob>) {
     setJobs((current) =>
@@ -544,6 +559,31 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            disabled={syncing}
+            onClick={() => {
+              setSyncing(true);
+              void fetch("/api/orbit/media/sync-site", { method: "POST" })
+                .then(async (response) => {
+                  const result = (await response.json()) as {
+                    message?: string;
+                    error?: string;
+                  };
+                  if (!response.ok) {
+                    push(result.error || "Sync failed", "error");
+                    return;
+                  }
+                  push(result.message || "Site media synced", "success");
+                  void load();
+                })
+                .catch(() => push("Network Error — sync failed.", "error"))
+                .finally(() => setSyncing(false));
+            }}
+            className="h-12 rounded-xl border border-[#17362b]/12 bg-white px-5 text-[10px] font-semibold tracking-[0.16em] uppercase disabled:opacity-50"
+          >
+            {syncing ? "Syncing…" : "Import site media"}
+          </button>
+          <button
+            type="button"
             onClick={() => setHeroOpen(true)}
             className="h-12 rounded-xl border border-[#17362b]/12 bg-white px-5 text-[10px] font-semibold tracking-[0.16em] uppercase"
           >
@@ -630,6 +670,22 @@ export function MediaManager({ initialAssets }: { initialAssets: Asset[] }) {
             >
               <List className="size-4" />
             </button>
+            <select
+              value={sitePage}
+              onChange={(event) => {
+                setPage(1);
+                setSitePage(event.target.value);
+                setFolder("all");
+              }}
+              className="h-10 rounded-lg border border-[#17362b]/10 bg-white px-3 text-[10px] font-semibold tracking-[0.12em] uppercase"
+            >
+              <option value="all">All pages</option>
+              {SITE_PAGE_MEDIA_FILTERS.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
             <select
               value={kind}
               onChange={(event) => {

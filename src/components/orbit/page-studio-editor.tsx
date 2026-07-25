@@ -399,11 +399,17 @@ export function PageStudioEditor({
                   {value.image.src ? (
                     <button
                       type="button"
-                      onClick={() =>
+                      onClick={() => {
+                        const assetId = value.image.assetId;
                         update({
                           image: { assetId: null, src: "", alt: "" },
-                        })
-                      }
+                        });
+                        if (assetId) {
+                          void fetch(`/api/orbit/media/${assetId}?hard=1`, {
+                            method: "DELETE",
+                          }).catch(() => undefined);
+                        }
+                      }}
                       className="text-[10px] font-semibold tracking-[0.14em] text-red-700 uppercase"
                     >
                       Delete image

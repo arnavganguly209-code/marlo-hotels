@@ -623,9 +623,15 @@ export function RoomsStudioEditor({
               {data.imageUrl ? (
                 <button
                   type="button"
-                  onClick={() =>
-                    patchData({ imageUrl: "", mediaAssetId: null })
-                  }
+                  onClick={() => {
+                    const assetId = data.mediaAssetId;
+                    patchData({ imageUrl: "", mediaAssetId: null });
+                    if (assetId) {
+                      void fetch(`/api/orbit/media/${assetId}?hard=1`, {
+                        method: "DELETE",
+                      }).catch(() => undefined);
+                    }
+                  }}
                   className="text-[10px] font-semibold tracking-[0.14em] text-red-700 uppercase"
                 >
                   Delete cover image
@@ -683,11 +689,18 @@ export function RoomsStudioEditor({
                       </button>
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          const removed = data.gallery[index];
                           patchData({
                             gallery: data.gallery.filter((_, i) => i !== index),
-                          })
-                        }
+                          });
+                          if (removed?.assetId) {
+                            void fetch(
+                              `/api/orbit/media/${removed.assetId}?hard=1`,
+                              { method: "DELETE" }
+                            ).catch(() => undefined);
+                          }
+                        }}
                         className="grid size-8 place-items-center rounded-lg text-red-700 hover:bg-red-50"
                         aria-label="Delete"
                       >

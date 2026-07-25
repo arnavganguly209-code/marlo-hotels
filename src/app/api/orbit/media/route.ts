@@ -18,6 +18,7 @@ import {
   storeOriginalUpload,
   VIDEO_MIME_TYPES,
 } from "@/lib/orbit/media-storage";
+import { getSitePageFilter } from "@/lib/orbit/site-page-media";
 
 function serializeAsset(asset: {
   id: string;
@@ -75,6 +76,7 @@ export async function GET(request: Request) {
   const sort = params.get("sort") || "newest";
   const unused = params.get("unused") === "1";
   const trash = params.get("trash") === "1";
+  const sitePage = getSitePageFilter(params.get("sitePage"));
   const page = Math.max(1, Number(params.get("page") || 1));
   const pageSize = Math.min(100, Math.max(1, Number(params.get("pageSize") || 48)));
 
@@ -93,6 +95,22 @@ export async function GET(request: Request) {
         }
       : {}),
     ...(unused ? { placements: { none: {} } } : {}),
+    ...(sitePage
+      ? {
+          OR: [
+            { folder: { in: [...sitePage.folders] } },
+            {
+              placements: {
+                some: {
+                  OR: sitePage.keyPrefixes.map((prefix) => ({
+                    key: { startsWith: prefix },
+                  })),
+                },
+              },
+            },
+          ],
+        }
+      : {}),
   };
 
   const orderBy: Prisma.MediaAssetOrderByWithRelationInput =
