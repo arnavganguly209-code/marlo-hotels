@@ -47,7 +47,8 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
                 src={primary.src}
                 alt={primary.alt}
                 fill
-                quality={100}
+                quality={85}
+                loading="lazy"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
                 style={{ objectPosition: objectPosition(primary) }}
@@ -65,7 +66,8 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
                 src={secondary.src}
                 alt={secondary.alt}
                 fill
-                quality={100}
+                quality={85}
+                loading="lazy"
                 sizes="25vw"
                 className="object-cover"
                 style={{ objectPosition: objectPosition(secondary) }}

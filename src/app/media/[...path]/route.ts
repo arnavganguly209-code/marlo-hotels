@@ -77,9 +77,10 @@ export async function GET(request: Request, { params }: Context) {
       if (Number.isNaN(start)) start = 0;
       if (Number.isNaN(end) || end >= size) end = size - 1;
 
-      // Cap a single range response to 2MB so first paint stays fast.
+      // Cap an open-ended range to ~4MB so the first playable frames arrive quickly
+      // without forcing a full download of large hero videos.
       if (!match[2]) {
-        end = Math.min(start + 2 * 1024 * 1024 - 1, size - 1);
+        end = Math.min(start + 4 * 1024 * 1024 - 1, size - 1);
       }
 
       if (start < 0 || start >= size || start > end) {

@@ -22,7 +22,16 @@ export default async function HomePage() {
     ...homepage.hero,
     image:
       homepage.hero.mediaType === "VIDEO"
-        ? { ...homepage.hero.image, src: "", alt: homepage.hero.image.alt || "" }
+        ? {
+            ...homepage.hero.image,
+            // Keep a still frame available as poster fallback while video boots.
+            src:
+              homepage.hero.poster?.src ||
+              homepage.hero.image?.src ||
+              heroMedia.posterUrl ||
+              "/images/brand/hero-reception.png",
+            alt: homepage.hero.image.alt || homepage.hero.poster?.alt || "",
+          }
         : homepage.hero.image?.src
           ? homepage.hero.image
           : heroMedia.id && heroMedia.kind === "IMAGE"
@@ -50,20 +59,43 @@ export default async function HomePage() {
     videoAutoplay: true,
     videoLoop: true,
     videoMuted: true,
-    poster: undefined,
+    poster:
+      homepage.hero.poster?.src
+        ? homepage.hero.poster
+        : heroMedia.posterUrl
+          ? {
+              src: heroMedia.posterUrl,
+              alt: homepage.hero.image?.alt || "Marlo Hotels",
+            }
+          : {
+              src: "/images/brand/hero-reception.png",
+              alt: homepage.hero.image?.alt || "Marlo Hotels",
+            },
   };
+
+  const posterHref = heroContent.poster?.src?.split("?")[0];
+  const videoHref = heroContent.videoUrl?.split("?")[0];
 
   return (
     <>
-      {heroContent.mediaType === "VIDEO" && heroContent.videoUrl ? (
+      {posterHref ? (
+        <link rel="preload" as="image" href={posterHref} fetchPriority="high" />
+      ) : null}
+      {heroContent.mediaType === "VIDEO" && videoHref ? (
         <link
           rel="preload"
           as="video"
-          href={heroContent.videoUrl.split("?")[0]}
+          href={videoHref}
           type="video/mp4"
+          fetchPriority="high"
         />
       ) : heroContent.mediaType === "IMAGE" && heroContent.image?.src ? (
-        <link rel="preload" as="image" href={heroContent.image.src} />
+        <link
+          rel="preload"
+          as="image"
+          href={heroContent.image.src.split("?")[0]}
+          fetchPriority="high"
+        />
       ) : null}
       <Hero content={heroContent} />
       <AboutSection content={homepage.about} />

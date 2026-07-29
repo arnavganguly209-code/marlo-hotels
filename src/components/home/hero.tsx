@@ -18,6 +18,9 @@ export function Hero({ content }: { content: HeroEditorContent }) {
   const isVideo = content.mediaType === "VIDEO";
   const videoSrc = isVideo ? resolveHeroVideoSrc(content) : "";
   const imageSrc = !isVideo ? content.image?.src || "" : "";
+  const posterSrc =
+    content.poster?.src ||
+    (isVideo ? content.image?.src || "/images/brand/hero-reception.png" : "");
 
   return (
     <div className="lg:flex lg:h-svh lg:flex-col">
@@ -27,7 +30,7 @@ export function Hero({ content }: { content: HeroEditorContent }) {
       >
         <div className="absolute inset-0">
           {videoSrc ? (
-            <HeroVideoClient src={videoSrc} />
+            <HeroVideoClient src={videoSrc} poster={posterSrc || undefined} />
           ) : imageSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
