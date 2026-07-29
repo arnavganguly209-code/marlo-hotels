@@ -101,22 +101,24 @@ export function NavPanel({ open, onClose }: NavPanelProps) {
         ref={overlayRef}
         onClick={onClose}
         aria-hidden="true"
-        className="invisible fixed inset-0 z-40 bg-charcoal-950/60 opacity-0 backdrop-blur-sm"
+        className="invisible fixed inset-0 z-40 bg-[rgba(40,36,28,0.28)] opacity-0 backdrop-blur-sm"
       />
       <aside
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label="Site navigation"
-        className="glass-dark invisible fixed top-0 right-0 z-50 flex h-dvh w-[88vw] max-w-sm flex-col overflow-y-auto px-8 py-8 md:top-4 md:right-4 md:h-[calc(100dvh-2rem)] md:rounded-2xl"
+        className="invisible fixed top-0 right-0 z-50 flex h-dvh w-[88vw] max-w-sm flex-col overflow-y-auto border border-[rgba(255,255,255,0.45)] bg-[rgba(252,249,243,0.92)] px-8 py-8 shadow-[0_12px_40px_-16px_rgba(40,32,20,0.18)] backdrop-blur-[22px] md:top-4 md:right-4 md:h-[calc(100dvh-2rem)] md:rounded-2xl"
       >
         <div className="flex items-center justify-between">
-          <p className="eyebrow">Menu</p>
+          <p className="text-[10px] font-semibold tracking-[0.32em] text-[#C09252] uppercase">
+            Menu
+          </p>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="grid size-10 place-items-center rounded-full border border-ivory/20 text-cream-100 transition-colors duration-300 hover:border-gold-400 hover:text-gold-400"
+            className="grid size-10 place-items-center rounded-full border border-[rgba(74,133,135,0.28)] text-[#4A8587] transition-colors duration-300 hover:border-[#C09252]/55 hover:text-[#C09252]"
           >
             <X className="size-4" />
           </button>
@@ -138,21 +140,21 @@ export function NavPanel({ open, onClose }: NavPanelProps) {
                     className={cn(
                       "group flex items-center gap-4 rounded-lg px-4 py-3 transition-all duration-300",
                       active
-                        ? "bg-ivory/10 text-gold-400"
-                        : "text-cream-100/85 hover:bg-ivory/5 hover:text-gold-300"
+                        ? "bg-[rgba(192,146,82,0.12)] text-[#C09252]"
+                        : "text-[#4A8587] hover:bg-[rgba(74,133,135,0.08)] hover:text-[#C09252]"
                     )}
                   >
                     <span
                       className={cn(
                         "grid size-9 place-items-center rounded-full border transition-colors duration-300",
                         active
-                          ? "border-gold-500/60 text-gold-400"
-                          : "border-ivory/15 group-hover:border-gold-400/50"
+                          ? "border-[#C09252]/55 text-[#C09252]"
+                          : "border-[rgba(74,133,135,0.28)] group-hover:border-[#C09252]/45"
                       )}
                     >
                       <Icon className="size-4" />
                     </span>
-                    <span className="text-sm font-light tracking-[0.14em]">
+                    <span className="text-sm font-semibold tracking-[0.14em]">
                       {item.label}
                     </span>
                   </Link>
@@ -162,15 +164,15 @@ export function NavPanel({ open, onClose }: NavPanelProps) {
           </ul>
         </nav>
 
-        <div data-nav-item className="mt-8 border-t border-ivory/10 pt-6">
+        <div data-nav-item className="mt-8 border-t border-[rgba(74,133,135,0.16)] pt-6">
           <Button asChild variant="gold" size="md" className="w-full">
             <Link href="/booking" onClick={onClose}>
               Reserve Now
             </Link>
           </Button>
-          <p className="mt-5 text-center text-xs font-light tracking-wider text-cream-200/60">
+          <p className="mt-5 text-center text-xs font-medium tracking-wider text-[#4A8587]/75">
             {siteConfig.contact.reservations}
-            <span className="mx-2 text-gold-500">·</span>
+            <span className="mx-2 text-[#C09252]">·</span>
             {siteConfig.contact.reservationsEmail}
           </p>
         </div>

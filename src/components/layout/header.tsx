@@ -75,10 +75,10 @@ export function Header({
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-[11px] font-bold tracking-[0.28em] uppercase antialiased [text-rendering:optimizeLegibility] transition-colors duration-300",
+                  "text-[11px] font-semibold tracking-[0.26em] uppercase antialiased [text-rendering:optimizeLegibility] transition-colors duration-300",
                   pathname.startsWith(link.href)
-                    ? "text-[#B8954F]"
-                    : "text-[#5F6B4E] hover:text-[#C4A574]"
+                    ? "text-[#C09252]"
+                    : "text-[#4A8587] hover:text-[#C09252]"
                 )}
               >
                 {link.label}
