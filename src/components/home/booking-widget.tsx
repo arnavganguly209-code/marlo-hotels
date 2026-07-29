@@ -13,7 +13,11 @@ import { createPortal } from "react-dom";
 import { CounterField } from "@/components/ui/counter-field";
 import { DateField } from "@/components/ui/date-field";
 import type { HeroEditorContent } from "@/lib/homepage-content";
-import { buildRoomsSearchParams, MAX_CHILDREN_PER_ROOM, suggestedRoomsForSearch } from "@/lib/booking-pricing";
+import { buildRoomsSearchParams } from "@/lib/booking-pricing";
+import {
+  maxChildrenAllowed,
+  type RoomCapacity,
+} from "@/lib/booking-occupancy";
 import { siteConfig } from "@/lib/site";
 import { cn, toISODateString } from "@/lib/utils";
 
@@ -30,9 +34,12 @@ function isDesktopViewport() {
 export function BookingWidget({
   className,
   content,
+  occupancy = [],
 }: {
   className?: string;
   content: HeroEditorContent["booking"];
+  /** Live room capacities from the Rooms module. */
+  occupancy?: RoomCapacity[];
 }) {
   const router = useRouter();
   const today = new Date();
@@ -53,14 +60,11 @@ export function BookingWidget({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  const childCap = occupancy.length
+    ? maxChildrenAllowed(occupancy, rooms)
+    : siteConfig.booking.maxChildren;
 
-  useEffect(() => {
-    const needed = suggestedRoomsForSearch(adults, children);
-    if (rooms < needed) setRooms(needed);
-    const childCap = Math.max(needed, rooms) * MAX_CHILDREN_PER_ROOM;
-    if (children > childCap) setChildren(childCap);
-  }, [adults, children, rooms]);
+  useEffect(() => setMounted(true), []);
 
   useLayoutEffect(() => {
     if (!guestsOpen || !buttonRef.current) {
@@ -123,14 +127,17 @@ export function BookingWidget({
   function onSearch(event: React.FormEvent) {
     event.preventDefault();
     router.push(
-      `/rooms?${buildRoomsSearchParams({
-        checkIn,
-        checkOut,
-        adults,
-        children,
-        rooms,
-        promo,
-      })}`
+      `/rooms?${buildRoomsSearchParams(
+        {
+          checkIn,
+          checkOut,
+          adults,
+          children,
+          rooms,
+          promo,
+        },
+        occupancy
+      )}`
     );
   }
 
@@ -167,14 +174,14 @@ export function BookingWidget({
               label={content.childrenLabel}
               value={children}
               min={0}
-              max={rooms * MAX_CHILDREN_PER_ROOM}
+              max={Math.max(0, childCap)}
               onChange={setChildren}
               tone="light"
             />
             <CounterField
               label={content.roomsLabel}
               value={rooms}
-              min={suggestedRoomsForSearch(adults, children)}
+              min={1}
               max={siteConfig.booking.maxRooms}
               onChange={setRooms}
               tone="light"

@@ -59,6 +59,7 @@ export function StickyRoomBookingCard({
         breakfast,
         includedAdults: room.includedAdults,
         includedChildren: room.includedChildren,
+        maxChildren: room.maxChildren,
         breakfastPerPersonPerNight:
           room.breakfastPrice || BREAKFAST_PER_PERSON_PER_NIGHT,
         extraAdultPerNight: room.extraAdultPrice,
@@ -69,6 +70,7 @@ export function StickyRoomBookingCard({
       room.breakfastPrice,
       room.includedAdults,
       room.includedChildren,
+      room.maxChildren,
       room.extraAdultPrice,
       room.extraChildPrice,
       checkIn,
@@ -142,7 +144,7 @@ export function StickyRoomBookingCard({
           />
         </label>
         <CounterField label="Adults" value={adults} min={1} max={siteConfig.booking.maxAdults} onChange={setAdults} />
-        <CounterField label="Children" value={children} min={0} max={siteConfig.booking.maxChildren} onChange={setChildren} />
+        <CounterField label="Children" value={children} min={0} max={Math.max(0, room.maxChildren * rooms)} onChange={setChildren} />
         <CounterField label="Rooms" value={rooms} min={1} max={Math.min(siteConfig.booking.maxRooms, Math.max(1, room.inventory))} onChange={setRooms} />
 
         <div>

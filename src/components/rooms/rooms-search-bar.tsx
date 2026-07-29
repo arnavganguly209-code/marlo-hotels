@@ -3,11 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DateField } from "@/components/ui/date-field";
+import { buildRoomsSearchParams } from "@/lib/booking-pricing";
 import {
-  buildRoomsSearchParams,
-  MAX_CHILDREN_PER_ROOM,
-  suggestedRoomsForSearch,
-} from "@/lib/booking-pricing";
+  maxChildrenAllowed,
+  type RoomCapacity,
+} from "@/lib/booking-occupancy";
 import { toISODateString } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,7 @@ export function RoomsSearchBar({
   initial,
   actionPath = "/rooms",
   submitLabel = "Check Availability",
+  occupancy = [],
 }: {
   initial?: {
     checkIn: string;
@@ -33,6 +34,8 @@ export function RoomsSearchBar({
   };
   actionPath?: string;
   submitLabel?: string;
+  /** Live room capacities from the Rooms module. */
+  occupancy?: RoomCapacity[];
 }) {
   const router = useRouter();
   const today = new Date();
@@ -44,41 +47,29 @@ export function RoomsSearchBar({
   );
   const [adults, setAdults] = useState(initial?.adults ?? 2);
   const [children, setChildren] = useState(initial?.children ?? 1);
-  const [rooms, setRooms] = useState(
-    initial?.rooms ?? suggestedRoomsForSearch(initial?.adults ?? 2, initial?.children ?? 1)
-  );
+  const [rooms, setRooms] = useState(initial?.rooms ?? 1);
   const [breakfast, setBreakfast] = useState(Boolean(initial?.breakfast));
   const [promo, setPromo] = useState(initial?.promo ?? "");
 
-  const minRooms = suggestedRoomsForSearch(adults, children);
-  const maxChildren = Math.max(rooms, minRooms) * MAX_CHILDREN_PER_ROOM;
-
-  function onAdultsChange(value: number) {
-    const nextAdults = Math.max(1, value);
-    setAdults(nextAdults);
-    const needed = suggestedRoomsForSearch(nextAdults, children);
-    if (rooms < needed) setRooms(needed);
-  }
-
-  function onChildrenChange(value: number) {
-    const nextChildren = Math.max(0, Math.min(value, maxChildren));
-    setChildren(nextChildren);
-    const needed = suggestedRoomsForSearch(adults, nextChildren);
-    if (rooms < needed) setRooms(needed);
-  }
+  const childCap = occupancy.length
+    ? maxChildrenAllowed(occupancy, rooms)
+    : rooms * 2;
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     router.push(
-      `${actionPath}?${buildRoomsSearchParams({
-        checkIn,
-        checkOut,
-        adults,
-        children,
-        rooms: Math.max(rooms, minRooms),
-        promo,
-        breakfast,
-      })}`
+      `${actionPath}?${buildRoomsSearchParams(
+        {
+          checkIn,
+          checkOut,
+          adults,
+          children,
+          rooms,
+          promo,
+          breakfast,
+        },
+        occupancy
+      )}`
     );
   }
 
@@ -124,7 +115,7 @@ export function RoomsSearchBar({
           min={1}
           max={8}
           value={adults}
-          onChange={(event) => onAdultsChange(Number(event.target.value) || 1)}
+          onChange={(event) => setAdults(Math.max(1, Number(event.target.value) || 1))}
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>
@@ -133,9 +124,12 @@ export function RoomsSearchBar({
         <input
           type="number"
           min={0}
-          max={maxChildren}
+          max={Math.max(0, childCap)}
           value={children}
-          onChange={(event) => onChildrenChange(Number(event.target.value) || 0)}
+          onChange={(event) => {
+            const next = Math.max(0, Number(event.target.value) || 0);
+            setChildren(Math.min(next, Math.max(0, childCap)));
+          }}
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>
@@ -143,58 +137,42 @@ export function RoomsSearchBar({
         Rooms
         <input
           type="number"
-          min={minRooms}
+          min={1}
           max={5}
-          value={Math.max(rooms, minRooms)}
+          value={rooms}
           onChange={(event) =>
-            setRooms(Math.max(minRooms, Number(event.target.value) || minRooms))
+            setRooms(Math.max(1, Number(event.target.value) || 1))
           }
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>
-      <label className={fieldLabel}>
+      <label className={cn(fieldLabel, "flex flex-col")}>
+        Breakfast
+        <select
+          value={breakfast ? "1" : "0"}
+          onChange={(event) => setBreakfast(event.target.value === "1")}
+          className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm normal-case tracking-normal"
+        >
+          <option value="0">Without Breakfast</option>
+          <option value="1">With Breakfast</option>
+        </select>
+      </label>
+      <label className={cn(fieldLabel, "md:col-span-1")}>
         Promo
         <input
+          type="text"
           value={promo}
           onChange={(event) => setPromo(event.target.value)}
-          className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm tracking-widest uppercase"
           placeholder="Optional"
+          className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm normal-case tracking-normal"
         />
       </label>
-      <div className="flex flex-col gap-2 md:col-span-6 lg:col-span-1 lg:contents">
-        <div className="flex gap-2 md:col-span-3">
-          <button
-            type="button"
-            onClick={() => setBreakfast(false)}
-            className={cn(
-              "h-11 flex-1 rounded-xl border text-[10px] font-semibold tracking-[0.12em] uppercase",
-              !breakfast
-                ? "border-forest-900 bg-forest-900 text-ivory"
-                : "border-forest-800/15"
-            )}
-          >
-            Without Breakfast
-          </button>
-          <button
-            type="button"
-            onClick={() => setBreakfast(true)}
-            className={cn(
-              "h-11 flex-1 rounded-xl border text-[10px] font-semibold tracking-[0.12em] uppercase",
-              breakfast
-                ? "border-gold-600 bg-gold-500 text-charcoal-950"
-                : "border-forest-800/15"
-            )}
-          >
-            With Breakfast
-          </button>
-        </div>
-        <button
-          type="submit"
-          className="h-11 rounded-xl bg-gold-500 px-5 text-[10px] font-semibold tracking-[0.16em] text-charcoal-950 uppercase"
-        >
-          {submitLabel}
-        </button>
-      </div>
+      <button
+        type="submit"
+        className="h-11 rounded-xl bg-gold-500 px-5 text-[10px] font-semibold tracking-[0.18em] text-charcoal-950 uppercase transition hover:bg-gold-400 md:h-11"
+      >
+        {submitLabel}
+      </button>
     </form>
   );
 }

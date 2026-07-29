@@ -45,6 +45,7 @@ export function RoomCard({
           breakfast: search.breakfast,
           includedAdults: room.includedAdults,
           includedChildren: room.includedChildren,
+          maxChildren: room.maxChildren,
           breakfastPerPersonPerNight:
             room.breakfastPrice || BREAKFAST_PER_PERSON_PER_NIGHT,
           extraAdultPerNight: room.extraAdultPrice,
@@ -130,7 +131,11 @@ export function RoomCard({
         </p>
         <p className="mt-3 flex items-center gap-2 text-xs font-light text-charcoal-900/70">
           <Users className="size-3.5 text-gold-600" />
-          {formatOccupancyLabel(room.includedAdults, room.includedChildren)} included
+          Up to {room.maxAdults} adult{room.maxAdults === 1 ? "" : "s"}
+          {room.maxChildren > 0
+            ? ` · ${room.maxChildren} child${room.maxChildren === 1 ? "" : "ren"}`
+            : ""}{" "}
+          · {formatOccupancyLabel(room.includedAdults, room.includedChildren)} included
         </p>
         <p className="mt-3 text-[10px] font-medium tracking-[0.16em] text-gold-700 uppercase">
           Without Breakfast
@@ -155,7 +160,10 @@ export function RoomCard({
             ) : null}
             {quote.extraChildCharge > 0 ? (
               <div className="flex justify-between">
-                <dt>Extra child (+{quote.extraChildren})</dt>
+                <dt>
+                  Extra child (+{quote.extraChildren}) · $
+                  {room.extraChildPrice}/night
+                </dt>
                 <dd>+{formatCurrency(quote.extraChildCharge, room.currency)}</dd>
               </div>
             ) : null}

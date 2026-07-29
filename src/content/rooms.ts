@@ -45,6 +45,15 @@ function mapEntryToRoom(entry: {
     "includedChildren",
     defaults?.includedChildren ?? 0
   );
+  const maxGuests = number(
+    "maxGuests",
+    defaults?.maxGuests ?? includedAdults + includedChildren
+  );
+  const maxAdults = number("maxAdults", includedAdults);
+  const maxChildren = number(
+    "maxChildren",
+    Math.max(includedChildren, maxGuests - maxAdults)
+  );
 
   const galleryFromArray = Array.isArray(data.gallery)
     ? (data.gallery as { src?: string; alt?: string; url?: string }[])
@@ -91,6 +100,9 @@ function mapEntryToRoom(entry: {
     inventory: Math.max(0, number("inventory", defaults?.inventory ?? 0)),
     includedAdults,
     includedChildren,
+    maxAdults: Math.max(1, maxAdults),
+    maxChildren: Math.max(0, maxChildren),
+    maxGuests: Math.max(maxGuests, maxAdults + maxChildren),
     extraAdultPrice: number(
       "extraAdultPrice",
       defaults?.extraAdultPrice ?? 5

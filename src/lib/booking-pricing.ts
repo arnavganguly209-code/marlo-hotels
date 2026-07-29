@@ -1,10 +1,12 @@
 import { nightsBetween } from "@/lib/utils";
+import {
+  maxChildrenAllowed,
+  minRoomsForParty,
+  type RoomCapacity,
+} from "@/lib/booking-occupancy";
 
 export const EXTRA_GUEST_PER_NIGHT = 5;
 export const BREAKFAST_PER_PERSON_PER_NIGHT = 5;
-/** Every room includes 1 child free; 2nd child per room is +$5 / night. */
-export const FREE_CHILDREN_PER_ROOM = 1;
-export const MAX_CHILDREN_PER_ROOM = 2;
 export const AIRPORT_PICKUP_PER_VEHICLE = 10;
 export const AIRPORT_PICKUP_MAX_PER_VEHICLE = 4;
 
@@ -15,9 +17,12 @@ export type StayQuoteInput = {
   children?: number;
   rooms?: number;
   breakfast: boolean;
-  /** Adults included in the base room rate (also treated as adult capacity). */
+  /** Adults included in the base room rate. */
   includedAdults?: number;
+  /** Children included complimentary in the base rate (per room). */
   includedChildren?: number;
+  /** Hard child cap per room from Rooms module. */
+  maxChildren?: number;
   breakfastPerPersonPerNight?: number;
   extraAdultPerNight?: number;
   extraChildPerNight?: number;
@@ -40,64 +45,6 @@ export type StayQuote = {
   total: number;
 };
 
-export type RoomOccupancy = {
-  includedAdults: number;
-  includedChildren?: number;
-};
-
-/** Minimum rooms needed for a party in a given room type. */
-export function roomsNeededForParty(
-  adults: number,
-  children: number,
-  room: RoomOccupancy
-): number {
-  const maxAdults = Math.max(1, room.includedAdults);
-  const byAdults = Math.ceil(Math.max(1, adults) / maxAdults);
-  const byChildren = Math.ceil(Math.max(0, children) / MAX_CHILDREN_PER_ROOM);
-  return Math.max(1, byAdults, byChildren);
-}
-
-/**
- * Suggested rooms from the search box when room type is unknown.
- * Assumes a standard 2-adult room as the baseline.
- */
-export function suggestedRoomsForSearch(adults: number, children: number) {
-  return roomsNeededForParty(adults, children, { includedAdults: 2 });
-}
-
-/**
- * A room matches the party when:
- * - it is not oversized for the adult count (e.g. hide 3-adult rooms for 2 adults)
- * - the selected room count can hold everyone
- */
-export function roomMatchesParty(
-  room: RoomOccupancy,
-  adults: number,
-  children: number,
-  rooms: number
-): boolean {
-  const partyAdults = Math.max(1, adults);
-  const partyChildren = Math.max(0, children);
-  const roomCount = Math.max(1, rooms);
-
-  // Do not suggest larger adult-capacity rooms than the party needs.
-  if (room.includedAdults > partyAdults) return false;
-
-  const needed = roomsNeededForParty(partyAdults, partyChildren, room);
-  return needed <= roomCount;
-}
-
-export function filterRoomsForParty<T extends RoomOccupancy>(
-  rooms: T[],
-  adults: number,
-  children: number,
-  roomCount: number
-): T[] {
-  return rooms.filter((room) =>
-    roomMatchesParty(room, adults, children, roomCount)
-  );
-}
-
 export function airportPickupVehiclesForGuests(guestCount: number) {
   const guests = Math.max(0, guestCount);
   if (guests <= 0) return 1;
@@ -109,30 +56,33 @@ export function airportPickupCharge(vehicles: number) {
 }
 
 /**
- * Base price includes the room's included adult occupancy.
- * Children: 1 complimentary per room; each additional child (max 2/room) +$5 / night.
- * Extra adults beyond included capacity are charged per night (legacy path);
- * search flow prefers enough rooms so adults fit without extras.
+ * Base rate covers included adults/children per room × room count.
+ * Extra children beyond includedChildren (from Rooms module) = +$5 / night
+ * (or room.extraChildPrice) — never rejects when within maxChildren.
  */
 export function calculateStayQuote(input: StayQuoteInput): StayQuote {
   const nights = Math.max(1, input.nights);
   const rooms = Math.max(1, input.rooms ?? 1);
   const adults = Math.max(1, input.adults);
+  const maxChildrenTotal =
+    typeof input.maxChildren === "number"
+      ? Math.max(0, input.maxChildren) * rooms
+      : Number.POSITIVE_INFINITY;
   const children = Math.min(
     Math.max(0, input.children ?? 0),
-    rooms * MAX_CHILDREN_PER_ROOM
+    Number.isFinite(maxChildrenTotal) ? maxChildrenTotal : 99
   );
-  const includedAdults = Math.max(0, input.includedAdults ?? 1);
-  const includedChildren = FREE_CHILDREN_PER_ROOM * rooms;
+  const includedAdultsPerRoom = Math.max(0, input.includedAdults ?? 1);
+  const includedChildrenPerRoom = Math.max(0, input.includedChildren ?? 0);
+  const includedAdults = includedAdultsPerRoom * rooms;
+  const includedChildren = includedChildrenPerRoom * rooms;
   const extraAdultRate = input.extraAdultPerNight ?? EXTRA_GUEST_PER_NIGHT;
   const extraChildRate = input.extraChildPerNight ?? EXTRA_GUEST_PER_NIGHT;
   const breakfastRate =
     input.breakfastPerPersonPerNight ?? BREAKFAST_PER_PERSON_PER_NIGHT;
 
   const roomSubtotal = input.basePricePerNight * nights * rooms;
-  // Adults across all rooms: capacity = includedAdults * rooms
-  const extraAdults = Math.max(0, adults - includedAdults * rooms);
-  // 1 child free per room; 2nd child per room is chargeable
+  const extraAdults = Math.max(0, adults - includedAdults);
   const extraChildren = Math.max(0, children - includedChildren);
   const extraAdultCharge = extraAdults * extraAdultRate * nights;
   const extraChildCharge = extraChildren * extraChildRate * nights;
@@ -147,7 +97,7 @@ export function calculateStayQuote(input: StayQuoteInput): StayQuote {
     adults,
     children,
     roomSubtotal,
-    includedAdults: includedAdults * rooms,
+    includedAdults,
     includedChildren,
     extraAdults,
     extraChildren,
@@ -170,23 +120,31 @@ export function quoteFromDates(
   return calculateStayQuote({ ...input, nights });
 }
 
-export function buildRoomsSearchParams(input: {
-  checkIn: string;
-  checkOut: string;
-  adults: number;
-  children: number;
-  rooms: number;
-  promo?: string;
-  breakfast?: boolean;
-}): string {
-  const rooms = Math.max(
-    input.rooms,
-    suggestedRoomsForSearch(input.adults, input.children)
-  );
-  const children = Math.min(
-    Math.max(0, input.children),
-    rooms * MAX_CHILDREN_PER_ROOM
-  );
+/**
+ * Build search query string.
+ * When an occupancy index is provided, room count is raised only if the
+ * live inventory cannot fit the party at the requested count.
+ */
+export function buildRoomsSearchParams(
+  input: {
+    checkIn: string;
+    checkOut: string;
+    adults: number;
+    children: number;
+    rooms: number;
+    promo?: string;
+    breakfast?: boolean;
+  },
+  occupancy?: RoomCapacity[]
+): string {
+  let rooms = Math.max(1, input.rooms);
+  let children = Math.max(0, input.children);
+
+  if (occupancy?.length) {
+    rooms = Math.max(rooms, minRoomsForParty(input.adults, children, occupancy));
+    children = Math.min(children, maxChildrenAllowed(occupancy, rooms));
+  }
+
   const params = new URLSearchParams({
     checkIn: input.checkIn,
     checkOut: input.checkOut,
@@ -204,3 +162,13 @@ export function formatOccupancyLabel(adults: number, children: number) {
   if (children <= 0) return adultLabel;
   return `${adultLabel} · ${children} Child${children === 1 ? "" : "ren"}`;
 }
+
+/** @deprecated Use resolvePartySearch from booking-occupancy */
+export {
+  resolvePartySearch,
+  roomCanHoldParty,
+  minRoomsForParty,
+  maxChildrenAllowed,
+  occupancyIndexFromRooms,
+  toRoomCapacity,
+} from "@/lib/booking-occupancy";

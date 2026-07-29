@@ -17,6 +17,7 @@ export type RoomCatalogData = {
   featured: boolean;
   sortOrder: number;
   maxGuests: number;
+  maxChildren?: number;
   beds: string;
   floorSize: string;
   floor: string;
@@ -395,6 +396,16 @@ export function catalogToRoom(seed: RoomCatalogSeed): Room {
     inventory: Math.max(0, data.inventory),
     includedAdults: data.includedAdults,
     includedChildren: data.includedChildren,
+    maxAdults: Math.max(1, data.includedAdults),
+    maxChildren: Math.max(
+      0,
+      data.maxChildren ??
+        Math.max(data.includedChildren, data.maxGuests - data.includedAdults)
+    ),
+    maxGuests: Math.max(
+      data.maxGuests,
+      data.includedAdults + data.includedChildren
+    ),
     extraAdultPrice: data.extraAdultPrice,
     extraChildPrice: data.extraChildPrice,
     published: data.available !== false,

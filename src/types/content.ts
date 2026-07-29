@@ -17,6 +17,12 @@ export type Room = {
   /** Guests included in the base rate (no extra charge). */
   includedAdults: number;
   includedChildren: number;
+  /** Hard adult capacity for this room type (from Rooms module). */
+  maxAdults: number;
+  /** Hard child capacity for this room type (from Rooms module). */
+  maxChildren: number;
+  /** Total guests allowed in the room. */
+  maxGuests: number;
   extraAdultPrice: number;
   extraChildPrice: number;
   size: string;

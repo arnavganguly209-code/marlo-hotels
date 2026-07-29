@@ -1,6 +1,7 @@
 import { BookingWidget } from "@/components/home/booking-widget";
 import { HeroVideoClient } from "@/components/home/hero-video-client";
 import type { HeroEditorContent } from "@/lib/homepage-content";
+import type { RoomCapacity } from "@/lib/booking-occupancy";
 import { resolveHeroVideoSrc } from "@/lib/hero-video";
 
 /**
@@ -12,7 +13,13 @@ import { resolveHeroVideoSrc } from "@/lib/hero-video";
  * Desktop (lg+): video + slim booking bar share one viewport so the entire
  * bar is visible on first paint with zero scroll.
  */
-export function Hero({ content }: { content: HeroEditorContent }) {
+export function Hero({
+  content,
+  occupancy = [],
+}: {
+  content: HeroEditorContent;
+  occupancy?: RoomCapacity[];
+}) {
   if (!content.enabled) return null;
 
   const isVideo = content.mediaType === "VIDEO";
@@ -56,7 +63,7 @@ export function Hero({ content }: { content: HeroEditorContent }) {
           className="relative z-20 -mt-10 bg-gradient-to-b from-forest-950 via-forest-950 to-forest-900 px-4 pb-8 pt-2 sm:-mt-12 sm:px-6 sm:pb-10 lg:mt-0 lg:shrink-0 lg:bg-gradient-to-b lg:from-forest-950/95 lg:via-forest-950 lg:to-forest-900 lg:px-8 lg:pb-3.5 lg:pt-2.5"
         >
           <div className="mx-auto max-w-[1400px]">
-            <BookingWidget content={content.booking} />
+            <BookingWidget content={content.booking} occupancy={occupancy} />
           </div>
         </section>
       ) : null}

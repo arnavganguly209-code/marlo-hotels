@@ -11,13 +11,19 @@ import { RoomsShowcase } from "@/components/home/rooms-showcase";
 import { TestimonialsSection } from "@/components/home/testimonials-section";
 import { WellnessSection } from "@/components/home/wellness-section";
 import { getHomepageContent } from "@/lib/homepage-content";
+import { occupancyIndexFromRooms } from "@/lib/booking-occupancy";
 import { getPlacement } from "@/lib/orbit/media";
+import { getRooms } from "@/content/rooms";
 
 export default async function HomePage() {
-  const [homepage, heroMedia] = await Promise.all([
+  const [homepage, heroMedia, allRooms] = await Promise.all([
     getHomepageContent(),
     getPlacement("home.hero"),
+    getRooms(),
   ]);
+  const occupancy = occupancyIndexFromRooms(
+    allRooms.filter((room) => room.published !== false)
+  );
   const heroContent = {
     ...homepage.hero,
     image:
@@ -100,7 +106,7 @@ export default async function HomePage() {
           fetchPriority="high"
         />
       ) : null}
-      <Hero content={heroContent} />
+      <Hero content={heroContent} occupancy={occupancy} />
       <AboutSection content={homepage.about} />
       <RoomsShowcase content={homepage.rooms} />
       <BreakfastSection content={homepage.breakfast} />

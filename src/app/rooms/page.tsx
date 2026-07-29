@@ -6,9 +6,9 @@ import { SectionHeading } from "@/components/ui/section-heading";
 import { RoomsSearchBar } from "@/components/rooms/rooms-search-bar";
 import { getRooms } from "@/content/rooms";
 import {
-  filterRoomsForParty,
-  suggestedRoomsForSearch,
-} from "@/lib/booking-pricing";
+  occupancyIndexFromRooms,
+  resolvePartySearch,
+} from "@/lib/booking-occupancy";
 import { getRoomsPageContent } from "@/lib/rooms-page-content";
 import { buildMetadata } from "@/lib/seo";
 
@@ -43,36 +43,37 @@ export default async function RoomsPage({ searchParams }: PageProps) {
     getRoomsPageContent(),
   ]);
   const { cover } = pageContent;
+  const published = allRooms.filter((room) => room.published !== false);
+  const occupancy = occupancyIndexFromRooms(published);
 
   const adults = Math.max(1, toInt(params.adults, 2));
   const children = toInt(params.children, 1);
-  const roomsCount = Math.max(
-    1,
-    toInt(params.rooms, 1),
-    suggestedRoomsForSearch(adults, children)
-  );
+  const requestedRooms = Math.max(1, toInt(params.rooms, 1));
 
-  const search =
+  const resolved =
     params.checkIn && params.checkOut
-      ? {
-          checkIn: params.checkIn,
-          checkOut: params.checkOut,
+      ? resolvePartySearch(occupancy, {
           adults,
           children,
-          rooms: roomsCount,
-          breakfast: params.breakfast === "1",
-          promo: params.promo,
-        }
-      : undefined;
+          rooms: requestedRooms,
+        })
+      : null;
 
-  const published = allRooms.filter((room) => room.published !== false);
+  const search = resolved
+    ? {
+        checkIn: params.checkIn!,
+        checkOut: params.checkOut!,
+        adults: resolved.adults,
+        children: resolved.children,
+        rooms: resolved.rooms,
+        breakfast: params.breakfast === "1",
+        promo: params.promo,
+      }
+    : undefined;
+
+  const matchSlugs = new Set(resolved?.matches.map((room) => room.slug) ?? []);
   const matched = search
-    ? filterRoomsForParty(
-        published,
-        search.adults,
-        search.children,
-        search.rooms
-      )
+    ? published.filter((room) => matchSlugs.has(room.slug))
     : published;
   const rooms = matched.filter((room) => room.category === "room");
   const suites = matched.filter((room) => room.category === "suite");
@@ -99,7 +100,12 @@ export default async function RoomsPage({ searchParams }: PageProps) {
 
       <section className="border-b border-forest-800/10 bg-cream-50 py-8">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
-          <RoomsSearchBar initial={search} />
+          <RoomsSearchBar initial={search} occupancy={occupancy} />
+          {resolved?.message ? (
+            <p className="mt-4 text-sm font-medium text-forest-900">
+              {resolved.message}
+            </p>
+          ) : null}
         </div>
       </section>
 
@@ -109,12 +115,12 @@ export default async function RoomsPage({ searchParams }: PageProps) {
             align="left"
             eyebrow="The Rooms"
             title="Rooms with a point of view"
-            description="Results match your guests — 1 child is complimentary per room, a 2nd child is +$5 / night."
+            description="Only rooms that fit your adults appear. Extra children follow each room’s included occupancy — surcharge shown clearly when applied."
           />
           {search && rooms.length === 0 ? (
             <p className="mt-10 text-sm text-charcoal-900/65">
-              No rooms match this guest mix. Try adding rooms or adjusting
-              adults/children.
+              No rooms match this guest mix. Try adjusting adults, children, or
+              dates.
             </p>
           ) : (
             <Stagger className="mt-14 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -138,7 +144,7 @@ export default async function RoomsPage({ searchParams }: PageProps) {
           />
           {search && suites.length === 0 ? (
             <p className="mt-10 text-sm text-charcoal-900/65">
-              No suites match this guest mix for the selected room count.
+              No suites match this guest mix.
             </p>
           ) : (
             <Stagger className="mt-14 grid gap-8 md:grid-cols-2">
