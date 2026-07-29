@@ -108,7 +108,7 @@ export function NavPanel({ open, onClose }: NavPanelProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Site navigation"
-        className="invisible fixed top-0 right-0 z-50 flex h-dvh w-[88vw] max-w-sm flex-col overflow-y-auto border border-[rgba(255,255,255,0.45)] bg-[rgba(252,249,243,0.92)] px-8 py-8 shadow-[0_12px_40px_-16px_rgba(40,32,20,0.18)] backdrop-blur-[22px] md:top-4 md:right-4 md:h-[calc(100dvh-2rem)] md:rounded-2xl"
+        className="invisible fixed top-0 right-0 z-50 flex h-dvh w-[88vw] max-w-sm flex-col overflow-y-auto border border-[rgba(255,255,255,0.55)] bg-[rgba(255,252,247,0.96)] px-8 py-8 shadow-[0_12px_40px_-16px_rgba(40,32,20,0.14)] backdrop-blur-[12px] md:top-4 md:right-4 md:h-[calc(100dvh-2rem)] md:rounded-2xl"
       >
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-semibold tracking-[0.32em] text-[#C09252] uppercase">
