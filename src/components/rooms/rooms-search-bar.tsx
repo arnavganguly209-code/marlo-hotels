@@ -3,7 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DateField } from "@/components/ui/date-field";
-import { buildRoomsSearchParams } from "@/lib/booking-pricing";
+import {
+  buildRoomsSearchParams,
+  MAX_CHILDREN_PER_ROOM,
+  suggestedRoomsForSearch,
+} from "@/lib/booking-pricing";
 import { toISODateString } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +43,29 @@ export function RoomsSearchBar({
     initial?.checkOut || toISODateString(addDays(today, 9))
   );
   const [adults, setAdults] = useState(initial?.adults ?? 2);
-  const [children, setChildren] = useState(initial?.children ?? 0);
-  const [rooms, setRooms] = useState(initial?.rooms ?? 1);
+  const [children, setChildren] = useState(initial?.children ?? 1);
+  const [rooms, setRooms] = useState(
+    initial?.rooms ?? suggestedRoomsForSearch(initial?.adults ?? 2, initial?.children ?? 1)
+  );
   const [breakfast, setBreakfast] = useState(Boolean(initial?.breakfast));
   const [promo, setPromo] = useState(initial?.promo ?? "");
+
+  const minRooms = suggestedRoomsForSearch(adults, children);
+  const maxChildren = Math.max(rooms, minRooms) * MAX_CHILDREN_PER_ROOM;
+
+  function onAdultsChange(value: number) {
+    const nextAdults = Math.max(1, value);
+    setAdults(nextAdults);
+    const needed = suggestedRoomsForSearch(nextAdults, children);
+    if (rooms < needed) setRooms(needed);
+  }
+
+  function onChildrenChange(value: number) {
+    const nextChildren = Math.max(0, Math.min(value, maxChildren));
+    setChildren(nextChildren);
+    const needed = suggestedRoomsForSearch(adults, nextChildren);
+    if (rooms < needed) setRooms(needed);
+  }
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -52,7 +75,7 @@ export function RoomsSearchBar({
         checkOut,
         adults,
         children,
-        rooms,
+        rooms: Math.max(rooms, minRooms),
         promo,
         breakfast,
       })}`
@@ -101,7 +124,7 @@ export function RoomsSearchBar({
           min={1}
           max={8}
           value={adults}
-          onChange={(event) => setAdults(Number(event.target.value) || 1)}
+          onChange={(event) => onAdultsChange(Number(event.target.value) || 1)}
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>
@@ -110,9 +133,9 @@ export function RoomsSearchBar({
         <input
           type="number"
           min={0}
-          max={6}
+          max={maxChildren}
           value={children}
-          onChange={(event) => setChildren(Number(event.target.value) || 0)}
+          onChange={(event) => onChildrenChange(Number(event.target.value) || 0)}
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>
@@ -120,10 +143,12 @@ export function RoomsSearchBar({
         Rooms
         <input
           type="number"
-          min={1}
+          min={minRooms}
           max={5}
-          value={rooms}
-          onChange={(event) => setRooms(Number(event.target.value) || 1)}
+          value={Math.max(rooms, minRooms)}
+          onChange={(event) =>
+            setRooms(Math.max(minRooms, Number(event.target.value) || minRooms))
+          }
           className="mt-1.5 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
         />
       </label>

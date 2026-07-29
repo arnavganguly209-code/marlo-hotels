@@ -31,7 +31,7 @@ export const siteConfig = {
   },
   booking: {
     maxAdults: 8,
-    maxChildren: 6,
+    maxChildren: 10,
     maxRooms: 5,
     maxNights: 30,
   },

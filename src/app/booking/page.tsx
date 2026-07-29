@@ -5,6 +5,10 @@ import { RoomsSearchBar } from "@/components/rooms/rooms-search-bar";
 import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { getBookingPageContent } from "@/lib/booking-page-content";
+import {
+  filterRoomsForParty,
+  suggestedRoomsForSearch,
+} from "@/lib/booking-pricing";
 import { getRooms } from "@/content/rooms";
 import { buildMetadata } from "@/lib/seo";
 
@@ -39,22 +43,38 @@ export default async function BookingPage({ searchParams }: PageProps) {
     getBookingPageContent(),
   ]);
 
+  const adults = Math.max(1, toInt(params.adults, 2));
+  const children = toInt(params.children, 1);
+  const roomsCount = Math.max(
+    1,
+    toInt(params.rooms, 1),
+    suggestedRoomsForSearch(adults, children)
+  );
+
   const search =
     params.checkIn && params.checkOut
       ? {
           checkIn: params.checkIn,
           checkOut: params.checkOut,
-          adults: Math.max(1, toInt(params.adults, 2)),
-          children: toInt(params.children, 0),
-          rooms: Math.max(1, toInt(params.rooms, 1)),
+          adults,
+          children,
+          rooms: roomsCount,
           breakfast: params.breakfast === "1",
           promo: params.promo,
         }
       : undefined;
 
   const published = allRooms.filter((room) => room.published !== false);
-  const rooms = published.filter((room) => room.category === "room");
-  const suites = published.filter((room) => room.category === "suite");
+  const matched = search
+    ? filterRoomsForParty(
+        published,
+        search.adults,
+        search.children,
+        search.rooms
+      )
+    : published;
+  const rooms = matched.filter((room) => room.category === "room");
+  const suites = matched.filter((room) => room.category === "suite");
 
   return (
     <>

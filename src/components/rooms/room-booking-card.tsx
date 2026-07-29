@@ -30,7 +30,7 @@ export function RoomBookingCard({
   const [checkIn, setCheckIn] = useState(toISODateString(addDays(today, 7)));
   const [checkOut, setCheckOut] = useState(toISODateString(addDays(today, 9)));
   const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(0);
+  const [children, setChildren] = useState(1);
 
   const nights = nightsBetween(checkIn, checkOut);
   const estimate = nights * priceFrom;

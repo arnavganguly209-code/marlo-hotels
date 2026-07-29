@@ -53,9 +53,12 @@ export function BookingPaymentForm() {
   const summary = useMemo(() => {
     const total = Number(params.get("total") || 0);
     const adults = Number(params.get("adults") || 2);
-    const children = Number(params.get("children") || 0);
+    const children = Number(params.get("children") || 1);
     const rooms = Number(params.get("rooms") || 1);
     const breakfast = params.get("breakfast") === "1";
+    const airportPickup = params.get("airportPickup") === "1";
+    const pickupVehicles = Number(params.get("pickupVehicles") || 0);
+    const pickupFee = Number(params.get("pickupFee") || 0);
     return {
       roomName: params.get("roomName") || params.get("room") || "Room",
       roomSlug: params.get("room") || "",
@@ -73,6 +76,11 @@ export function BookingPaymentForm() {
       country: params.get("country") || "",
       arrivalTime: params.get("arrivalTime") || "",
       notes: params.get("notes") || "",
+      airportPickup,
+      pickupVehicles,
+      pickupFee,
+      flightNumber: params.get("flightNumber") || "",
+      flightArrivalTime: params.get("flightArrivalTime") || "",
       total,
       taxes: Math.round(total * 0.1),
       mealPlanLabel: breakfast ? "With Breakfast" : "Without Breakfast",
@@ -133,6 +141,16 @@ export function BookingPaymentForm() {
           notes: summary.notes || "None",
           breakfast: summary.breakfast,
           totalAmount: grandTotal,
+          airportPickup: summary.airportPickup || undefined,
+          pickupVehicles: summary.airportPickup
+            ? summary.pickupVehicles || 1
+            : undefined,
+          flightNumber: summary.airportPickup
+            ? summary.flightNumber || undefined
+            : undefined,
+          flightArrivalTime: summary.airportPickup
+            ? summary.flightArrivalTime || undefined
+            : undefined,
           billingName: form.billingName.trim(),
           billingCountry: form.billingCountry.trim(),
           billingAddress: `${form.billingAddress.trim()}, ${form.billingCity.trim()}, ${form.billingPostalCode.trim()}`,
@@ -349,6 +367,19 @@ export function BookingPaymentForm() {
             <dt>Meal plan</dt>
             <dd className="text-right text-ivory">{summary.mealPlanLabel}</dd>
           </div>
+          {summary.airportPickup ? (
+            <div className="flex justify-between gap-4">
+              <dt>Airport pickup</dt>
+              <dd className="text-right text-ivory">
+                {summary.pickupVehicles} vehicle
+                {summary.pickupVehicles > 1 ? "s" : ""}
+                {summary.flightNumber ? ` · ${summary.flightNumber}` : ""}
+                {summary.flightArrivalTime
+                  ? ` · ${summary.flightArrivalTime}`
+                  : ""}
+              </dd>
+            </div>
+          ) : null}
           <div className="flex justify-between gap-4 border-t border-ivory/15 pt-3">
             <dt>Stay subtotal</dt>
             <dd className="text-ivory">{formatCurrency(staySubtotal)}</dd>

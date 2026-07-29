@@ -41,6 +41,9 @@ export async function POST(request: Request) {
     `Country: ${parsed.data.country}`,
     `Arrival: ${parsed.data.arrivalTime}`,
     `Breakfast: ${parsed.data.breakfast ? "Yes" : "No"}`,
+    parsed.data.airportPickup
+      ? `Airport pickup: Yes · ${parsed.data.pickupVehicles || 1} vehicle(s) · Flight ${parsed.data.flightNumber || "—"} · Kathmandu arrival ${parsed.data.flightArrivalTime || "—"}`
+      : "Airport pickup: No",
     parsed.data.billingName
       ? `Billing: ${parsed.data.billingName}, ${parsed.data.billingCountry}, ${parsed.data.billingCity || ""} ${parsed.data.billingPostalCode || ""}, ${parsed.data.billingAddress}`
       : null,

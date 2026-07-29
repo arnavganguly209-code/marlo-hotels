@@ -13,7 +13,7 @@ import { createPortal } from "react-dom";
 import { CounterField } from "@/components/ui/counter-field";
 import { DateField } from "@/components/ui/date-field";
 import type { HeroEditorContent } from "@/lib/homepage-content";
-import { buildRoomsSearchParams } from "@/lib/booking-pricing";
+import { buildRoomsSearchParams, MAX_CHILDREN_PER_ROOM, suggestedRoomsForSearch } from "@/lib/booking-pricing";
 import { siteConfig } from "@/lib/site";
 import { cn, toISODateString } from "@/lib/utils";
 
@@ -39,7 +39,7 @@ export function BookingWidget({
   const [checkIn, setCheckIn] = useState(toISODateString(addDays(today, 7)));
   const [checkOut, setCheckOut] = useState(toISODateString(addDays(today, 9)));
   const [adults, setAdults] = useState(2);
-  const [children, setChildren] = useState(0);
+  const [children, setChildren] = useState(1);
   const [rooms, setRooms] = useState(1);
   const [promo, setPromo] = useState("");
   const [guestsOpen, setGuestsOpen] = useState(false);
@@ -54,6 +54,13 @@ export function BookingWidget({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const needed = suggestedRoomsForSearch(adults, children);
+    if (rooms < needed) setRooms(needed);
+    const childCap = Math.max(needed, rooms) * MAX_CHILDREN_PER_ROOM;
+    if (children > childCap) setChildren(childCap);
+  }, [adults, children, rooms]);
 
   useLayoutEffect(() => {
     if (!guestsOpen || !buttonRef.current) {
@@ -160,14 +167,14 @@ export function BookingWidget({
               label={content.childrenLabel}
               value={children}
               min={0}
-              max={siteConfig.booking.maxChildren}
+              max={rooms * MAX_CHILDREN_PER_ROOM}
               onChange={setChildren}
               tone="light"
             />
             <CounterField
               label={content.roomsLabel}
               value={rooms}
-              min={1}
+              min={suggestedRoomsForSearch(adults, children)}
               max={siteConfig.booking.maxRooms}
               onChange={setRooms}
               tone="light"

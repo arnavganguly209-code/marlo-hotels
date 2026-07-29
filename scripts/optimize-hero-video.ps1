@@ -34,12 +34,12 @@ Write-Host "==> Downloading source..."
 Invoke-WebRequest -Uri $sourceUrl -OutFile $src -UseBasicParsing
 Write-Host ("    source: {0:N2} MB" -f ((Get-Item $src).Length / 1MB))
 
-Write-Host "==> Compressing stream cut (1280p H.264, no audio, faststart)..."
+Write-Host "==> Compressing stream cut (~8–12MB, 1440p H.264, no audio, faststart)..."
 & $ff -y -i $src -an `
-  -vf "scale='min(1280,iw)':-2" `
-  -c:v libx264 -preset veryfast -profile:v main -level 3.1 -pix_fmt yuv420p `
-  -crf 28 -movflags +faststart -g 48 -keyint_min 48 -sc_threshold 0 `
-  -maxrate 2M -bufsize 4M `
+  -vf "scale='min(1440,iw)':-2" `
+  -c:v libx264 -preset medium -profile:v high -level 4.0 -pix_fmt yuv420p `
+  -crf 24 -movflags +faststart -g 48 -keyint_min 48 -sc_threshold 0 `
+  -maxrate 2.8M -bufsize 5.6M `
   $out
 
 Write-Host ("==> Done: {0:N2} MB -> {1}" -f ((Get-Item $out).Length / 1MB), $out)

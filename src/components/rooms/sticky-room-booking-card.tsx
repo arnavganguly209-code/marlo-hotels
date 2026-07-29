@@ -42,7 +42,7 @@ export function StickyRoomBookingCard({
     initial?.checkOut || toISODateString(addDays(today, 9))
   );
   const [adults, setAdults] = useState(initial?.adults ?? 2);
-  const [children, setChildren] = useState(initial?.children ?? 0);
+  const [children, setChildren] = useState(initial?.children ?? 1);
   const [rooms, setRooms] = useState(initial?.rooms ?? 1);
   const [breakfast, setBreakfast] = useState(Boolean(initial?.breakfast));
   const [promo, setPromo] = useState(initial?.promo ?? "");
