@@ -74,14 +74,17 @@ export default async function HomePage() {
   };
 
   const posterHref = heroContent.poster?.src?.split("?")[0];
-  const videoHref = heroContent.videoUrl?.split("?")[0];
+  const videoHref =
+    heroContent.mediaType === "VIDEO" && heroContent.videoUrl
+      ? "/videos/hero-loop.mp4"
+      : undefined;
 
   return (
     <>
       {posterHref ? (
         <link rel="preload" as="image" href={posterHref} fetchPriority="high" />
       ) : null}
-      {heroContent.mediaType === "VIDEO" && videoHref ? (
+      {videoHref ? (
         <link
           rel="preload"
           as="video"

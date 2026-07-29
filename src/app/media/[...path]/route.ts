@@ -19,6 +19,8 @@ const MIME: Record<string, string> = {
   ".mov": "video/quicktime",
 };
 
+const VIDEO_EXTS = new Set([".mp4", ".webm", ".mov"]);
+
 function emptyStatus(status: number) {
   return new NextResponse(null, {
     status,
@@ -30,8 +32,9 @@ function emptyStatus(status: number) {
 }
 
 /**
- * Serve Orbit media with HTTP Range support so large Hero videos can
- * start playback within ~500ms instead of waiting for a full download.
+ * Serve Orbit media with proper HTTP Range support.
+ * Honor browser range requests fully — artificial small caps cause
+ * stuttering on hero videos because the player must re-request every chunk.
  */
 export async function GET(request: Request, { params }: Context) {
   const segments = (await params).path || [];
@@ -60,6 +63,7 @@ export async function GET(request: Request, { params }: Context) {
     const ext = path.extname(absolute).toLowerCase();
     const contentType = MIME[ext] || "application/octet-stream";
     const size = info.size;
+    const isVideo = VIDEO_EXTS.has(ext);
     const cacheControl = "public, max-age=31536000, immutable";
     const rangeHeader = request.headers.get("range");
 
@@ -76,12 +80,6 @@ export async function GET(request: Request, { params }: Context) {
       let end = match[2] ? Number(match[2]) : size - 1;
       if (Number.isNaN(start)) start = 0;
       if (Number.isNaN(end) || end >= size) end = size - 1;
-
-      // Cap an open-ended range to ~4MB so the first playable frames arrive quickly
-      // without forcing a full download of large hero videos.
-      if (!match[2]) {
-        end = Math.min(start + 4 * 1024 * 1024 - 1, size - 1);
-      }
 
       if (start < 0 || start >= size || start > end) {
         return new NextResponse(null, {
@@ -106,6 +104,8 @@ export async function GET(request: Request, { params }: Context) {
       });
     }
 
+    // Without a Range header, still advertise Accept-Ranges so browsers
+    // can seek/stream. Prefer streaming the body for large videos.
     const stream = createReadStream(absolute);
     const webStream = Readable.toWeb(stream) as ReadableStream;
     return new NextResponse(webStream, {
@@ -115,6 +115,9 @@ export async function GET(request: Request, { params }: Context) {
         "Content-Length": String(size),
         "Accept-Ranges": "bytes",
         "Cache-Control": cacheControl,
+        ...(isVideo
+          ? { "Content-Disposition": 'inline; filename="media"' }
+          : {}),
       },
     });
   } catch {
