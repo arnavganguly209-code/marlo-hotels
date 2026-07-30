@@ -64,6 +64,35 @@ export function occupancyIndexFromRooms(rooms: Room[]): RoomCapacity[] {
     .map(toRoomCapacity);
 }
 
+/**
+ * Adult capacity match — exact for a single room; for multi-room, match the
+ * per-room adult share from the Rooms module (e.g. 4 adults → 2×2-adult rooms).
+ */
+export function adultCapacityMatches(
+  room: RoomCapacity,
+  adults: number,
+  roomCount: number
+): boolean {
+  const a = Math.max(1, adults);
+  const n = Math.max(1, roomCount);
+
+  if (n === 1) {
+    // 2 adults → only maxAdults === 2; never show 3/4-adult rooms
+    return room.maxAdults === a;
+  }
+
+  if (room.maxAdults * n < a) return false;
+
+  const evenShare = a / n;
+  if (Number.isInteger(evenShare)) {
+    // 4 adults / 2 rooms → only rooms with maxAdults === 2
+    return room.maxAdults === evenShare;
+  }
+
+  // Uneven (e.g. 5 adults / 2 rooms) → need at least ceil per room
+  return room.maxAdults >= Math.ceil(a / n);
+}
+
 /** True when `roomCount` units of this type can sleep the party. */
 export function roomCanHoldParty(
   room: RoomCapacity,
@@ -75,7 +104,7 @@ export function roomCanHoldParty(
   const c = Math.max(0, children);
   const n = Math.max(1, roomCount);
   if (room.inventory > 0 && room.inventory < n) return false;
-  if (n * room.maxAdults < a) return false;
+  if (!adultCapacityMatches(room, a, n)) return false;
   if (n * room.maxChildren < c) return false;
   if (n * room.maxGuests < a + c) return false;
   return true;
@@ -83,7 +112,7 @@ export function roomCanHoldParty(
 
 /**
  * Minimum rooms required given live inventory capacities.
- * Prefers 1 room whenever any room type can hold the full party.
+ * Prefers 1 room when an exact adult-capacity match exists.
  */
 export function minRoomsForParty(
   adults: number,
@@ -121,10 +150,10 @@ export function minRoomsForParty(
 /**
  * Core hotel search resolver — identical results for homepage, /rooms, /booking.
  *
- * Rules:
- * - Prefer a single room when any type can hold the adults (and children).
- * - Never show rooms that cannot accommodate the adult count for the room qty.
- * - Only auto-increase rooms when no compatible type exists at the requested count.
+ * Rules (from Rooms-module maxAdults):
+ * - 2 adults → only rooms with maxAdults === 2
+ * - 3 adults → only rooms with maxAdults === 3
+ * - 4 adults → maxAdults === 4 if any; else 2 rooms of maxAdults === 2
  */
 export function resolvePartySearch<T extends RoomCapacity>(
   inventory: T[],
@@ -152,6 +181,18 @@ export function resolvePartySearch<T extends RoomCapacity>(
       autoAdjusted = true;
     }
     matches = matchesFor(rooms);
+
+    // If even-split exact match failed for uneven leftovers, widen slightly
+    // to any room type that can hold the party across N units.
+    if (!matches.length && rooms > 1) {
+      matches = available.filter((room) => {
+        if (room.inventory > 0 && room.inventory < rooms) return false;
+        if (room.maxAdults * rooms < adults) return false;
+        if (rooms * room.maxChildren < children) return false;
+        if (rooms * room.maxGuests < adults + children) return false;
+        return room.maxAdults >= Math.ceil(adults / rooms);
+      });
+    }
   }
 
   const message =

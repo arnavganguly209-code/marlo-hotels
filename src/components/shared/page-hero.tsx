@@ -85,11 +85,11 @@ export function PageHero({
           </nav>
 
           <p className="eyebrow mt-8">{eyebrow}</p>
-          <h1 className="font-display mt-4 max-w-3xl text-5xl leading-[1.05] font-medium text-ivory text-balance md:text-6xl lg:text-7xl">
+          <h1 className="font-display mt-5 max-w-3xl text-5xl leading-[1.08] font-semibold tracking-[-0.015em] text-ivory text-balance md:text-6xl md:leading-[1.06] lg:text-7xl">
             {title}
           </h1>
           {description ? (
-            <p className="mt-6 max-w-xl text-[15px] leading-relaxed font-light text-cream-200/85">
+            <p className="mt-7 max-w-xl text-[15.5px] leading-[1.75] font-normal tracking-[0.015em] text-cream-200/88">
               {description}
             </p>
           ) : null}

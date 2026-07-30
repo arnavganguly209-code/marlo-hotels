@@ -62,6 +62,9 @@ body {
   background-color: var(--color-ivory);
   color: var(--color-charcoal-900);
   font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: clip;
@@ -97,10 +100,44 @@ body {
 /* Small-caps golden eyebrow label */
 @utility eyebrow {
   font-size: 0.6875rem;
-  letter-spacing: 0.38em;
+  letter-spacing: 0.34em;
   text-transform: uppercase;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-gold-500);
+}
+
+/* Luxury page typography (excludes fixed header menu) */
+.site-typography h1,
+.site-typography h2,
+.site-typography h3,
+.site-typography h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+  text-rendering: optimizeLegibility;
+}
+
+.site-typography h1 {
+  line-height: 1.08;
+}
+
+.site-typography h2 {
+  line-height: 1.12;
+}
+
+.site-typography h3 {
+  line-height: 1.2;
+  letter-spacing: -0.008em;
+}
+
+.site-typography p {
+  line-height: 1.75;
+  letter-spacing: 0.012em;
+}
+
+.site-typography .font-light {
+  font-weight: 400;
 }
 
 /* Frosted glass surfaces */

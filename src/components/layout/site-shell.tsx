@@ -63,7 +63,9 @@ export function SiteShell({
             : undefined
         }
       />
-      <main id="main-content">{children}</main>
+      <main id="main-content" className="site-typography">
+        {children}
+      </main>
       <Footer
         logoUrl={footerLogoUrl ?? logoUrl}
         content={footerContent}
