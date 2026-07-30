@@ -57,8 +57,8 @@ export function Header({
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-30 border-b border-white/25 bg-gradient-to-b from-[rgb(245_240_228_/_0.22)] via-[rgb(236_242_235_/_0.16)] to-[rgb(228_236_230_/_0.12)] shadow-[0_18px_48px_-20px_rgb(0_0_0_/_0.42),inset_0_1px_0_0_rgb(255_255_255_/_0.4)] backdrop-blur-[24px] backdrop-saturate-150 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/50 before:to-transparent">
-        <div className="relative mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-4 px-4 sm:px-6 lg:px-8">
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-[#EDE6D8] bg-[#FFFCF7] shadow-[0_4px_18px_-12px_rgba(40,32,20,0.08)]">
+        <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-4 px-4 sm:px-6 lg:px-8">
           <Logo
             tone="light"
             src={logoUrl}
