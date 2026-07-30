@@ -112,9 +112,8 @@ export default async function HomePage() {
       <BreakfastSection content={homepage.breakfast} />
       <DiningSection content={homepage.dining} />
       <WellnessSection content={homepage.wellness} />
-      <FeatureGridSectionView content={homepage.facilities} tone="cream" />
+      <FeatureGridSectionView content={homepage.facilities} tone="forest" />
       <FeatureGridSectionView content={homepage.whyStay} tone="ivory" />
-      <FeatureGridSectionView content={homepage.guestServices} tone="forest" />
       <AttractionsSection content={homepage.attractions} />
       <TestimonialsSection content={homepage.testimonials} />
       <OffersSection content={homepage.offers} />

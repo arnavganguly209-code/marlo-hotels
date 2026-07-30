@@ -412,6 +412,8 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
         { icon: "laundry", title: "Laundry", description: "Same-day laundry and pressing." },
         { icon: "parking", title: "Parking", description: "Secure parking for guests." },
         { icon: "travel", title: "Travel Assistance", description: "Tickets, guides and itineraries." },
+        { icon: "sparkles", title: "Daily Housekeeping", description: "Fresh linens and a reset room each day." },
+        { icon: "concierge", title: "Concierge", description: "Reservations, arrangements and local insight." },
       ],
     },
     whyStay: {
@@ -428,20 +430,12 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       ],
     },
     guestServices: {
-      enabled: true,
+      enabled: false,
       eyebrow: "Guest Services",
       heading: "Support that stays out of the way",
       description:
         "Practical services arranged with the same quiet standard as the rooms themselves.",
-      items: [
-        { icon: "plane", title: "Airport Pickup", description: "Meet-and-greet transfers from Tribhuvan International." },
-        { icon: "roomService", title: "Room Service", description: "Meals delivered to your room." },
-        { icon: "wifi", title: "Free WiFi", description: "Reliable connection in every space." },
-        { icon: "laundry", title: "Laundry", description: "Laundry and dry cleaning on request." },
-        { icon: "sparkles", title: "Daily Housekeeping", description: "Fresh linens and a reset room each day." },
-        { icon: "travel", title: "Travel Desk", description: "Tours, tickets and local recommendations." },
-        { icon: "concierge", title: "Concierge", description: "Reservations, arrangements and local insight." },
-      ],
+      items: [],
     },
     pool: {
       enabled: false,
@@ -917,6 +911,22 @@ async function withLiveRooms(
   content: HomepageContent
 ): Promise<HomepageContent> {
   const rooms = await getRooms();
+  const facilityTitles = new Set(
+    content.facilities.items.map((item) => item.title.trim().toLowerCase())
+  );
+  const guestOnly = content.guestServices.items.filter((item) => {
+    const title = item.title.trim().toLowerCase();
+    if (facilityTitles.has(title)) return false;
+    // Near-duplicates already covered under Hotel Facilities
+    if (title.includes("airport")) return false;
+    if (title.includes("travel desk") || title.includes("travel assistance"))
+      return false;
+    if (title.includes("wifi")) return false;
+    if (title.includes("room service")) return false;
+    if (title.includes("laundry")) return false;
+    return true;
+  });
+
   return {
     ...content,
     pool: { ...content.pool, enabled: false },
@@ -925,6 +935,12 @@ async function withLiveRooms(
     awards: { ...content.awards, enabled: false },
     instagram: { ...content.instagram, enabled: false },
     journal: { ...content.journal, enabled: false },
+    guestServices: { ...content.guestServices, enabled: false, items: [] },
+    facilities: {
+      ...content.facilities,
+      enabled: true,
+      items: [...content.facilities.items, ...guestOnly],
+    },
     rooms: {
       ...content.rooms,
       items: rooms,
