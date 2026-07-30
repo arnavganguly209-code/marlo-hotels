@@ -57,6 +57,7 @@ export function Header({
 
   return (
     <>
+      {/* Solid cream header — preferred over frosted glass */}
       <header className="fixed inset-x-0 top-0 z-30 border-b border-[#EDE6D8] bg-[#FFFCF7] shadow-[0_4px_18px_-12px_rgba(40,32,20,0.08)]">
         <div className="mx-auto flex h-[4.5rem] max-w-[1400px] items-center gap-4 px-4 sm:px-6 lg:px-8">
           <Logo
