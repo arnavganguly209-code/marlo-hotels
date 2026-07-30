@@ -7,11 +7,8 @@ import { resolveHeroVideoSrc } from "@/lib/hero-video";
 /**
  * Hero media + booking bar.
  *
- * Mobile: unchanged — near-full viewport video, booking bar nested below
- * with a slight overlap (existing perfect layout).
- *
- * Desktop (lg+): video + slim booking bar share one viewport so the entire
- * bar is visible on first paint with zero scroll.
+ * Video starts just below the fixed header (4.5rem). The booking bar sits on
+ * top of the video at the bottom — no solid green band behind it.
  */
 export function Hero({
   content,
@@ -30,10 +27,10 @@ export function Hero({
     (isVideo ? content.image?.src || "/images/brand/hero-reception.png" : "");
 
   return (
-    <div className="lg:flex lg:h-svh lg:flex-col">
+    <div className="relative pt-[4.5rem]">
       <section
         aria-label="Welcome to Marlo Hotels"
-        className="relative h-[calc(100svh-4.5rem)] min-h-[520px] overflow-hidden bg-forest-950 md:min-h-[640px] lg:h-auto lg:min-h-0 lg:flex-1"
+        className="relative h-[calc(100svh-4.5rem)] min-h-[520px] overflow-hidden bg-forest-950 md:min-h-[640px]"
       >
         <div className="absolute inset-0">
           {videoSrc ? (
@@ -53,20 +50,20 @@ export function Hero({
           ) : (
             <div className="absolute inset-0 bg-forest-950" />
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-charcoal-950/40 via-transparent to-charcoal-950/25" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-charcoal-950/30 via-transparent to-transparent" />
         </div>
-      </section>
 
-      {content.bookingWidget !== false ? (
-        <section
-          aria-label="Check availability"
-          className="relative z-20 -mt-10 bg-gradient-to-b from-forest-950 via-forest-950 to-forest-900 px-4 pb-8 pt-2 sm:-mt-12 sm:px-6 sm:pb-10 lg:mt-0 lg:shrink-0 lg:bg-gradient-to-b lg:from-forest-950/95 lg:via-forest-950 lg:to-forest-900 lg:px-8 lg:pb-3.5 lg:pt-2.5"
-        >
-          <div className="mx-auto max-w-[1400px]">
-            <BookingWidget content={content.booking} occupancy={occupancy} />
+        {content.bookingWidget !== false ? (
+          <div
+            aria-label="Check availability"
+            className="absolute inset-x-0 bottom-0 z-20 px-4 pb-6 pt-2 sm:px-6 sm:pb-8 lg:px-8 lg:pb-3.5 lg:pt-2.5"
+          >
+            <div className="mx-auto max-w-[1400px]">
+              <BookingWidget content={content.booking} occupancy={occupancy} />
+            </div>
           </div>
-        </section>
-      ) : null}
+        ) : null}
+      </section>
     </div>
   );
 }
