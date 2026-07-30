@@ -7,8 +7,9 @@ import { resolveHeroVideoSrc } from "@/lib/hero-video";
 /**
  * Hero media + booking bar.
  *
- * Video starts just below the fixed header (4.5rem). The booking bar sits on
- * top of the video at the bottom — no solid green band behind it.
+ * Fits exactly in the first viewport (header + hero = 100dvh) so the search
+ * box is fully visible without scrolling. Video starts below the header;
+ * booking sits on the video with comfortable bottom inset.
  */
 export function Hero({
   content,
@@ -27,10 +28,10 @@ export function Hero({
     (isVideo ? content.image?.src || "/images/brand/hero-reception.png" : "");
 
   return (
-    <div className="relative pt-[4.5rem]">
+    <div className="relative flex h-dvh flex-col pt-[4.5rem]">
       <section
         aria-label="Welcome to Marlo Hotels"
-        className="relative h-[calc(100svh-4.5rem)] min-h-[520px] overflow-hidden bg-forest-950 md:min-h-[640px]"
+        className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-forest-950"
       >
         <div className="absolute inset-0">
           {videoSrc ? (
@@ -56,7 +57,7 @@ export function Hero({
         {content.bookingWidget !== false ? (
           <div
             aria-label="Check availability"
-            className="absolute inset-x-0 bottom-0 z-20 px-4 pb-6 pt-2 sm:px-6 sm:pb-8 lg:px-8 lg:pb-3.5 lg:pt-2.5"
+            className="relative z-20 mt-auto px-4 pb-5 pt-2 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8 lg:pt-3"
           >
             <div className="mx-auto max-w-[1400px]">
               <BookingWidget content={content.booking} occupancy={occupancy} />
