@@ -410,7 +410,6 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
         { icon: "clock", title: "24 Hour Reception", description: "Front desk assistance around the clock." },
         { icon: "roomService", title: "Room Service", description: "In-room dining when you prefer privacy." },
         { icon: "laundry", title: "Laundry", description: "Same-day laundry and pressing." },
-        { icon: "parking", title: "Parking", description: "Secure parking for guests." },
         { icon: "travel", title: "Travel Assistance", description: "Tickets, guides and itineraries." },
         { icon: "sparkles", title: "Daily Housekeeping", description: "Fresh linens and a reset room each day." },
         { icon: "concierge", title: "Concierge", description: "Reservations, arrangements and local insight." },
@@ -926,6 +925,10 @@ async function withLiveRooms(
     if (title.includes("laundry")) return false;
     return true;
   });
+  // Drop Parking so the forest grid stays a clean 4×3 (12 cards).
+  const facilityItems = [...content.facilities.items, ...guestOnly].filter(
+    (item) => item.title.trim().toLowerCase() !== "parking"
+  );
 
   return {
     ...content,
@@ -939,7 +942,7 @@ async function withLiveRooms(
     facilities: {
       ...content.facilities,
       enabled: true,
-      items: [...content.facilities.items, ...guestOnly],
+      items: facilityItems,
     },
     rooms: {
       ...content.rooms,
