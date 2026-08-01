@@ -27,7 +27,7 @@ export function Hero({
     (isVideo ? content.image?.src || "/images/brand/hero-reception.png" : "");
 
   return (
-    <div className="relative flex h-dvh flex-col pt-[4.5rem]">
+    <div className="relative flex h-dvh flex-col pt-[4.5rem] max-lg:h-[112dvh] lg:h-dvh">
       <section
         aria-label="Welcome to Marlo Hotels"
         className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-forest-950"

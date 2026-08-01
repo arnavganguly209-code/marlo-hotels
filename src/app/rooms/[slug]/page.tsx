@@ -93,13 +93,33 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
       />
 
       <section className="bg-ivory py-20 md:py-28">
-        <div className="mx-auto grid max-w-7xl gap-14 px-5 md:px-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 md:gap-14 md:px-8 lg:grid-cols-3">
+          {/* Gallery — first on mobile and desktop */}
+          <div className="order-1 lg:col-span-2 lg:col-start-1 lg:row-start-1">
             <Reveal>
               <RoomGallery images={room.images} />
             </Reveal>
+          </div>
 
-            <Reveal className="mt-14">
+          {/* Reserve card — directly under gallery on mobile; sticky sidebar on desktop */}
+          <div className="order-2 lg:order-none lg:col-span-1 lg:col-start-3 lg:row-span-2 lg:row-start-1 lg:self-start">
+            <StickyRoomBookingCard
+              room={room}
+              initial={{
+                checkIn: query.checkIn,
+                checkOut: query.checkOut,
+                adults: query.adults ? Number(query.adults) : undefined,
+                children: query.children ? Number(query.children) : undefined,
+                rooms: query.rooms ? Number(query.rooms) : undefined,
+                breakfast: query.breakfast === "1",
+                promo: query.promo,
+              }}
+            />
+          </div>
+
+          {/* Room copy — after Reserve on mobile; under gallery on desktop */}
+          <div className="order-3 lg:col-span-2 lg:col-start-1 lg:row-start-2">
+            <Reveal className="mt-4 lg:mt-0">
               <dl className="grid grid-cols-2 gap-6 rounded-xl border border-forest-800/10 bg-cream-50 p-7 sm:grid-cols-4">
                 {facts.map(({ Icon, label, value }) => (
                   <div key={label}>
@@ -222,21 +242,6 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
                 ))}
               </dl>
             </Reveal>
-          </div>
-
-          <div className="lg:col-span-1">
-            <StickyRoomBookingCard
-              room={room}
-              initial={{
-                checkIn: query.checkIn,
-                checkOut: query.checkOut,
-                adults: query.adults ? Number(query.adults) : undefined,
-                children: query.children ? Number(query.children) : undefined,
-                rooms: query.rooms ? Number(query.rooms) : undefined,
-                breakfast: query.breakfast === "1",
-                promo: query.promo,
-              }}
-            />
           </div>
         </div>
       </section>
