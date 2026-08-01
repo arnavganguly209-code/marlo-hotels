@@ -5,13 +5,15 @@ import {
   ArrowUp,
   Check,
   ImagePlus,
+  Pencil,
   Plus,
   Save,
   Trash2,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MediaField, MediaPicker } from "@/components/orbit/media-picker";
 import {
   PageCoverEditor,
@@ -29,23 +31,65 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+function normalizeCategoryName(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+/** Ensure All leads the list and names are unique (case-insensitive). */
+function normalizeCategories(list: string[]): string[] {
+  const seen = new Set<string>();
+  const rest: string[] = [];
+  for (const raw of list) {
+    const name = normalizeCategoryName(raw);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (key === "all" || seen.has(key)) continue;
+    seen.add(key);
+    rest.push(name);
+  }
+  return ["All", ...rest];
+}
+
 export function GalleryStudioEditor({
   initialContent,
 }: {
   initialContent: GalleryPageContent;
 }) {
   const { push } = useToast();
-  const [content, setContent] = useState(() => clone(initialContent));
-  const [saved, setSaved] = useState(() => clone(initialContent));
+  const [content, setContent] = useState(() =>
+    clone({
+      ...initialContent,
+      categories: normalizeCategories(initialContent.categories),
+    })
+  );
+  const [saved, setSaved] = useState(() =>
+    clone({
+      ...initialContent,
+      categories: normalizeCategories(initialContent.categories),
+    })
+  );
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [newCategory, setNewCategory] = useState("");
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
 
-  const categoryOptions = content.categories.filter((item) => item !== "All");
+  const categoryOptions = useMemo(
+    () => content.categories.filter((item) => item !== "All"),
+    [content.categories]
+  );
+
+  function patchContent(
+    updater: (current: GalleryPageContent) => GalleryPageContent
+  ) {
+    setContent((current) => updater(current));
+    setDirty(true);
+  }
 
   function updateCover(next: PageCoverValue) {
-    setContent((current) => ({
+    patchContent((current) => ({
       ...current,
       cover: {
         ...current.cover,
@@ -57,41 +101,142 @@ export function GalleryStudioEditor({
         description: next.description || "",
       },
     }));
-    setDirty(true);
   }
 
   function updateImage(id: string, patch: Partial<GalleryImageEntry>) {
-    setContent((current) => ({
+    patchContent((current) => ({
       ...current,
       images: current.images.map((image) =>
         image.id === id ? { ...image, ...patch } : image
       ),
     }));
-    setDirty(true);
   }
 
   function moveImage(index: number, direction: -1 | 1) {
-    setContent((current) => {
+    patchContent((current) => {
       const next = [...current.images];
       const target = index + direction;
       if (target < 0 || target >= next.length) return current;
       [next[index], next[target]] = [next[target], next[index]];
       return { ...current, images: next };
     });
-    setDirty(true);
+  }
+
+  function addCategory() {
+    const name = normalizeCategoryName(newCategory);
+    if (!name) {
+      push("Enter a category name.", "warning");
+      return;
+    }
+    if (name.toLowerCase() === "all") {
+      push('"All" is reserved for the public filter.', "warning");
+      return;
+    }
+    if (
+      content.categories.some((item) => item.toLowerCase() === name.toLowerCase())
+    ) {
+      push("That category already exists.", "warning");
+      return;
+    }
+    patchContent((current) => ({
+      ...current,
+      categories: normalizeCategories([...current.categories, name]),
+    }));
+    setNewCategory("");
+    push(`Category “${name}” added — Save & Publish to go live.`, "success");
+  }
+
+  function startEditCategory(category: string) {
+    if (category === "All") return;
+    setEditingCategory(category);
+    setEditDraft(category);
+  }
+
+  function commitEditCategory() {
+    if (!editingCategory) return;
+    const nextName = normalizeCategoryName(editDraft);
+    if (!nextName) {
+      push("Category name cannot be empty.", "warning");
+      return;
+    }
+    if (nextName.toLowerCase() === "all") {
+      push('"All" is reserved.', "warning");
+      return;
+    }
+    const clash = content.categories.some(
+      (item) =>
+        item !== editingCategory &&
+        item.toLowerCase() === nextName.toLowerCase()
+    );
+    if (clash) {
+      push("That category already exists.", "warning");
+      return;
+    }
+
+    const from = editingCategory;
+    patchContent((current) => ({
+      ...current,
+      categories: normalizeCategories(
+        current.categories.map((item) => (item === from ? nextName : item))
+      ),
+      images: current.images.map((image) =>
+        image.category === from ? { ...image, category: nextName } : image
+      ),
+    }));
+    setEditingCategory(null);
+    setEditDraft("");
+  }
+
+  function removeCategory(category: string) {
+    if (category === "All") return;
+    const inUse = content.images.filter(
+      (image) => image.category === category
+    ).length;
+    const fallback =
+      categoryOptions.find((item) => item !== category) || "Rooms";
+    const message =
+      inUse > 0
+        ? `Remove “${category}”? ${inUse} image${inUse === 1 ? "" : "s"} will move to “${fallback}".`
+        : `Remove category “${category}”?`;
+    if (!window.confirm(message)) return;
+
+    patchContent((current) => ({
+      ...current,
+      categories: normalizeCategories(
+        current.categories.filter((item) => item !== category)
+      ),
+      images: current.images.map((image) =>
+        image.category === category ? { ...image, category: fallback } : image
+      ),
+    }));
+  }
+
+  function moveCategory(category: string, direction: -1 | 1) {
+    if (category === "All") return;
+    patchContent((current) => {
+      const rest = current.categories.filter((item) => item !== "All");
+      const index = rest.indexOf(category);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= rest.length) return current;
+      [rest[index], rest[target]] = [rest[target], rest[index]];
+      return {
+        ...current,
+        categories: normalizeCategories(["All", ...rest]),
+      };
+    });
   }
 
   async function deleteImage(image: GalleryImageEntry) {
     if (!window.confirm("Delete this image permanently?")) return;
     setDeletingId(image.id);
-    setContent((current) => ({
+    patchContent((current) => ({
       ...current,
       images: current.images.filter((item) => item.id !== image.id),
     }));
-    setDirty(true);
     if (image.assetId) {
       await fetch(`/api/orbit/media/${image.assetId}?hard=1`, {
         method: "DELETE",
+        credentials: "include",
       }).catch(() => undefined);
     }
     setDeletingId(null);
@@ -100,6 +245,10 @@ export function GalleryStudioEditor({
   async function save() {
     setSaving(true);
     try {
+      const payload = {
+        ...content,
+        categories: normalizeCategories(content.categories),
+      };
       const response = await fetch("/api/orbit/content", {
         method: "POST",
         credentials: "include",
@@ -109,7 +258,7 @@ export function GalleryStudioEditor({
           key: "page-content",
           title: "Gallery Page",
           status: "PUBLISHED",
-          data: content,
+          data: payload,
         }),
       });
       const result = (await response.json()) as {
@@ -120,7 +269,8 @@ export function GalleryStudioEditor({
         if (response.status === 401) {
           push("Session expired — please sign in again.", "error");
           window.setTimeout(() => {
-            window.location.href = "/orbit?reason=session-expired&next=/orbit/gallery";
+            window.location.href =
+              "/orbit?reason=session-expired&next=/orbit/gallery";
           }, 600);
           return;
         }
@@ -131,12 +281,13 @@ export function GalleryStudioEditor({
         key: "page.gallery.hero",
         label: "Gallery Page Hero",
         cover: {
-          src: content.cover.src,
-          alt: content.cover.alt,
-          assetId: content.cover.assetId,
+          src: payload.cover.src,
+          alt: payload.cover.alt,
+          assetId: payload.cover.assetId,
         },
       });
-      setSaved(clone(content));
+      setContent(payload);
+      setSaved(clone(payload));
       setDirty(false);
       push(result.message || "Saved Successfully · Published", "success");
     } catch {
@@ -184,6 +335,8 @@ export function GalleryStudioEditor({
             onClick={() => {
               setContent(clone(saved));
               setDirty(false);
+              setEditingCategory(null);
+              setNewCategory("");
             }}
             className="h-11 rounded-xl border border-[#17362b]/12 px-4 text-[10px] font-semibold tracking-[0.14em] uppercase disabled:opacity-40"
           >
@@ -224,18 +377,148 @@ export function GalleryStudioEditor({
                 Categories
               </p>
               <p className="mt-1 text-sm text-[#62716b]">
-                Filter pills shown on the public gallery page.
+                Create, rename, reorder or remove filter pills on the public
+                gallery. “All” is always first and cannot be removed.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2 p-5">
-              {content.categories.map((category) => (
-                <span
-                  key={category}
-                  className="rounded-full border border-[#17362b]/12 bg-[#f6f7f4] px-4 py-2 text-[10px] font-semibold tracking-[0.16em] text-[#294138] uppercase"
+
+            <div className="space-y-4 p-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  value={newCategory}
+                  onChange={(event) => setNewCategory(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addCategory();
+                    }
+                  }}
+                  placeholder="New category name (e.g. Spa, Pool)"
+                  className="h-11 flex-1 rounded-xl border border-[#17362b]/12 bg-white px-4 text-sm outline-none focus:border-[#c9a24a]"
+                />
+                <button
+                  type="button"
+                  onClick={addCategory}
+                  className="orbit-gold-button flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-[10px] font-semibold tracking-[0.14em] uppercase"
                 >
-                  {category}
-                </span>
-              ))}
+                  <Plus className="size-4" /> Add Category
+                </button>
+              </div>
+
+              <ul className="divide-y divide-[#17362b]/8 rounded-xl border border-[#17362b]/10">
+                {content.categories.map((category, index) => {
+                  const isAll = category === "All";
+                  const isEditing = editingCategory === category;
+                  const restIndex = index - 1;
+                  const restCount = categoryOptions.length;
+                  const imageCount = content.images.filter(
+                    (image) => image.category === category
+                  ).length;
+
+                  return (
+                    <li
+                      key={category}
+                      className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0 flex-1">
+                        {isEditing ? (
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <input
+                              value={editDraft}
+                              autoFocus
+                              onChange={(event) =>
+                                setEditDraft(event.target.value)
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  event.preventDefault();
+                                  commitEditCategory();
+                                }
+                                if (event.key === "Escape") {
+                                  setEditingCategory(null);
+                                  setEditDraft("");
+                                }
+                              }}
+                              className="h-10 w-full max-w-sm rounded-xl border border-[#17362b]/12 px-3 text-sm outline-none focus:border-[#c9a24a]"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={commitEditCategory}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[#17362b] px-3 text-[10px] font-semibold tracking-[0.12em] text-white uppercase"
+                              >
+                                <Check className="size-3.5" /> Save
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingCategory(null);
+                                  setEditDraft("");
+                                }}
+                                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-[#17362b]/12 px-3 text-[10px] font-semibold tracking-[0.12em] uppercase"
+                              >
+                                <X className="size-3.5" /> Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <span className="rounded-full border border-[#17362b]/12 bg-[#f6f7f4] px-4 py-2 text-[10px] font-semibold tracking-[0.16em] text-[#294138] uppercase">
+                              {category}
+                            </span>
+                            {isAll ? (
+                              <span className="text-[11px] text-[#8a9690]">
+                                System filter · always shown
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-[#8a9690]">
+                                {imageCount} image{imageCount === 1 ? "" : "s"}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {!isAll && !isEditing ? (
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <button
+                            type="button"
+                            aria-label={`Move ${category} up`}
+                            disabled={restIndex <= 0}
+                            onClick={() => moveCategory(category, -1)}
+                            className="grid size-9 place-items-center rounded-lg border border-[#17362b]/12 disabled:opacity-30"
+                          >
+                            <ArrowUp className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Move ${category} down`}
+                            disabled={restIndex >= restCount - 1}
+                            onClick={() => moveCategory(category, 1)}
+                            className="grid size-9 place-items-center rounded-lg border border-[#17362b]/12 disabled:opacity-30"
+                          >
+                            <ArrowDown className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => startEditCategory(category)}
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#17362b]/12 px-3 text-[10px] font-semibold tracking-[0.12em] uppercase"
+                          >
+                            <Pencil className="size-3.5" /> Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeCategory(category)}
+                            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-[10px] font-semibold tracking-[0.12em] text-red-700 uppercase"
+                          >
+                            <Trash2 className="size-3.5" /> Remove
+                          </button>
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </section>
 
@@ -308,7 +591,11 @@ export function GalleryStudioEditor({
                         Category
                       </span>
                       <select
-                        value={image.category}
+                        value={
+                          categoryOptions.includes(image.category)
+                            ? image.category
+                            : categoryOptions[0] || ""
+                        }
                         onChange={(event) =>
                           updateImage(image.id, {
                             category: event.target.value,
@@ -316,16 +603,20 @@ export function GalleryStudioEditor({
                         }
                         className="h-10 w-full rounded-xl border border-[#17362b]/12 bg-white px-3 text-sm"
                       >
-                        {categoryOptions.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
+                        {categoryOptions.length ? (
+                          categoryOptions.map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="">Add a category first</option>
+                        )}
                       </select>
                     </label>
                     <label className="block">
                       <span className="mb-1.5 block text-[9px] font-semibold tracking-[0.16em] text-[#52665c] uppercase">
-                        Alt Text
+                        Alt text
                       </span>
                       <input
                         value={image.alt}
@@ -384,18 +675,24 @@ export function GalleryStudioEditor({
         title="Add gallery image"
         folder="gallery"
         onSelect={(asset) => {
+          if (!categoryOptions.length) {
+            push(
+              "Add at least one category before uploading images.",
+              "warning"
+            );
+            return;
+          }
           const entry: GalleryImageEntry = {
             id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
             src: withMediaCacheBust(asset.url),
             alt: asset.alt || asset.originalName,
-            category: categoryOptions[0] || "Rooms",
+            category: categoryOptions[0],
             assetId: asset.id,
           };
-          setContent((current) => ({
+          patchContent((current) => ({
             ...current,
             images: [...current.images, entry],
           }));
-          setDirty(true);
           setPickerOpen(false);
         }}
       />
