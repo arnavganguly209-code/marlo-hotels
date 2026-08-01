@@ -40,6 +40,9 @@ export function SiteShell({
 
   if (isOrbit) return <>{children}</>;
 
+  const isAdmin = pathname.startsWith("/admin");
+  if (isAdmin) return <>{children}</>;
+
   return (
     <>
       <a

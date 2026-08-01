@@ -1,5 +1,6 @@
 import { BedDouble, Check, Expand, Eye, Users } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RoomCard } from "@/components/cards/room-card";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -80,19 +81,42 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
         }}
       />
 
-      <PageHero
-        eyebrow={room.category === "suite" ? "The Suites" : "The Rooms"}
-        title={room.name}
-        description={room.tagline}
-        image={room.images[0] || { src: "", alt: room.name }}
-        crumbs={[
-          { label: "Home", href: "/" },
-          { label: "Rooms & Suites", href: "/rooms" },
-          { label: room.name, href: `/rooms/${room.slug}` },
-        ]}
-      />
+      <div className="hidden lg:block">
+        <PageHero
+          eyebrow={room.category === "suite" ? "The Suites" : "The Rooms"}
+          title={room.name}
+          description={room.tagline}
+          image={room.images[0] || { src: "", alt: room.name }}
+          crumbs={[
+            { label: "Home", href: "/" },
+            { label: "Rooms & Suites", href: "/rooms" },
+            { label: room.name, href: `/rooms/${room.slug}` },
+          ]}
+        />
+      </div>
 
-      <section className="bg-ivory py-20 md:py-28">
+      {/* Mobile breadcrumb strip */}
+      <nav
+        aria-label="Breadcrumb"
+        className="border-b border-forest-800/10 bg-ivory px-5 py-4 pt-[calc(4.5rem+1rem)] lg:hidden"
+      >
+        <ol className="flex flex-wrap items-center gap-2 text-[11px] font-medium tracking-[0.16em] text-charcoal-900/50 uppercase">
+          <li>
+            <Link href="/" className="hover:text-gold-600">
+              Home
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li>
+            <Link href="/rooms" className="hover:text-gold-600">
+              Rooms
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li className="text-forest-900">{room.name}</li>
+        </ol>
+      </nav>
+      <section className="bg-ivory py-10 md:py-20 lg:py-28">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 md:gap-14 md:px-8 lg:grid-cols-3">
           {/* Gallery — first on mobile and desktop */}
           <div className="order-1 lg:col-span-2 lg:col-start-1 lg:row-start-1">
@@ -119,7 +143,20 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
 
           {/* Room copy — after Reserve on mobile; under gallery on desktop */}
           <div className="order-3 lg:col-span-2 lg:col-start-1 lg:row-start-2">
-            <Reveal className="mt-4 lg:mt-0">
+            {/* Mobile: name + subtitle directly under Reserve */}
+            <Reveal className="lg:hidden">
+              <p className="eyebrow">
+                {room.category === "suite" ? "The Suites" : "The Rooms"}
+              </p>
+              <h1 className="font-display mt-4 text-[2.15rem] leading-[1.1] font-semibold tracking-[-0.018em] text-forest-950">
+                {room.name}
+              </h1>
+              <p className="mt-3 text-[15.5px] leading-[1.75] font-normal tracking-[0.012em] text-charcoal-900/65">
+                {room.tagline}
+              </p>
+            </Reveal>
+
+            <Reveal className="mt-10 lg:mt-0">
               <dl className="grid grid-cols-2 gap-6 rounded-xl border border-forest-800/10 bg-cream-50 p-7 sm:grid-cols-4">
                 {facts.map(({ Icon, label, value }) => (
                   <div key={label}>

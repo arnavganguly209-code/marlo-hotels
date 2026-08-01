@@ -115,34 +115,53 @@ body {
 .site-typography h4 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.018em;
+  letter-spacing: -0.02em;
   text-wrap: balance;
   text-rendering: optimizeLegibility;
   font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 .site-typography h1 {
-  line-height: 1.06;
-}
-
-.site-typography h2 {
-  line-height: 1.1;
-}
-
-.site-typography h3 {
-  line-height: 1.18;
-  letter-spacing: -0.01em;
+  line-height: 1.05;
   font-weight: 600;
 }
 
-.site-typography p {
-  line-height: 1.8;
-  letter-spacing: 0.014em;
+.site-typography h2 {
+  line-height: 1.08;
+  font-weight: 600;
+}
+
+.site-typography h3 {
+  line-height: 1.16;
+  letter-spacing: -0.012em;
+  font-weight: 600;
+}
+
+.site-typography h4 {
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.site-typography p,
+.site-typography li,
+.site-typography dd {
+  line-height: 1.82;
+  letter-spacing: 0.015em;
   font-weight: 400;
+  -webkit-font-smoothing: antialiased;
 }
 
 .site-typography .font-light {
   font-weight: 400;
+}
+
+.site-typography .font-medium {
+  font-weight: 500;
+}
+
+.site-typography a:not([class*="btn"]):not(button) {
+  letter-spacing: inherit;
 }
 
 /* Premium statistic figures (About + similar) */

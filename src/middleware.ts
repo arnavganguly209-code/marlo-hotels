@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const ORBIT_COOKIE = "marlo_orbit_session";
+const ADMIN_COOKIE = "marlo_hotel_admin_session";
 
 export function middleware(request: NextRequest) {
   try {
@@ -8,7 +9,44 @@ export function middleware(request: NextRequest) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-marlo-pathname", pathname);
 
-    // Exact /orbit login page must remain publicly reachable.
+    // —— Hotel Admin panel ——
+    if (pathname === "/admin" || pathname === "/admin/") {
+      if (request.cookies.has(ADMIN_COOKIE)) {
+        const dash = request.nextUrl.clone();
+        dash.pathname = "/admin/dashboard";
+        dash.search = "";
+        return NextResponse.redirect(dash);
+      }
+      return NextResponse.next({
+        request: { headers: requestHeaders },
+      });
+    }
+
+    if (pathname.startsWith("/admin/")) {
+      if (!request.cookies.has(ADMIN_COOKIE)) {
+        const login = request.nextUrl.clone();
+        login.pathname = "/admin";
+        login.search = "";
+        return NextResponse.redirect(login);
+      }
+      return NextResponse.next({
+        request: { headers: requestHeaders },
+      });
+    }
+
+    if (
+      pathname.startsWith("/api/admin/") &&
+      !pathname.startsWith("/api/admin/auth/login")
+    ) {
+      if (!request.cookies.has(ADMIN_COOKIE)) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      return NextResponse.next({
+        request: { headers: requestHeaders },
+      });
+    }
+
+    // —— Orbit CMS ——
     if (pathname === "/orbit" || pathname === "/orbit/") {
       return NextResponse.next({
         request: { headers: requestHeaders },
@@ -38,11 +76,18 @@ export function middleware(request: NextRequest) {
       request: { headers: requestHeaders },
     });
   } catch (error) {
-    console.error("[orbit] middleware failure", error);
+    console.error("[middleware] failure", error);
     return NextResponse.next();
   }
 }
 
 export const config = {
-  matcher: ["/orbit", "/orbit/:path*", "/api/orbit/:path*"],
+  matcher: [
+    "/orbit",
+    "/orbit/:path*",
+    "/api/orbit/:path*",
+    "/admin",
+    "/admin/:path*",
+    "/api/admin/:path*",
+  ],
 };

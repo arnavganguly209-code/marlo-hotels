@@ -1,0 +1,16 @@
+export const adminNav = [
+  { label: "Dashboard", href: "/admin/dashboard" },
+  { label: "Rooms", href: "/admin/rooms" },
+  { label: "Room Numbers", href: "/admin/room-numbers" },
+  { label: "Inventory", href: "/admin/inventory" },
+  { label: "Date Blocking", href: "/admin/date-blocking" },
+  { label: "Online Bookings", href: "/admin/online-bookings" },
+  { label: "Offline Bookings", href: "/admin/offline-bookings" },
+  { label: "Payments", href: "/admin/payments" },
+  { label: "Contact Messages", href: "/admin/contact-messages" },
+  { label: "Restaurant", href: "/admin/restaurant" },
+  { label: "Spa", href: "/admin/spa" },
+  { label: "Meetings", href: "/admin/meetings" },
+  { label: "Newsletter", href: "/admin/newsletter" },
+  { label: "Settings", href: "/admin/settings" },
+] as const;
