@@ -46,13 +46,13 @@ export function WellnessSection({
         <div className="order-2 lg:order-1">
           <Reveal>
             <p className="eyebrow">{content.eyebrow}</p>
-            <h2 className="font-display mt-5 text-4xl leading-[1.08] font-medium text-forest-950 text-balance md:text-5xl">
+            <h2 className="font-display mt-5 text-[2.45rem] leading-[1.08] font-semibold tracking-[-0.018em] text-forest-950 text-balance sm:text-5xl lg:leading-[1.06]">
               <HighlightedHeading
                 heading={content.heading}
                 highlightedText={content.highlightedText}
               />
             </h2>
-            <p className="mt-7 text-[15px] leading-relaxed font-light text-charcoal-900/70">
+            <p className="mt-7 text-[15.5px] leading-[1.8] font-normal tracking-[0.014em] text-charcoal-900/70 sm:text-base sm:leading-[1.82]">
               {content.description}
             </p>
           </Reveal>
@@ -66,14 +66,14 @@ export function WellnessSection({
                     className="flex items-baseline justify-between gap-6 py-5"
                   >
                     <div>
-                      <h3 className="font-display text-xl font-medium text-forest-900">
+                      <h3 className="font-display text-xl font-semibold tracking-[-0.01em] text-forest-900">
                         {treatment.name}
                       </h3>
-                      <p className="mt-1 text-xs font-light tracking-wider text-charcoal-900/55 uppercase">
+                      <p className="mt-1 text-[11px] font-medium tracking-[0.18em] text-charcoal-900/55 uppercase">
                         {treatment.duration}
                       </p>
                     </div>
-                    <span className="font-display shrink-0 text-xl text-gold-600">
+                    <span className="font-display shrink-0 text-xl font-semibold tracking-[-0.01em] text-gold-600">
                       {formatCurrency(treatment.price)}
                     </span>
                   </li>

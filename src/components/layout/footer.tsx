@@ -77,10 +77,10 @@ export function Footer({
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 px-5 py-16 md:flex-row md:justify-between md:px-8">
           <div className="max-w-md text-center md:text-left">
             <p className="eyebrow">{newsletterEyebrow}</p>
-            <h2 className="font-display mt-3 text-3xl font-medium text-ivory">
+            <h2 className="font-display mt-3 text-[2rem] leading-[1.12] font-semibold tracking-[-0.016em] text-ivory sm:text-3xl sm:leading-[1.1] md:text-[2.15rem]">
               {newsletterHeading}
             </h2>
-            <p className="mt-3 text-sm font-light text-cream-200/70">
+            <p className="mt-3 text-[15px] leading-[1.8] font-normal tracking-[0.014em] text-cream-200/70">
               {newsletterDescription}
             </p>
           </div>
@@ -92,7 +92,7 @@ export function Footer({
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 md:grid-cols-2 md:px-8 lg:grid-cols-4">
         <div>
           <Logo tone="light" src={resolvedLogoUrl} />
-          <p className="mt-6 max-w-xs text-sm leading-relaxed font-light text-cream-200/70">
+          <p className="mt-6 max-w-xs text-[15px] leading-[1.8] font-normal tracking-[0.014em] text-cream-200/70">
             {description}
           </p>
           <div className="mt-6 flex gap-3">
@@ -122,7 +122,7 @@ export function Footer({
               <li key={link.label}>
                 <Link
                   href={link.href}
-                  className="link-underline text-sm font-light text-cream-200/75 transition-colors hover:text-gold-300"
+                  className="link-underline text-[15px] leading-[1.7] font-normal tracking-[0.01em] text-cream-200/75 transition-colors hover:text-gold-300"
                 >
                   {link.label}
                 </Link>
@@ -138,7 +138,7 @@ export function Footer({
               <li key={link.label}>
                 <Link
                   href={link.href}
-                  className="link-underline text-sm font-light text-cream-200/75 transition-colors hover:text-gold-300"
+                  className="link-underline text-[15px] leading-[1.7] font-normal tracking-[0.01em] text-cream-200/75 transition-colors hover:text-gold-300"
                 >
                   {link.label}
                 </Link>
@@ -149,7 +149,7 @@ export function Footer({
 
         <div>
           <p className="eyebrow">{findUsHeading}</p>
-          <ul className="mt-5 space-y-4 text-sm font-light text-cream-200/75">
+          <ul className="mt-5 space-y-4 text-[15px] leading-[1.7] font-normal tracking-[0.01em] text-cream-200/75">
             <li className="flex gap-3">
               <MapPin className="mt-0.5 size-4 shrink-0 text-gold-500" />
               <span>{address}</span>
@@ -183,7 +183,7 @@ export function Footer({
       <div className="border-t border-ivory/10">
         <nav
           aria-label="Legal"
-          className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-3 gap-y-2 px-5 pt-6 pb-2 text-[10px] font-medium tracking-[0.16em] text-cream-200/55 uppercase md:px-8"
+          className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-3 gap-y-2 px-5 pt-6 pb-2 text-[11px] font-semibold tracking-[0.2em] text-cream-200/55 uppercase md:px-8"
         >
           {legalLinks.map((link, index) => (
             <span key={link.href} className="inline-flex items-center gap-3">
@@ -201,7 +201,7 @@ export function Footer({
             </span>
           ))}
         </nav>
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 text-xs font-light tracking-wider text-cream-200/50 md:flex-row md:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 text-[13px] font-normal tracking-[0.04em] text-cream-200/50 md:flex-row md:px-8">
           <p>
             © {new Date().getFullYear()}{" "}
             {content?.copyrightText ??

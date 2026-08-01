@@ -79,10 +79,10 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
             delay={0.4}
             className="glass-light shadow-luxury-sm absolute -bottom-6 left-6 hidden rounded-xl px-6 py-4 md:block"
           >
-            <p className="font-display text-4xl font-medium text-forest-800">
+            <p className="font-display stat-figure text-5xl text-forest-800">
               {content.badgeValue}
             </p>
-            <p className="mt-1 text-[10px] tracking-[0.3em] text-gold-600 uppercase">
+            <p className="stat-caption mt-1 text-gold-600">
               {content.badgeLabel}
             </p>
           </Reveal>
@@ -92,7 +92,7 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
         <div>
           <Reveal>
             <p className="eyebrow">{content.eyebrow}</p>
-            <h2 className="font-display mt-5 text-4xl leading-[1.08] font-medium text-forest-950 text-balance md:text-5xl lg:text-[3.4rem]">
+            <h2 className="font-display mt-5 text-[2.45rem] leading-[1.08] font-semibold tracking-[-0.018em] text-forest-950 text-balance sm:text-5xl lg:text-[3.55rem] lg:leading-[1.06]">
               <HighlightedHeading
                 heading={content.heading}
                 highlightedText={content.highlightedText}
@@ -101,7 +101,7 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
             {[content.description, ...content.paragraphs.slice(1)].map((paragraph, index) => (
               <p
                 key={paragraph}
-                className={`${index === 0 ? "mt-8" : "mt-5"} text-[15px] leading-relaxed font-light text-charcoal-900/70`}
+                className={`${index === 0 ? "mt-8" : "mt-5"} text-[15.5px] leading-[1.8] font-normal tracking-[0.014em] text-charcoal-900/70 sm:text-base sm:leading-[1.82]`}
               >
                 {paragraph}
               </p>
@@ -111,11 +111,11 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
           <Reveal delay={0.15}>
             <dl className="mt-12 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-forest-800/10 pt-10 sm:grid-cols-4">
               {content.stats.map((stat) => (
-                <div key={stat.label}>
-                  <dd className="font-display text-4xl font-medium text-forest-800">
+                <div key={stat.label} className="text-left">
+                  <dd className="stat-figure text-5xl text-forest-800 md:text-[3.25rem]">
                     {stat.value}
                   </dd>
-                  <dt className="mt-2 text-[10px] tracking-[0.26em] text-charcoal-900/55 uppercase">
+                  <dt className="stat-caption mt-2 text-charcoal-900/55">
                     {stat.label}
                   </dt>
                 </div>

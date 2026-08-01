@@ -32,7 +32,7 @@ export function ExperienceCard({
             {experience.duration}
           </span>
         </div>
-        <h3 className="font-display mt-3 text-2xl leading-tight font-medium text-ivory">
+        <h3 className="font-display mt-3 text-2xl leading-[1.15] font-semibold tracking-[-0.012em] text-ivory">
           <Link
             href={`/experiences#${experience.slug}`}
             className="after:absolute after:inset-0 focus-visible:outline-none"
@@ -40,10 +40,10 @@ export function ExperienceCard({
             {experience.title}
           </Link>
         </h3>
-        <p className="mt-3 line-clamp-2 max-h-0 overflow-hidden text-sm leading-relaxed font-light text-cream-200/80 opacity-0 transition-all duration-700 group-hover:max-h-24 group-hover:opacity-100">
+        <p className="mt-3 line-clamp-2 max-h-0 overflow-hidden text-[15px] leading-[1.75] font-normal tracking-[0.012em] text-cream-200/80 opacity-0 transition-all duration-700 group-hover:max-h-24 group-hover:opacity-100">
           {experience.shortDescription}
         </p>
-        <span className="mt-4 inline-flex items-center gap-2 text-[10px] font-medium tracking-[0.3em] text-gold-400 uppercase">
+        <span className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-gold-400 uppercase">
           {actionLabel}
           <ArrowRight className="size-3.5 transition-transform duration-500 group-hover:translate-x-1.5" />
         </span>

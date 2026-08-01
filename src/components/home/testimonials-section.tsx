@@ -69,14 +69,14 @@ export function TestimonialsSection({
                   />
                 ))}
               </div>
-              <p className="font-display mt-8 text-2xl leading-relaxed font-light text-ivory italic md:text-[1.75rem]">
+              <p className="font-display mt-8 text-[1.65rem] leading-[1.55] font-medium tracking-[-0.01em] text-ivory italic md:text-[1.9rem] md:leading-[1.5]">
                 “{current.quote}”
               </p>
               <footer className="mt-9">
-                <p className="text-sm font-medium tracking-[0.2em] text-gold-400 uppercase">
+                <p className="text-[13px] font-semibold tracking-[0.22em] text-gold-400 uppercase">
                   {current.name}
                 </p>
-                <p className="mt-2 text-xs font-light tracking-wider text-cream-200/60">
+                <p className="mt-2 text-[12px] font-normal tracking-[0.08em] text-cream-200/60">
                   {current.origin} · {current.stay}
                 </p>
               </footer>

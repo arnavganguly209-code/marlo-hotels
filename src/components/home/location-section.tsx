@@ -16,13 +16,13 @@ export function LocationSection({
       <div className="mx-auto grid max-w-7xl gap-12 px-5 md:px-8 lg:grid-cols-2 lg:items-center">
         <Reveal>
           <p className="eyebrow">{content.eyebrow}</p>
-          <h2 className="font-display mt-5 text-4xl font-medium text-forest-950 md:text-5xl">
+          <h2 className="font-display mt-5 text-[2.45rem] leading-[1.08] font-semibold tracking-[-0.018em] text-forest-950 text-balance sm:text-5xl lg:leading-[1.06]">
             {content.heading}
           </h2>
-          <p className="mt-6 text-[15px] leading-relaxed font-light text-charcoal-900/70">
+          <p className="mt-6 text-[15.5px] leading-[1.8] font-normal tracking-[0.014em] text-charcoal-900/70 sm:text-base sm:leading-[1.82]">
             {content.description}
           </p>
-          <div className="mt-8 space-y-4 text-sm text-charcoal-900/75">
+          <div className="mt-8 space-y-4 text-[15px] leading-[1.7] font-normal tracking-[0.01em] text-charcoal-900/75">
             <p className="flex items-start gap-3">
               <MapPin className="mt-0.5 size-4 shrink-0 text-gold-600" />
               {content.address}
@@ -59,7 +59,9 @@ export function LocationSection({
             />
           ) : (
             <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-forest-900 to-forest-950 px-8 text-center">
-              <p className="font-display text-2xl text-ivory">{content.address}</p>
+              <p className="font-display text-2xl font-semibold tracking-[-0.012em] text-ivory">
+                {content.address}
+              </p>
             </div>
           )}
         </Reveal>

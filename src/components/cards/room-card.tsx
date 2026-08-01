@@ -114,22 +114,22 @@ export function RoomCard({
               ? `${quote.nights} night${quote.nights > 1 ? "s" : ""}`
               : labels?.from ?? "From"}
           </span>
-          <span className="font-display text-2xl font-medium text-ivory">
+          <span className="font-display text-2xl font-semibold tracking-[-0.012em] text-ivory">
             {formatCurrency(quote ? quote.total : room.priceFrom, room.currency)}
           </span>
         </span>
       </div>
 
       <div className="relative z-10 flex flex-1 flex-col p-7">
-        <h3 className="font-display text-2xl font-medium text-forest-950">
+        <h3 className="font-display text-2xl font-semibold tracking-[-0.012em] text-forest-950">
           <Link href={detailsHref} className="hover:text-gold-700">
             {room.name}
           </Link>
         </h3>
-        <p className="mt-3 line-clamp-2 text-sm leading-relaxed font-light text-charcoal-900/60">
+        <p className="mt-3 line-clamp-2 text-[15px] leading-[1.75] font-normal tracking-[0.012em] text-charcoal-900/60">
           {room.shortDescription}
         </p>
-        <p className="mt-3 flex items-center gap-2 text-xs font-light text-charcoal-900/70">
+        <p className="mt-3 flex items-center gap-2 text-[13px] font-normal tracking-[0.01em] text-charcoal-900/70">
           <Users className="size-3.5 text-gold-600" />
           Up to {room.maxAdults} adult{room.maxAdults === 1 ? "" : "s"}
           {room.maxChildren > 0

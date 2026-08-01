@@ -53,7 +53,7 @@ export function GalleryPreview({
                   unoptimized={image.src.startsWith("/media/")}
                 />
                 <span className="absolute inset-0 bg-charcoal-950/0 transition-colors duration-500 group-hover:bg-charcoal-950/30" />
-                <span className="absolute bottom-4 left-4 text-[9px] font-medium tracking-[0.28em] text-ivory uppercase opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+                <span className="absolute bottom-4 left-4 text-[10px] font-semibold tracking-[0.24em] text-ivory uppercase opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                   {image.category}
                 </span>
               </Link>

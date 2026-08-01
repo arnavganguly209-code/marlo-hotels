@@ -58,10 +58,10 @@ export function DiningSection({
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/95 via-charcoal-950/30 to-transparent" />
 
                   <div className="absolute inset-x-0 bottom-0 p-8">
-                    <p className="text-[9px] font-medium tracking-[0.3em] text-gold-400 uppercase">
+                    <p className="text-[10px] font-semibold tracking-[0.26em] text-gold-400 uppercase">
                       {restaurant.cuisine}
                     </p>
-                    <h3 className="font-display mt-2 text-3xl font-medium text-ivory">
+                    <h3 className="font-display mt-2 text-3xl font-semibold tracking-[-0.014em] text-ivory md:text-[2.05rem]">
                       <Link
                         href={`/dining/${restaurant.slug}`}
                         className="after:absolute after:inset-0 focus-visible:outline-none"
@@ -69,10 +69,10 @@ export function DiningSection({
                         {restaurant.name}
                       </Link>
                     </h3>
-                    <p className="mt-3 line-clamp-2 text-sm leading-relaxed font-light text-cream-200/80">
+                    <p className="mt-3 line-clamp-2 text-[15px] leading-[1.75] font-normal tracking-[0.012em] text-cream-200/80">
                       {restaurant.tagline}
                     </p>
-                    <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[11px] font-light text-cream-200/65">
+                    <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[12px] font-normal tracking-[0.02em] text-cream-200/65">
                       <span className="flex items-center gap-1.5">
                         <Clock className="size-3 text-gold-500" />
                         {restaurant.hours}

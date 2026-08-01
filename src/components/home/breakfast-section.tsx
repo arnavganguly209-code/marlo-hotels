@@ -47,10 +47,10 @@ export function BreakfastSection({
 
         <Reveal>
           <p className="eyebrow">{content.eyebrow}</p>
-          <h2 className="font-display mt-5 text-4xl font-medium text-forest-950 text-balance md:text-5xl">
+          <h2 className="font-display mt-5 text-[2.45rem] leading-[1.08] font-semibold tracking-[-0.018em] text-forest-950 text-balance sm:text-5xl lg:leading-[1.06]">
             {content.heading}
           </h2>
-          <p className="mt-7 text-[15px] leading-relaxed font-light text-charcoal-900/70">
+          <p className="mt-7 text-[15.5px] leading-[1.8] font-normal tracking-[0.014em] text-charcoal-900/70 sm:text-base sm:leading-[1.82]">
             {content.description}
           </p>
           {content.timings.length ? (
@@ -60,11 +60,11 @@ export function BreakfastSection({
                   key={timing.label}
                   className="flex items-start justify-between gap-6"
                 >
-                  <span className="flex items-center gap-2 text-sm text-forest-950">
+                  <span className="flex items-center gap-2 text-[15px] font-medium tracking-[0.01em] text-forest-950">
                     <Clock className="size-4 text-gold-600" />
                     {timing.label}
                   </span>
-                  <span className="text-sm font-light text-charcoal-900/65">
+                  <span className="text-[15px] font-normal tracking-[0.01em] text-charcoal-900/65">
                     {timing.hours}
                   </span>
                 </li>

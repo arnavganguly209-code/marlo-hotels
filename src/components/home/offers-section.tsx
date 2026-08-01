@@ -39,16 +39,16 @@ export function OffersSection({
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/55 to-transparent" />
                 </div>
                 <div className="p-7">
-                  <h3 className="font-display text-2xl text-forest-950">
+                  <h3 className="font-display text-2xl font-semibold tracking-[-0.012em] text-forest-950">
                     {offer.title}
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed font-light text-charcoal-900/65">
+                  <p className="mt-3 text-[15px] leading-[1.75] font-normal tracking-[0.012em] text-charcoal-900/65">
                     {offer.description}
                   </p>
                   {offer.buttonText ? (
                     <Link
                       href={offer.buttonLink || "/offers"}
-                      className="mt-6 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.2em] text-gold-700 uppercase"
+                      className="mt-6 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.22em] text-gold-700 uppercase"
                     >
                       {offer.buttonText}
                       <ArrowRight className="size-3.5" />

@@ -49,10 +49,10 @@ export function AttractionsSection({
                       </span>
                     ) : null}
                   </div>
-                  <h3 className="font-display mt-5 text-xl font-medium text-forest-950">
+                  <h3 className="font-display mt-5 text-xl font-semibold tracking-[-0.01em] text-forest-950">
                     {attraction.name}
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed font-light text-charcoal-900/60">
+                  <p className="mt-2 text-[15px] leading-[1.75] font-normal tracking-[0.012em] text-charcoal-900/60">
                     {attraction.description}
                   </p>
                   {attraction.distance && attraction.badge ? (
@@ -63,7 +63,7 @@ export function AttractionsSection({
                   {attraction.buttonText ? (
                     <Link
                       href={attraction.buttonLink || "/experiences"}
-                      className="mt-4 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.2em] text-gold-700 uppercase"
+                      className="mt-4 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.22em] text-gold-700 uppercase"
                     >
                       {attraction.buttonText}
                       <ArrowRight className="size-3.5" />

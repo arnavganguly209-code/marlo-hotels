@@ -97,13 +97,15 @@ body {
   font-family: var(--font-display);
 }
 
-/* Small-caps golden eyebrow label */
+/* Small-caps golden eyebrow label — luxury hotel section marker */
 @utility eyebrow {
-  font-size: 0.6875rem;
-  letter-spacing: 0.34em;
+  font-size: 0.7rem;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
   font-weight: 600;
   color: var(--color-gold-500);
+  line-height: 1.35;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 /* Luxury page typography (excludes fixed header menu) */
@@ -113,31 +115,51 @@ body {
 .site-typography h4 {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.018em;
   text-wrap: balance;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 .site-typography h1 {
-  line-height: 1.08;
+  line-height: 1.06;
 }
 
 .site-typography h2 {
-  line-height: 1.12;
+  line-height: 1.1;
 }
 
 .site-typography h3 {
-  line-height: 1.2;
-  letter-spacing: -0.008em;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  font-weight: 600;
 }
 
 .site-typography p {
-  line-height: 1.75;
-  letter-spacing: 0.012em;
+  line-height: 1.8;
+  letter-spacing: 0.014em;
+  font-weight: 400;
 }
 
 .site-typography .font-light {
   font-weight: 400;
+}
+
+/* Premium statistic figures (About + similar) */
+@utility stat-figure {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-rendering: optimizeLegibility;
+}
+
+@utility stat-caption {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  line-height: 1.4;
 }
 
 /* Frosted glass surfaces */

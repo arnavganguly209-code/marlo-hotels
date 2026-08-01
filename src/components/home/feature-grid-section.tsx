@@ -79,8 +79,8 @@ export function FeatureGridSectionView({
                   <h3
                     className={
                       tone === "forest"
-                        ? "font-display mt-5 text-2xl text-ivory"
-                        : "font-display mt-5 text-2xl text-forest-950"
+                        ? "font-display mt-5 text-2xl font-semibold tracking-[-0.012em] text-ivory"
+                        : "font-display mt-5 text-2xl font-semibold tracking-[-0.012em] text-forest-950"
                     }
                   >
                     {item.title}
@@ -88,8 +88,8 @@ export function FeatureGridSectionView({
                   <p
                     className={
                       tone === "forest"
-                        ? "mt-3 text-sm leading-relaxed font-light text-cream-200/70"
-                        : "mt-3 text-sm leading-relaxed font-light text-charcoal-900/65"
+                        ? "mt-3 text-[15px] leading-[1.75] font-normal tracking-[0.012em] text-cream-200/70"
+                        : "mt-3 text-[15px] leading-[1.75] font-normal tracking-[0.012em] text-charcoal-900/65"
                     }
                   >
                     {item.description}
