@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { RoyalImageFrame } from "@/components/shared/royal-image-frame";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
+import { splitParagraphs } from "@/lib/page-studio-content";
+import type { StudioSectionData } from "@/lib/orbit/page-studio";
 
 export type ExperienceCard = {
   title: string;
@@ -59,6 +61,8 @@ const ARRANGEMENT = [
 export function ExperiencesShowcase({
   experiences,
   images,
+  sections,
+  features,
 }: {
   experiences: ExperienceCard[];
   images: {
@@ -66,30 +70,34 @@ export function ExperiencesShowcase({
     accent: ExperienceImage;
     cta?: ExperienceImage;
   };
+  sections: Record<
+    "intro" | "editorial" | "listing" | "features" | "accent" | "cta",
+    StudioSectionData
+  >;
+  features: ExperienceCard[];
 }) {
   const cards = experiences.slice(0, 6);
+  const arrangement = features.slice(0, 6);
 
   return (
     <>
       {/* Intro */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-40">
+      {sections.intro.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-40">
         <div className="mx-auto max-w-3xl px-5 text-center md:px-8">
           <Reveal>
-            <p className="eyebrow gold-rule justify-center">Concierge</p>
+            <p className="eyebrow gold-rule justify-center">{sections.intro.eyebrow}</p>
             <h2 className="font-display mt-6 text-[2.45rem] leading-[1.1] font-semibold tracking-[-0.018em] text-balance text-forest-950 sm:text-5xl lg:text-[3.4rem] lg:leading-[1.06]">
-              Experiences Composed for You
+              {sections.intro.heading}
             </h2>
             <p className="mx-auto mt-8 max-w-2xl text-[15.5px] leading-[1.85] font-light tracking-[0.014em] text-charcoal-900/70 sm:text-base">
-              Culture, quiet adventure and culinary access — arranged privately by the Marlo
-              concierge. Timings, guides and entry change with the season. We compose around your
-              stay, never a fixed brochure.
+              {sections.intro.description}
             </p>
           </Reveal>
         </div>
-      </section>
+      </section> : null}
 
       {/* Editorial — one clear gallery frame */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {sections.editorial.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 md:gap-16 md:px-8 lg:grid-cols-2 lg:gap-20">
           <Reveal direction="left">
             <RoyalImageFrame
@@ -98,34 +106,29 @@ export function ExperiencesShowcase({
             />
           </Reveal>
           <Reveal direction="right">
-            <p className="eyebrow">The Valley</p>
+            <p className="eyebrow">{sections.editorial.eyebrow}</p>
             <h2 className="font-display mt-5 text-4xl font-medium tracking-[-0.02em] text-forest-950 md:text-5xl">
-              The Valley, Opened Privately
+              {sections.editorial.heading}
             </h2>
-            <p className="mt-8 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              From palace courtyards to ridge-top sunsets, every journey begins with a quiet
-              conversation at the desk. We listen for what you want to feel — wonder, stillness,
-              craft — then arrange the day with the same precision that shapes your room and table.
-            </p>
-            <p className="mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Vehicles, permissions and pacing are handled before you leave the lobby, so the
-              experience itself remains unhurried and entirely yours.
-            </p>
+            {splitParagraphs(sections.editorial.description).map((paragraph, index) => (
+              <p key={paragraph} className={`${index ? "mt-6" : "mt-8"} text-[15.5px] leading-[1.85] font-light text-charcoal-900/70`}>
+                {paragraph}
+              </p>
+            ))}
           </Reveal>
         </div>
-      </section>
+      </section> : null}
 
       {/* Signature experiences — text only, no photo clutter */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {sections.listing.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">Signature</p>
+            <p className="eyebrow gold-rule justify-center">{sections.listing.eyebrow}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Journeys We Arrange Often
+              {sections.listing.heading}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Share what you seek — we will refine the day. Each journey is reserved for hotel
-              guests and private appointment.
+              {sections.listing.description}
             </p>
           </Reveal>
 
@@ -148,24 +151,29 @@ export function ExperiencesShowcase({
             ))}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* How we arrange */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {sections.features.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">How We Work</p>
+            <p className="eyebrow gold-rule justify-center">{sections.features.eyebrow}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Arranged With Quiet Precision
+              {sections.features.heading}
             </h2>
+            {sections.features.description ? (
+              <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
+                {sections.features.description}
+              </p>
+            ) : null}
           </Reveal>
 
           <Stagger
             stagger={0.04}
             className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:mt-16"
           >
-            {ARRANGEMENT.map((item) => {
-              const Icon = item.icon;
+            {arrangement.map((item, index) => {
+              const Icon = ARRANGEMENT[index % ARRANGEMENT.length].icon;
               return (
                 <StaggerItem key={item.title}>
                   <div className="flex h-full flex-col rounded-2xl border border-forest-800/10 bg-ivory/90 px-5 py-7 transition-colors duration-500 hover:border-gold-500/30 hover:bg-white md:px-6 md:py-8">
@@ -184,27 +192,25 @@ export function ExperiencesShowcase({
             })}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* Second framed image — single accent, not a busy gallery */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {sections.accent.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <Reveal>
-              <p className="eyebrow">Hospitality Beyond the Lobby</p>
+              <p className="eyebrow">{sections.accent.eyebrow}</p>
               <h2 className="font-display mt-5 text-4xl font-medium text-forest-950 md:text-5xl">
-                From First Light to Last Lantern
+                {sections.accent.heading}
               </h2>
               <p className="mt-8 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-                Whether a historian-led walk through living temples, a private kitchen session, or
-                a ridge-top sunset, every detail is held before you arrive — so the hours themselves
-                feel effortless.
+                {sections.accent.description}
               </p>
               <Link
-                href="/contact?subject=Experience%20enquiry"
+                href={sections.accent.buttonLink || "/contact?subject=Experience%20enquiry"}
                 className="mt-8 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] text-forest-950 uppercase transition-colors hover:text-gold-700"
               >
-                Speak with the concierge <ArrowRight className="size-3.5" />
+                {sections.accent.buttonText || "Speak with the concierge"} <ArrowRight className="size-3.5" />
               </Link>
             </Reveal>
             <Reveal direction="left" className="order-first lg:order-last">
@@ -215,10 +221,10 @@ export function ExperiencesShowcase({
             </Reveal>
           </div>
         </div>
-      </section>
+      </section> : null}
 
       {/* CTA */}
-      <section className="relative overflow-hidden bg-forest-950 py-28 md:py-36">
+      {sections.cta.enabled !== false ? <section className="relative overflow-hidden bg-forest-950 py-28 md:py-36">
         {images.cta?.src ? (
           <div className="absolute inset-0">
             <Image
@@ -237,17 +243,16 @@ export function ExperiencesShowcase({
 
         <div className="relative mx-auto max-w-3xl px-5 text-center md:px-8">
           <Reveal>
-            <p className="eyebrow text-gold-400 gold-rule justify-center">Enquire</p>
+            <p className="eyebrow text-gold-400 gold-rule justify-center">{sections.cta.eyebrow}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-ivory md:text-5xl lg:text-[3.25rem]">
-              Begin with a Conversation
+              {sections.cta.heading}
             </h2>
             <p className="mx-auto mt-7 max-w-xl text-[15.5px] leading-[1.85] font-light text-cream-200/80">
-              Tell us what you wish to see and feel. Our concierge will compose a private journey
-              around your stay at Marlo Hotels.
+              {sections.cta.description}
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
               <Button asChild variant="gold" size="lg">
-                <Link href="/contact?subject=Experience%20enquiry">Enquire Now</Link>
+                <Link href={sections.cta.buttonLink || "/contact?subject=Experience%20enquiry"}>{sections.cta.buttonText || "Enquire Now"}</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link href="/rooms">Reserve Your Stay</Link>
@@ -255,7 +260,7 @@ export function ExperiencesShowcase({
             </div>
           </Reveal>
         </div>
-      </section>
+      </section> : null}
     </>
   );
 }

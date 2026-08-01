@@ -523,13 +523,19 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
       initialDocument[section.key] = {
         ...base,
         ...patch,
+        eyebrow: String(patch?.eyebrow || base.eyebrow || ""),
+        heading: String(patch?.heading || base.heading || section.label),
+        description: String(patch?.description || base.description || ""),
         image: {
-          assetId: patch?.image?.assetId ?? null,
-          src: String(patch?.image?.src || ""),
+          assetId: patch?.image?.assetId ?? base.image.assetId ?? null,
+          src: String(patch?.image?.src || base.image.src || ""),
           alt: String(patch?.image?.alt || base.image.alt || section.label),
         },
-        gallery: Array.isArray(patch?.gallery) ? patch.gallery : [],
-        videoUrl: String(patch?.videoUrl || ""),
+        gallery:
+          Array.isArray(patch?.gallery) && patch.gallery.length
+            ? patch.gallery
+            : (base.gallery || []),
+        videoUrl: String(patch?.videoUrl || base.videoUrl || ""),
         videoAssetId: patch?.videoAssetId ?? null,
         hours: String(patch?.hours ?? base.hours ?? ""),
         features: String(patch?.features ?? base.features ?? ""),

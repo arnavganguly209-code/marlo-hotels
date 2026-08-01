@@ -9,6 +9,7 @@ import { getOffers } from "@/content/offers";
 import { getGalleryContent } from "@/lib/gallery-content";
 import {
   getPageStudioDocument,
+  resolveSectionImage,
   sectionItems,
 } from "@/lib/page-studio-content";
 import { buildMetadata } from "@/lib/seo";
@@ -95,7 +96,7 @@ export default async function OffersPage() {
   };
 
   // Max four photographs — clear royal frames, never a crowded collage.
-  const editorial =
+  const editorialFallback =
     pickGalleryImage(
       galleryImages,
       [/premier/i, /executive/i, /room/i, /Rooms/],
@@ -103,8 +104,9 @@ export default async function OffersPage() {
     ) ||
     pickGalleryImage(galleryImages, [/./], used) ||
     fallbackFrame;
+  const editorial = resolveSectionImage(doc.editorial, editorialFallback);
 
-  const accent =
+  const accentFallback =
     pickGalleryImage(
       galleryImages,
       [/spa/i, /massage/i, /jacuzzi/i, /Spa/],
@@ -113,42 +115,56 @@ export default async function OffersPage() {
     pickGalleryImage(galleryImages, [/dining/i, /restaurant/i], used) ||
     pickGalleryImage(galleryImages, [/./], used) ||
     fallbackFrame;
+  const accent = resolveSectionImage(doc.accent, accentFallback);
 
-  const pair =
+  const pairFallback =
     pickGalleryImage(
       galleryImages,
       [/dining/i, /restaurant/i, /breakfast/i, /Dining/],
       used
     ) || undefined;
+  const pair = resolveSectionImage(doc.pair, pairFallback || fallbackFrame);
 
-  const cta =
+  const ctaFallback =
     pickGalleryImage(
       galleryImages,
       [/gate/i, /entrance/i, /lobby/i, /architecture/i],
       used
     ) || accent;
+  const cta = resolveSectionImage(doc.cta, ctaFallback);
 
   return (
     <>
-      {/* Hero cover — Orbit / studio image unchanged */}
-      <PageHero
-        eyebrow={hero?.eyebrow || "Offers & Packages"}
-        title={hero?.heading || "Considered ways to stay"}
-        description={hero?.description}
-        image={{
-          src: hero?.image?.src || "",
-          alt: hero?.image?.alt || "Offers at Marlo Hotels",
-        }}
-        videoUrl={hero?.videoUrl || undefined}
-        crumbs={[
-          { label: "Home", href: "/" },
-          { label: "Offers", href: "/offers" },
-        ]}
-      />
+      {hero?.enabled !== false ? (
+        <PageHero
+          eyebrow={hero?.eyebrow || "Offers & Packages"}
+          title={hero?.heading || "Considered ways to stay"}
+          description={hero?.description}
+          image={{
+            src: hero?.image?.src || "",
+            alt: hero?.image?.alt || "Offers at Marlo Hotels",
+          }}
+          videoUrl={hero?.videoUrl || undefined}
+          crumbs={[
+            { label: "Home", href: "/" },
+            { label: "Offers", href: "/offers" },
+          ]}
+        />
+      ) : null}
 
       <OffersShowcase
         offers={listing}
-        images={{ editorial, accent, pair, cta }}
+        images={{ editorial, accent, pair: doc.pair?.enabled !== false ? pair : undefined, cta }}
+        sections={{
+          intro: doc.intro,
+          editorial: doc.editorial,
+          listing: doc.listing,
+          privileges: doc.privileges,
+          accent: doc.accent,
+          pair: doc.pair,
+          cta: doc.cta,
+        }}
+        privileges={sectionItems(doc.privileges)}
       />
     </>
   );

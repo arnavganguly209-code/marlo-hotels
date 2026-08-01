@@ -40,7 +40,7 @@ export default async function SpaPage() {
         ]}
       />
 
-      <SpaExperience />
+      <SpaExperience doc={doc} />
     </>
   );
 }

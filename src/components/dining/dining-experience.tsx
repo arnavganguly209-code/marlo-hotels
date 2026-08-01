@@ -14,6 +14,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { RoyalImageFrame } from "@/components/shared/royal-image-frame";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
+import type { PageStudioDocument } from "@/lib/page-studio-content";
+import {
+  resolveSectionImage,
+  sectionFeatures,
+  sectionGallery,
+  sectionHours,
+  sectionItems,
+  splitParagraphs,
+} from "@/lib/page-studio-content";
 
 const IMAGES = {
   memorable: {
@@ -131,71 +140,99 @@ export type DiningMealStep = {
 };
 
 export function DiningExperience({
+  doc,
   mealTimeline,
 }: {
+  doc: PageStudioDocument;
   mealTimeline: DiningMealStep[];
 }) {
+  const intro = doc.intro;
+  const memorable = doc.memorable;
+  const highlights = doc.highlights;
+  const timeline = doc.timeline;
+  const experience = doc.experience;
+  const why = doc.why;
+  const gallery = doc.gallery;
+  const cta = doc.cta;
+  const memorableParagraphs = splitParagraphs(memorable?.description || "");
+  const highlightItems = sectionItems(highlights);
+  const experienceItems = sectionItems(experience);
+  const whyFeatures = sectionFeatures(why);
+  const timelineHours = sectionHours(timeline);
+  const timelineItems = sectionItems(timeline);
+  const cmsTimeline = timelineItems.map((item) => ({
+    step: item.title,
+    hours:
+      timelineHours.find(
+        (hour) => hour.label.toLowerCase() === item.title.toLowerCase()
+      )?.hours || "",
+    detail: item.description,
+  }));
+  const activeTimeline = cmsTimeline.length ? cmsTimeline : mealTimeline;
+  const galleryImages = sectionGallery(gallery)
+    .filter((image) => image.src)
+    .slice(0, 4);
+  const activeGallery = galleryImages.length ? galleryImages : IMAGES.gallery.slice(0, 4);
+  const highlightCards = highlightItems.length ? highlightItems : HIGHLIGHTS;
+  const experienceCards = experienceItems.length ? experienceItems : EXPERIENCE_POINTS;
+  const whyCards = whyFeatures.length
+    ? whyFeatures.map((title) => ({
+        title,
+        icon:
+          WHY.find((item) => {
+            const candidate = item.title.toLowerCase();
+            const label = title.toLowerCase();
+            return label.includes(candidate) || candidate.includes(label);
+          })?.icon || Sparkles,
+      }))
+    : WHY;
+
   return (
     <>
       {/* 2 — Introduction */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-40">
+      {intro?.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-40">
         <div className="mx-auto max-w-3xl px-5 text-center md:px-8">
           <Reveal>
-            <p className="eyebrow gold-rule justify-center">Dining</p>
+            <p className="eyebrow gold-rule justify-center">{intro?.eyebrow || "Dining"}</p>
             <h2 className="font-display mt-6 text-[2.45rem] leading-[1.1] font-semibold tracking-[-0.018em] text-balance text-forest-950 sm:text-5xl lg:text-[3.4rem] lg:leading-[1.06]">
-              An Elegant Dining Experience
+              {intro?.heading || "An Elegant Dining Experience"}
             </h2>
             <p className="mx-auto mt-8 max-w-2xl text-[15.5px] leading-[1.85] font-light tracking-[0.014em] text-charcoal-900/70 sm:text-base">
-              At Marlo Hotels, the table is composed with the same care as the suites —
-              freshly prepared cuisine, a peaceful dining atmosphere, comfortable seating and
-              warm hospitality. International quality service meets Himalayan generosity, so
-              every meal feels unhurried, considered and quietly memorable.
+              {intro?.description || "At Marlo Hotels, the table is composed with the same care as the suites — freshly prepared cuisine, a peaceful dining atmosphere, comfortable seating and warm hospitality. International quality service meets Himalayan generosity, so every meal feels unhurried, considered and quietly memorable."}
             </p>
           </Reveal>
         </div>
-      </section>
+      </section> : null}
 
       {/* 3 — Memorable Experience */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {memorable?.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 md:gap-16 md:px-8 lg:grid-cols-2 lg:gap-20">
           <Reveal direction="left">
             <RoyalImageFrame
-              image={IMAGES.memorable}
+              image={resolveSectionImage(memorable, IMAGES.memorable)}
               sizes="(max-width: 1024px) 100vw, 48vw"
             />
           </Reveal>
           <Reveal direction="right">
-            <p className="eyebrow">The Restaurant</p>
+            <p className="eyebrow">{memorable?.eyebrow || "The Restaurant"}</p>
             <h2 className="font-display mt-5 text-4xl font-medium tracking-[-0.02em] text-forest-950 md:text-5xl">
-              Where Every Meal Becomes a Memorable Experience
+              {memorable?.heading || "Where Every Meal Becomes a Memorable Experience"}
             </h2>
-            <p className="mt-8 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Light falls softly across timber and cream. Tables are spaced for conversation.
-              The kitchen works without spectacle — seasonal produce, careful technique and a
-              service rhythm that never hurries the guest. Whether you arrive for first light
-              breakfast or a lingering dinner, the room holds you with the same quiet luxury
-              that defines Marlo.
-            </p>
-            <p className="mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              From Nepal’s own flavours to familiar international plates, every dish is prepared
-              to be shared, savoured and remembered — hospitality that feels personal, never
-              performative.
-            </p>
+            {memorableParagraphs.map((paragraph, index) => <p key={paragraph} className={index ? "mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70" : "mt-8 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70"}>{paragraph}</p>)}
           </Reveal>
         </div>
-      </section>
+      </section> : null}
 
       {/* 4 — Dining Highlights */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {highlights?.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">Highlights</p>
+            <p className="eyebrow gold-rule justify-center">{highlights?.eyebrow || "Highlights"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Dining Highlights
+              {highlights?.heading || "Dining Highlights"}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              The essentials of a five-star table — freshness, comfort and hospitality held in
-              balance from morning until late evening.
+              {highlights?.description || "The essentials of a five-star table — freshness, comfort and hospitality held in balance from morning until late evening."}
             </p>
           </Reveal>
 
@@ -203,7 +240,7 @@ export function DiningExperience({
             stagger={0.05}
             className="mt-14 grid gap-5 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3 lg:gap-6"
           >
-            {HIGHLIGHTS.map((item) => (
+            {highlightCards.map((item) => (
               <StaggerItem key={item.title}>
                 <article className="group h-full rounded-2xl border border-forest-800/10 bg-cream-50/70 p-7 transition-all duration-500 hover:-translate-y-1 hover:border-gold-500/35 hover:bg-white hover:shadow-luxury-sm md:p-8">
                   <h3 className="font-display text-xl font-medium text-forest-950 transition-colors duration-500 group-hover:text-gold-800 md:text-2xl">
@@ -218,18 +255,18 @@ export function DiningExperience({
             ))}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* 5 — Meal Experience Timeline */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {timeline?.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow gold-rule justify-center">The Day at Table</p>
+            <p className="eyebrow gold-rule justify-center">{timeline?.eyebrow || "The Day at Table"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Meal Experience Timeline
+              {timeline?.heading || "Meal Experience Timeline"}
             </h2>
             <p className="mx-auto mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              A calm passage through the day — timings drawn from Marlo’s live restaurant hours.
+              {timeline?.description || "A calm passage through the day — timings drawn from Marlo’s live restaurant hours."}
             </p>
           </Reveal>
 
@@ -237,7 +274,7 @@ export function DiningExperience({
             stagger={0.1}
             className="relative mt-16 flex flex-col gap-0 md:mt-20 md:flex-row md:items-stretch md:justify-between"
           >
-            {mealTimeline.map((item, index) => (
+            {activeTimeline.map((item, index) => (
               <StaggerItem
                 key={item.step}
                 className="relative flex flex-1 flex-col items-center text-center"
@@ -261,7 +298,7 @@ export function DiningExperience({
                   </p>
                 </div>
 
-                {index < mealTimeline.length - 1 ? (
+                {index < activeTimeline.length - 1 ? (
                   <>
                     <ArrowDown
                       className="my-5 size-4 text-gold-600/70 md:hidden"
@@ -277,25 +314,24 @@ export function DiningExperience({
             ))}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* 6 — Restaurant Experience */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {experience?.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">The Room</p>
+            <p className="eyebrow gold-rule justify-center">{experience?.eyebrow || "The Room"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Restaurant Experience
+              {experience?.heading || "Restaurant Experience"}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              A bright, composed dining space — comfortable seating, fresh ingredients and
-              personalized service in a relaxed atmosphere.
+              {experience?.description || "A bright, composed dining space — comfortable seating, fresh ingredients and personalized service in a relaxed atmosphere."}
             </p>
           </Reveal>
 
           <Reveal className="mt-14 md:mt-16">
             <RoyalImageFrame
-              image={IMAGES.experience}
+              image={resolveSectionImage(experience, IMAGES.experience)}
               sizes="(max-width: 768px) 100vw, min(1200px, 92vw)"
               className="mx-auto max-w-6xl"
             />
@@ -305,7 +341,7 @@ export function DiningExperience({
             stagger={0.08}
             className="mt-14 grid gap-10 sm:grid-cols-2 lg:mt-20 lg:grid-cols-3 lg:gap-x-14 lg:gap-y-12"
           >
-            {EXPERIENCE_POINTS.map((item) => (
+            {experienceCards.map((item) => (
               <StaggerItem key={item.title}>
                 <h3 className="font-display text-2xl font-medium text-forest-950 md:text-[1.65rem]">
                   {item.title}
@@ -317,15 +353,15 @@ export function DiningExperience({
             ))}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* 7 — Why Guests Love Dining */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {why?.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">Why Marlo</p>
+            <p className="eyebrow gold-rule justify-center">{why?.eyebrow || "Why Marlo"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Why Guests Love Dining With Us
+              {why?.heading || "Why Guests Love Dining With Us"}
             </h2>
           </Reveal>
 
@@ -333,7 +369,7 @@ export function DiningExperience({
             stagger={0.04}
             className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:mt-16"
           >
-            {WHY.map((item) => {
+            {whyCards.map((item) => {
               const Icon = item.icon;
               return (
                 <StaggerItem key={item.title}>
@@ -350,19 +386,18 @@ export function DiningExperience({
             })}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* 8 — Gallery */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {gallery?.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">Gallery</p>
+            <p className="eyebrow gold-rule justify-center">{gallery?.eyebrow || "Gallery"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              The Dining Room, Framed
+              {gallery?.heading || "The Dining Room, Framed"}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Tables, buffet light and the quiet architecture of hospitality — shown in full,
-              never cropped for effect.
+              {gallery?.description || "Tables, buffet light and the quiet architecture of hospitality — shown in full, never cropped for effect."}
             </p>
           </Reveal>
 
@@ -370,7 +405,7 @@ export function DiningExperience({
             stagger={0.07}
             className="mt-14 grid gap-6 sm:grid-cols-2 lg:mt-16 lg:grid-cols-2 lg:gap-8"
           >
-            {IMAGES.gallery.map((image) => (
+            {activeGallery.map((image) => (
               <StaggerItem key={image.src}>
                 <RoyalImageFrame
                   image={image}
@@ -380,13 +415,13 @@ export function DiningExperience({
             ))}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* 9 — CTA */}
-      <section className="relative overflow-hidden bg-forest-950 py-28 md:py-36">
+      {cta?.enabled !== false ? <section className="relative overflow-hidden bg-forest-950 py-28 md:py-36">
         <div className="absolute inset-0">
           <Image
-            src={IMAGES.cta.src}
+            src={resolveSectionImage(cta, IMAGES.cta).src}
             alt=""
             fill
             quality={100}
@@ -400,18 +435,17 @@ export function DiningExperience({
         <div className="relative mx-auto max-w-3xl px-5 text-center md:px-8">
           <Reveal>
             <p className="eyebrow text-gold-400 gold-rule justify-center">
-              Reservations
+              {cta?.eyebrow || "Reservations"}
             </p>
             <h2 className="font-display mt-6 text-4xl font-medium text-ivory md:text-5xl lg:text-[3.25rem]">
-              Enjoy Every Meal at Marlo Hotels
+              {cta?.heading || "Enjoy Every Meal at Marlo Hotels"}
             </h2>
             <p className="mx-auto mt-7 max-w-xl text-[15.5px] leading-[1.85] font-light text-cream-200/80">
-              Begin with a room, then a table — breakfast through dinner, composed with Marlo
-              hospitality for guests who prefer the unhurried meal.
+              {cta?.description || "Begin with a room, then a table — breakfast through dinner, composed with Marlo hospitality for guests who prefer the unhurried meal."}
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
               <Button asChild variant="gold" size="lg">
-                <Link href="/rooms">Reserve Your Stay</Link>
+                <Link href={cta?.buttonLink || "/rooms"}>{cta?.buttonText || "Reserve Your Stay"}</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link href="/contact?subject=Dining%20reservation">Contact Us</Link>
@@ -419,7 +453,7 @@ export function DiningExperience({
             </div>
           </Reveal>
         </div>
-      </section>
+      </section> : null}
     </>
   );
 }

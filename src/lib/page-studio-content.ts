@@ -22,6 +22,7 @@ function mergeSection(
     if (typeof value === "boolean") return value;
     return value ?? base[key];
   };
+  const savedGallery = Array.isArray(saved.gallery) ? saved.gallery : null;
   return {
     ...base,
     enabled: saved.enabled !== false,
@@ -30,8 +31,8 @@ function mergeSection(
     description: String(pick("description") || ""),
     buttonText: String(pick("buttonText") || ""),
     buttonLink: String(pick("buttonLink") || ""),
-    videoUrl: String(saved.videoUrl || ""),
-    videoAssetId: saved.videoAssetId ?? null,
+    videoUrl: String(saved.videoUrl || base.videoUrl || ""),
+    videoAssetId: saved.videoAssetId ?? base.videoAssetId ?? null,
     hours: String(pick("hours") || ""),
     features: String(pick("features") || ""),
     faq: String(pick("faq") || ""),
@@ -39,18 +40,37 @@ function mergeSection(
     seoTitle: String(pick("seoTitle") || ""),
     seoDescription: String(pick("seoDescription") || ""),
     image: {
-      assetId: saved.image?.assetId ?? null,
-      src: String(saved.image?.src || ""),
+      assetId: saved.image?.assetId ?? base.image.assetId ?? null,
+      // Empty saved src falls back to seeded defaults so pages keep photos until replaced.
+      src: String(saved.image?.src || base.image.src || ""),
       alt: String(saved.image?.alt || base.image.alt || base.heading),
     },
-    gallery: Array.isArray(saved.gallery)
-      ? saved.gallery.map((item) => ({
-          assetId: item?.assetId ?? null,
-          src: String(item?.src || ""),
-          alt: String(item?.alt || base.heading),
-        }))
-      : [],
+    gallery:
+      savedGallery && savedGallery.length
+        ? savedGallery.map((item) => ({
+            assetId: item?.assetId ?? null,
+            src: String(item?.src || ""),
+            alt: String(item?.alt || base.heading),
+          }))
+        : base.gallery,
   };
+}
+
+export function resolveSectionImage(
+  section: StudioSectionData | undefined,
+  fallback: { src: string; alt: string }
+) {
+  return {
+    src: section?.image?.src || fallback.src,
+    alt: section?.image?.alt || fallback.alt,
+  };
+}
+
+export function splitParagraphs(text: string) {
+  return text
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean);
 }
 
 export async function getPageStudioDocument(

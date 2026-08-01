@@ -118,7 +118,7 @@ export default async function DiningPage() {
         ]}
       />
 
-      <DiningExperience mealTimeline={mealTimeline} />
+      <DiningExperience doc={doc} mealTimeline={mealTimeline} />
     </>
   );
 }

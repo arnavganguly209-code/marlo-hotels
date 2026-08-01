@@ -8,6 +8,7 @@ import { PageHero } from "@/components/shared/page-hero";
 import { getGalleryContent } from "@/lib/gallery-content";
 import {
   getPageStudioDocument,
+  resolveSectionImage,
   sectionItems,
 } from "@/lib/page-studio-content";
 import { buildMetadata } from "@/lib/seo";
@@ -81,12 +82,13 @@ export default async function ExperiencesPage() {
   };
 
   // Only three gallery photographs — clear frames, never a crowded collage.
-  const editorial =
+  const editorialFallback =
     pickGalleryImage(galleryImages, [/gate/i, /architecture/i, /entrance/i], used) ||
     pickGalleryImage(galleryImages, [/./], used) ||
     fallbackFrame;
+  const editorial = resolveSectionImage(doc.editorial, editorialFallback);
 
-  const accent =
+  const accentFallback =
     pickGalleryImage(
       galleryImages,
       [/expri/i, /restro/i, /dining/i, /terrace/i, /spa/i],
@@ -94,31 +96,43 @@ export default async function ExperiencesPage() {
     ) ||
     pickGalleryImage(galleryImages, [/./], used) ||
     fallbackFrame;
+  const accent = resolveSectionImage(doc.accent, accentFallback);
 
-  const cta =
+  const ctaFallback =
     pickGalleryImage(galleryImages, [/spa/i, /room/i, /gate/i], used) || accent;
+  const cta = resolveSectionImage(doc.cta, ctaFallback);
 
   return (
     <>
-      {/* Hero cover — Orbit / studio image unchanged */}
-      <PageHero
-        eyebrow={hero?.eyebrow || "Experiences"}
-        title={hero?.heading || "The valley, opened for you"}
-        description={hero?.description}
-        image={{
-          src: hero?.image?.src || "",
-          alt: hero?.image?.alt || "Experiences at Marlo Hotels",
-        }}
-        videoUrl={hero?.videoUrl || undefined}
-        crumbs={[
-          { label: "Home", href: "/" },
-          { label: "Experiences", href: "/experiences" },
-        ]}
-      />
+      {hero?.enabled !== false ? (
+        <PageHero
+          eyebrow={hero?.eyebrow || "Experiences"}
+          title={hero?.heading || "The valley, opened for you"}
+          description={hero?.description}
+          image={{
+            src: hero?.image?.src || "",
+            alt: hero?.image?.alt || "Experiences at Marlo Hotels",
+          }}
+          videoUrl={hero?.videoUrl || undefined}
+          crumbs={[
+            { label: "Home", href: "/" },
+            { label: "Experiences", href: "/experiences" },
+          ]}
+        />
+      ) : null}
 
       <ExperiencesShowcase
         experiences={listing}
         images={{ editorial, accent, cta }}
+        sections={{
+          intro: doc.intro,
+          editorial: doc.editorial,
+          listing: doc.listing,
+          features: doc.features,
+          accent: doc.accent,
+          cta: doc.cta,
+        }}
+        features={sectionItems(doc.features)}
       />
     </>
   );

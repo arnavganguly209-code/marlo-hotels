@@ -19,6 +19,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { MediaField, MediaPicker } from "@/components/orbit/media-picker";
 import { syncPageCoverPlacement } from "@/components/orbit/page-cover-editor";
+import {
+  StudioFeaturesEditor,
+  StudioHoursEditor,
+  StudioItemsEditor,
+} from "@/components/orbit/studio-lines-editor";
 import { useToast } from "@/components/orbit/toast";
 import { withMediaCacheBust } from "@/lib/media-cache";
 import {
@@ -107,6 +112,12 @@ export function PageStudioEditor({
   const activeMeta = sections.find((item) => item.key === active) || sections[0];
   const value = doc[active] || emptyStudioSection();
   const fields = new Set(activeMeta?.fields || ["image"]);
+  const showButtonFields =
+    ["hero", "cta", "accent"].includes(active) ||
+    Boolean(value.buttonText || value.buttonLink);
+  const photoSections = sections.filter((section) =>
+    section.fields?.some((field) => field === "image" || field === "gallery")
+  );
 
   function update(next: Partial<StudioSectionData>) {
     setDoc((current) => ({
@@ -305,6 +316,53 @@ export function PageStudioEditor({
                 </p>
               </div>
 
+              {photoSections.length ? (
+                <div>
+                  <p className="mb-3 text-[9px] font-semibold tracking-[0.16em] text-[#4e6258] uppercase">
+                    Page photos
+                  </p>
+                  <div className="flex gap-3 overflow-x-auto pb-1">
+                    {photoSections.map((section) => {
+                      const sectionValue = doc[section.key] || emptyStudioSection();
+                      const photo =
+                        sectionValue.image.src || sectionValue.gallery[0]?.src || "";
+                      return (
+                        <button
+                          key={section.key}
+                          type="button"
+                          onClick={() => setActive(section.key)}
+                          className={cn(
+                            "w-28 shrink-0 overflow-hidden rounded-xl border bg-white text-left transition",
+                            active === section.key
+                              ? "border-[#c4943c] ring-2 ring-[#c4943c]/20"
+                              : "border-[var(--orbit-border)] hover:border-[#c4943c]/50"
+                          )}
+                        >
+                          <div className="relative aspect-[4/3] bg-[#eef1ee]">
+                            {photo ? (
+                              <Image
+                                src={photo}
+                                alt=""
+                                fill
+                                className="object-cover"
+                                unoptimized={photo.startsWith("/media/")}
+                              />
+                            ) : (
+                              <div className="grid h-full place-items-center text-[#a8b0ac]">
+                                <ImagePlus className="size-5" />
+                              </div>
+                            )}
+                          </div>
+                          <span className="block truncate px-2 py-2 text-[10px] font-semibold text-[#3d5248]">
+                            {section.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
               {active === "hero" && fields.has("image") ? (
                 <div className="relative aspect-video min-h-[240px] w-full overflow-hidden rounded-2xl border border-[var(--orbit-border)] bg-[#eef1ee]">
                   {value.image.src ? (
@@ -347,8 +405,12 @@ export function PageStudioEditor({
                   ["eyebrow", "Eyebrow"],
                   ["heading", "Heading"],
                   ["description", "Description"],
-                  ["buttonText", "Button text"],
-                  ["buttonLink", "Button link"],
+                  ...(showButtonFields
+                    ? [
+                        ["buttonText", "Button text"],
+                        ["buttonLink", "Button link"],
+                      ] as const
+                    : []),
                 ] as const
               ).map(([key, label]) => (
                 <label key={key} className="block">
@@ -379,7 +441,11 @@ export function PageStudioEditor({
               {fields.has("image") ? (
                 <div className="space-y-2">
                   <MediaField
-                    label="Cover / Section Image"
+                    label={
+                      active === "hero"
+                        ? "Cover image — replace / remove"
+                        : "Section photo — replace / remove"
+                    }
                     value={{
                       assetId: value.image.assetId,
                       url: value.image.src || null,
@@ -456,9 +522,20 @@ export function PageStudioEditor({
                     <p className="text-[9px] font-semibold tracking-[0.16em] text-[#4e6258] uppercase">
                       Gallery Images
                     </p>
+                    {moduleSlug === "dining" ? (
+                      <span className="text-[10px] font-semibold text-[#62716b]">
+                        {value.gallery.length} / 4 photos
+                      </span>
+                    ) : null}
                     <button
                       type="button"
-                      onClick={() => setGalleryOpen(true)}
+                      onClick={() => {
+                        if (moduleSlug === "dining" && value.gallery.length >= 4) {
+                          push("Dining gallery is limited to 4 photos", "info");
+                          return;
+                        }
+                        setGalleryOpen(true);
+                      }}
                       className="flex h-9 items-center gap-1.5 rounded-lg border border-[#17362b]/12 bg-white px-3 text-[10px] font-semibold tracking-[0.12em] uppercase"
                     >
                       <Plus className="size-3.5" /> Add image
@@ -528,63 +605,36 @@ export function PageStudioEditor({
               ) : null}
 
               {fields.has("hours") ? (
-                <label className="block">
-                  <span className="mb-2 block text-[9px] font-semibold tracking-[0.16em] text-[#4e6258] uppercase">
-                    Opening Hours (one per line)
-                  </span>
-                  <textarea
-                    rows={4}
-                    value={value.hours}
-                    onChange={(event) => update({ hours: event.target.value })}
-                    placeholder="Breakfast | 7:00 AM – 10:30 AM"
-                    className="w-full rounded-xl border border-[#17362b]/12 bg-white px-4 py-3 text-sm outline-none focus:border-[#c4943c]/50"
-                  />
-                </label>
+                <StudioHoursEditor
+                  value={value.hours}
+                  onChange={(hours) => update({ hours })}
+                />
               ) : null}
 
               {fields.has("features") ? (
-                <label className="block">
-                  <span className="mb-2 block text-[9px] font-semibold tracking-[0.16em] text-[#4e6258] uppercase">
-                    Features (one per line)
-                  </span>
-                  <textarea
-                    rows={5}
-                    value={value.features}
-                    onChange={(event) =>
-                      update({ features: event.target.value })
-                    }
-                    className="w-full rounded-xl border border-[#17362b]/12 bg-white px-4 py-3 text-sm outline-none focus:border-[#c4943c]/50"
-                  />
-                </label>
+                <StudioFeaturesEditor
+                  value={value.features}
+                  onChange={(features) => update({ features })}
+                  title="Features"
+                />
               ) : null}
 
               {fields.has("items") ? (
-                <label className="block">
-                  <span className="mb-2 block text-[9px] font-semibold tracking-[0.16em] text-[#4e6258] uppercase">
-                    Cards / Items (Title | Description per line)
-                  </span>
-                  <textarea
-                    rows={8}
-                    value={value.items}
-                    onChange={(event) => update({ items: event.target.value })}
-                    placeholder="Signature Massage | Deep relaxation without published pricing"
-                    className="w-full rounded-xl border border-[#17362b]/12 bg-white px-4 py-3 text-sm outline-none focus:border-[#c4943c]/50"
-                  />
-                </label>
+                <StudioItemsEditor
+                  value={value.items}
+                  onChange={(items) => update({ items })}
+                />
               ) : null}
 
               {fields.has("faq") ? (
-                <label className="block">
-                  <span className="mb-2 block text-[9px] font-semibold tracking-[0.16em] text-[#4e6258] uppercase">
-                    FAQ (Question | Answer per line)
-                  </span>
-                  <textarea
-                    rows={6}
-                    value={value.faq}
-                    onChange={(event) => update({ faq: event.target.value })}
-                    className="w-full rounded-xl border border-[#17362b]/12 bg-white px-4 py-3 text-sm outline-none focus:border-[#c4943c]/50"
-                  />
-                </label>
+                <StudioItemsEditor
+                  value={value.faq}
+                  onChange={(faq) => update({ faq })}
+                  title="FAQ cards"
+                  addLabel="Add question"
+                  titleLabel="Question"
+                  descriptionLabel="Answer"
+                />
               ) : null}
 
               {fields.has("seo") || active === "seo" ? (
@@ -720,6 +770,11 @@ export function PageStudioEditor({
         kind="IMAGE"
         title="Add gallery image"
         onSelect={(asset) => {
+          if (moduleSlug === "dining" && value.gallery.length >= 4) {
+            push("Dining gallery is limited to 4 photos", "info");
+            setGalleryOpen(false);
+            return;
+          }
           const next: StudioImage = {
             assetId: asset.id,
             src: withMediaCacheBust(asset.url),

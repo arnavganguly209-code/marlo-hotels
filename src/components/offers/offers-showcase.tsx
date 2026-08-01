@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { RoyalImageFrame } from "@/components/shared/royal-image-frame";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
+import { splitParagraphs } from "@/lib/page-studio-content";
+import type { StudioSectionData } from "@/lib/orbit/page-studio";
 
 export type OfferCardData = {
   title: string;
@@ -54,6 +56,8 @@ const PRIVILEGES = [
 export function OffersShowcase({
   offers,
   images,
+  sections,
+  privileges,
 }: {
   offers: OfferCardData[];
   images: {
@@ -62,30 +66,34 @@ export function OffersShowcase({
     pair?: OfferImage;
     cta?: OfferImage;
   };
+  sections: Record<
+    "intro" | "editorial" | "listing" | "privileges" | "accent" | "pair" | "cta",
+    StudioSectionData
+  >;
+  privileges: OfferCardData[];
 }) {
   const cards = offers.slice(0, 6);
+  const privilegeCards = privileges.slice(0, 4);
 
   return (
     <>
       {/* Intro */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-40">
+      {sections.intro.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-40">
         <div className="mx-auto max-w-3xl px-5 text-center md:px-8">
           <Reveal>
-            <p className="eyebrow gold-rule justify-center">Direct Privileges</p>
+            <p className="eyebrow gold-rule justify-center">{sections.intro.eyebrow}</p>
             <h2 className="font-display mt-6 text-[2.45rem] leading-[1.1] font-semibold tracking-[-0.018em] text-balance text-forest-950 sm:text-5xl lg:text-[3.4rem] lg:leading-[1.06]">
-              Offers Without Noise
+              {sections.intro.heading}
             </h2>
             <p className="mx-auto mt-8 max-w-2xl text-[15.5px] leading-[1.85] font-light tracking-[0.014em] text-charcoal-900/70 sm:text-base">
-              Seasonal privileges and composed packages for guests who book direct. Each offer is
-              considered — never crowded with promotions — and refined quietly for your stay in the
-              valley.
+              {sections.intro.description}
             </p>
           </Reveal>
         </div>
-      </section>
+      </section> : null}
 
       {/* Editorial — one clear gallery frame */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {sections.editorial.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 md:gap-16 md:px-8 lg:grid-cols-2 lg:gap-20">
           <Reveal direction="left">
             <RoyalImageFrame
@@ -94,32 +102,29 @@ export function OffersShowcase({
             />
           </Reveal>
           <Reveal direction="right">
-            <p className="eyebrow">Stay With Intention</p>
+            <p className="eyebrow">{sections.editorial.eyebrow}</p>
             <h2 className="font-display mt-5 text-4xl font-medium tracking-[-0.02em] text-forest-950 md:text-5xl">
-              Considered Ways to Arrive
+              {sections.editorial.heading}
             </h2>
-            <p className="mt-8 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              From advance purchase to wellness escapes, every privilege is shaped for guests who
-              prefer clarity over clutter. Terms remain private; hospitality remains unhurried.
-            </p>
-            <p className="mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Select a package that suits your journey, or enquire and we will compose something
-              quieter still — rooms, rituals and table, held together.
-            </p>
+            {splitParagraphs(sections.editorial.description).map((paragraph, index) => (
+              <p key={paragraph} className={`${index ? "mt-6" : "mt-8"} text-[15.5px] leading-[1.85] font-light text-charcoal-900/70`}>
+                {paragraph}
+              </p>
+            ))}
           </Reveal>
         </div>
-      </section>
+      </section> : null}
 
       {/* Featured offers — text-forward, no photo clutter */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {sections.listing.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">This Season</p>
+            <p className="eyebrow gold-rule justify-center">{sections.listing.eyebrow}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Featured Privileges
+              {sections.listing.heading}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Book direct to secure current terms. Where a code is shown, apply it at checkout.
+              {sections.listing.description}
             </p>
           </Reveal>
 
@@ -215,24 +220,29 @@ export function OffersShowcase({
             </Reveal>
           )}
         </div>
-      </section>
+      </section> : null}
 
       {/* Why book direct */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {sections.privileges.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">Why Direct</p>
+            <p className="eyebrow gold-rule justify-center">{sections.privileges.eyebrow}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Privileges Held Quietly
+              {sections.privileges.heading}
             </h2>
+            {sections.privileges.description ? (
+              <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
+                {sections.privileges.description}
+              </p>
+            ) : null}
           </Reveal>
 
           <Stagger
             stagger={0.04}
             className="mt-14 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:mt-16"
           >
-            {PRIVILEGES.map((item) => {
-              const Icon = item.icon;
+            {privilegeCards.map((item, index) => {
+              const Icon = PRIVILEGES[index % PRIVILEGES.length].icon;
               return (
                 <StaggerItem key={item.title}>
                   <div className="flex h-full flex-col rounded-2xl border border-forest-800/10 bg-ivory/90 px-5 py-7 transition-colors duration-500 hover:border-gold-500/30 hover:bg-white md:px-6 md:py-8">
@@ -251,26 +261,25 @@ export function OffersShowcase({
             })}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* Accent frame + optional pair */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {sections.accent.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <Reveal>
-              <p className="eyebrow">Composed for Two — or the Family</p>
+              <p className="eyebrow">{sections.accent.eyebrow}</p>
               <h2 className="font-display mt-5 text-4xl font-medium text-forest-950 md:text-5xl">
-                Packages Shaped Around Your Stay
+                {sections.accent.heading}
               </h2>
               <p className="mt-8 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-                Honeymoon quiet, wellness mornings, or an advance-purchase rate that simply makes
-                room for longer — each package is held with the same care as your suite and table.
+                {sections.accent.description}
               </p>
               <Link
-                href="/contact?subject=Offer%20enquiry"
+                href={sections.accent.buttonLink || "/contact?subject=Offer%20enquiry"}
                 className="mt-8 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.2em] text-forest-950 uppercase transition-colors hover:text-gold-700"
               >
-                Speak with reservations <ArrowRight className="size-3.5" />
+                {sections.accent.buttonText || "Speak with reservations"} <ArrowRight className="size-3.5" />
               </Link>
             </Reveal>
             <Reveal direction="left" className="order-first lg:order-last">
@@ -281,7 +290,7 @@ export function OffersShowcase({
             </Reveal>
           </div>
 
-          {images.pair?.src ? (
+          {sections.pair.enabled !== false && images.pair?.src ? (
             <Reveal className="mx-auto mt-16 max-w-3xl lg:mt-20">
               <RoyalImageFrame
                 image={images.pair}
@@ -290,10 +299,10 @@ export function OffersShowcase({
             </Reveal>
           ) : null}
         </div>
-      </section>
+      </section> : null}
 
       {/* CTA */}
-      <section className="relative overflow-hidden bg-forest-950 py-28 md:py-36">
+      {sections.cta.enabled !== false ? <section className="relative overflow-hidden bg-forest-950 py-28 md:py-36">
         {images.cta?.src ? (
           <div className="absolute inset-0">
             <Image
@@ -314,17 +323,16 @@ export function OffersShowcase({
 
         <div className="relative mx-auto max-w-3xl px-5 text-center md:px-8">
           <Reveal>
-            <p className="eyebrow text-gold-400 gold-rule justify-center">Book Direct</p>
+            <p className="eyebrow text-gold-400 gold-rule justify-center">{sections.cta.eyebrow}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-ivory md:text-5xl lg:text-[3.25rem]">
-              Continue to Rooms
+              {sections.cta.heading}
             </h2>
             <p className="mx-auto mt-7 max-w-xl text-[15.5px] leading-[1.85] font-light text-cream-200/80">
-              Select a room, complete your booking, and apply your offer code at checkout when one
-              is provided. Our team remains available for private arrangements.
+              {sections.cta.description}
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
               <Button asChild variant="gold" size="lg">
-                <Link href="/rooms">Explore Rooms & Book</Link>
+                <Link href={sections.cta.buttonLink || "/rooms"}>{sections.cta.buttonText || "Explore Rooms & Book"}</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link href="/contact?subject=Offer%20enquiry">Enquire</Link>
@@ -332,7 +340,7 @@ export function OffersShowcase({
             </div>
           </Reveal>
         </div>
-      </section>
+      </section> : null}
     </>
   );
 }

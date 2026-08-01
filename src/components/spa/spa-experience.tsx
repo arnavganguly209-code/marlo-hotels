@@ -16,6 +16,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { RoyalImageFrame } from "@/components/shared/royal-image-frame";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
+import type { PageStudioDocument } from "@/lib/page-studio-content";
+import {
+  resolveSectionImage,
+  sectionFeatures,
+  sectionItems,
+  splitParagraphs,
+} from "@/lib/page-studio-content";
 
 const IMAGES = {
   sanctuary: {
@@ -175,73 +182,92 @@ const EXPERIENCE_POINTS = [
   },
 ] as const;
 
-export function SpaExperience() {
+function facilityIcon(label: string) {
+  const normalized = label.toLowerCase();
+  const match = FACILITIES.find((facility) => {
+    const candidate = facility.label.toLowerCase();
+    return normalized.includes(candidate) || candidate.includes(normalized);
+  });
+  return match?.icon || Sparkles;
+}
+
+export function SpaExperience({ doc }: { doc: PageStudioDocument }) {
+  const intro = doc.intro;
+  const sanctuary = doc.sanctuary;
+  const experience = doc.experience;
+  const treatments = doc.treatments;
+  const facilities = doc.facilities;
+  const why = doc.why;
+  const journey = doc.journey;
+  const cta = doc.cta;
+  const sanctuaryParagraphs = splitParagraphs(sanctuary?.description || "");
+  const memorableExperienceItems = sectionItems(experience);
+  const treatmentItems = sectionItems(treatments);
+  const facilityItems = sectionFeatures(facilities);
+  const whyItems = sectionItems(why);
+  const journeyItems = sectionItems(journey);
+  const experienceCards = memorableExperienceItems.length
+    ? memorableExperienceItems
+    : EXPERIENCE_POINTS;
+  const treatmentCards = treatmentItems.length
+    ? treatmentItems
+    : SERVICES.map((service) => ({
+        title: service.name,
+        description: service.description,
+      }));
+
   return (
     <>
       {/* 1 — Introduction */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-40">
+      {intro?.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-40">
         <div className="mx-auto max-w-3xl px-5 text-center md:px-8">
           <Reveal>
-            <p className="eyebrow gold-rule justify-center">Marlo Spa</p>
+            <p className="eyebrow gold-rule justify-center">{intro?.eyebrow || "Marlo Spa"}</p>
             <h2 className="font-display mt-6 text-[2.45rem] leading-[1.1] font-semibold tracking-[-0.018em] text-balance text-forest-950 sm:text-5xl lg:text-[3.4rem] lg:leading-[1.06]">
-              Wellness Inspired by the Himalayas
+              {intro?.heading || "Wellness Inspired by the Himalayas"}
             </h2>
             <p className="mx-auto mt-8 max-w-2xl text-[15.5px] leading-[1.85] font-light tracking-[0.014em] text-charcoal-900/70 sm:text-base">
-              Here, wellness is composed like hospitality — unhurried, precise and deeply personal.
-              Drawing on Himalayan healing traditions and contemporary therapy, Marlo Spa invites
-              you into balance: warm oils, quiet suites and rituals that restore body, mind and
-              spirit after travel through the valley.
+              {intro?.description || "Here, wellness is composed like hospitality — unhurried, precise and deeply personal. Drawing on Himalayan healing traditions and contemporary therapy, Marlo Spa invites you into balance: warm oils, quiet suites and rituals that restore body, mind and spirit after travel through the valley."}
             </p>
           </Reveal>
         </div>
-      </section>
+      </section> : null}
 
       {/* 2 — Sanctuary of Calm */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {sanctuary?.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 md:gap-16 md:px-8 lg:grid-cols-2 lg:gap-20">
           <Reveal direction="left">
             <RoyalImageFrame
-              image={IMAGES.sanctuary}
+              image={resolveSectionImage(sanctuary, IMAGES.sanctuary)}
               sizes="(max-width: 1024px) 100vw, 48vw"
             />
           </Reveal>
           <Reveal direction="right">
-            <p className="eyebrow">Atmosphere</p>
+            <p className="eyebrow">{sanctuary?.eyebrow || "Atmosphere"}</p>
             <h2 className="font-display mt-5 text-4xl font-medium tracking-[-0.02em] text-forest-950 md:text-5xl">
-              A Sanctuary of Calm
+              {sanctuary?.heading || "A Sanctuary of Calm"}
             </h2>
-            <p className="mt-8 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Step from the lobby into a softer register of light and sound. Warm timber, amber
-              glow and carefully considered quiet prepare you for what follows — not a schedule of
-              treatments, but a passage into stillness. Our spa is designed as a refuge within the
-              hotel: private enough for true rest, generous enough for unhurried arrival.
-            </p>
-            <p className="mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Whether you come after a day among the valley&apos;s temples or before an evening at
-              Amaya, the sanctuary meets you without hurry — herbal tea, soft seating and the
-              assurance that every ritual begins in calm.
-            </p>
+            {sanctuaryParagraphs.map((paragraph, index) => <p key={paragraph} className={index ? "mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70" : "mt-8 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70"}>{paragraph}</p>)}
           </Reveal>
         </div>
-      </section>
+      </section> : null}
 
       {/* 3 — Luxury Spa Experience */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {experience?.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">The Experience</p>
+            <p className="eyebrow gold-rule justify-center">{experience?.eyebrow || "The Experience"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Luxury Spa Experience
+              {experience?.heading || "Luxury Spa Experience"}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Private rooms, considered materials and therapists who listen first — a spa experience
-              composed to the standard of the world&apos;s great houses of hospitality.
+              {experience?.description || "Private rooms, considered materials and therapists who listen first — a spa experience composed to the standard of the world's great houses of hospitality."}
             </p>
           </Reveal>
 
           <Reveal className="mt-14 md:mt-16">
             <RoyalImageFrame
-              image={IMAGES.experience}
+              image={resolveSectionImage(experience, IMAGES.experience)}
               sizes="(max-width: 768px) 100vw, min(1200px, 92vw)"
               className="mx-auto max-w-6xl"
             />
@@ -251,7 +277,7 @@ export function SpaExperience() {
             stagger={0.08}
             className="mt-14 grid gap-10 sm:grid-cols-2 lg:mt-20 lg:gap-x-16 lg:gap-y-14"
           >
-            {EXPERIENCE_POINTS.map((item) => (
+            {experienceCards.map((item) => (
               <StaggerItem key={item.title}>
                 <h3 className="font-display text-2xl font-medium text-forest-950 md:text-[1.65rem]">
                   {item.title}
@@ -263,19 +289,18 @@ export function SpaExperience() {
             ))}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* 4 — Signature Services */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {treatments?.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-3xl text-center">
-            <p className="eyebrow gold-rule justify-center">Treatments</p>
+            <p className="eyebrow gold-rule justify-center">{treatments?.eyebrow || "Treatments"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Our Signature Wellness Services
+              {treatments?.heading || "Our Signature Wellness Services"}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              Rituals composed without published rates — enquire with the spa desk for availability
-              and a journey written around your stay.
+              {treatments?.description || "Rituals composed without published rates — enquire with the spa desk for availability and a journey written around your stay."}
             </p>
           </Reveal>
 
@@ -283,11 +308,11 @@ export function SpaExperience() {
             stagger={0.05}
             className="mt-14 grid gap-5 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3 lg:gap-6"
           >
-            {SERVICES.map((service) => (
-              <StaggerItem key={service.name}>
+            {treatmentCards.map((service) => (
+              <StaggerItem key={service.title}>
                 <article className="group h-full rounded-2xl border border-forest-800/10 bg-ivory/80 p-7 transition-all duration-500 hover:-translate-y-1 hover:border-gold-500/35 hover:bg-white hover:shadow-luxury-sm md:p-8">
                   <h3 className="font-display text-xl font-medium text-forest-950 transition-colors duration-500 group-hover:text-gold-800 md:text-2xl">
-                    {service.name}
+                    {service.title}
                   </h3>
                   <span className="mt-4 block h-px w-10 bg-gold-500/50 transition-all duration-500 group-hover:w-16" />
                   <p className="mt-5 text-sm leading-relaxed font-light text-charcoal-900/65">
@@ -298,21 +323,20 @@ export function SpaExperience() {
             ))}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* 5 — Spa Facilities */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {facilities?.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
             <div>
               <Reveal>
-                <p className="eyebrow">Amenities</p>
+                <p className="eyebrow">{facilities?.eyebrow || "Amenities"}</p>
                 <h2 className="font-display mt-5 text-4xl font-medium text-forest-950 md:text-5xl">
-                  Spa Facilities
+                  {facilities?.heading || "Spa Facilities"}
                 </h2>
                 <p className="mt-6 max-w-xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-                  Every space is arranged for ease — from the privacy of treatment suites to the
-                  glow of the jacuzzi and the quiet of the relaxation lounge.
+                  {facilities?.description || "Every space is arranged for ease — from the privacy of treatment suites to the glow of the jacuzzi and the quiet of the relaxation lounge."}
                 </p>
               </Reveal>
 
@@ -320,16 +344,16 @@ export function SpaExperience() {
                 stagger={0.04}
                 className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-2 md:gap-5"
               >
-                {FACILITIES.map((item) => {
-                  const Icon = item.icon;
+                {(facilityItems.length ? facilityItems : FACILITIES.map((item) => item.label)).map((label) => {
+                  const Icon = facilityIcon(label);
                   return (
-                    <StaggerItem key={item.label}>
+                    <StaggerItem key={label}>
                       <div className="flex items-start gap-3.5 rounded-xl border border-forest-800/8 bg-cream-50/80 px-4 py-4 transition-colors duration-500 hover:border-gold-500/30 hover:bg-white md:px-5 md:py-5">
                         <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full border border-gold-500/30 text-gold-700">
                           <Icon className="size-4" strokeWidth={1.5} />
                         </span>
                         <p className="pt-1.5 text-[13px] leading-snug font-medium tracking-[0.02em] text-forest-950 md:text-sm">
-                          {item.label}
+                          {label}
                         </p>
                       </div>
                     </StaggerItem>
@@ -340,39 +364,38 @@ export function SpaExperience() {
 
             <Reveal direction="left" className="order-first lg:order-last">
               <RoyalImageFrame
-                image={IMAGES.facilities}
+                image={resolveSectionImage(facilities, IMAGES.facilities)}
                 sizes="(max-width: 1024px) 100vw, 42vw"
               />
             </Reveal>
           </div>
         </div>
-      </section>
+      </section> : null}
 
       {/* 6 — Why Choose Our Spa */}
-      <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
+      {why?.enabled !== false ? <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid items-start gap-14 lg:grid-cols-2 lg:gap-20">
             <Reveal className="lg:sticky lg:top-32">
               <RoyalImageFrame
-                image={IMAGES.why}
+                image={resolveSectionImage(why, IMAGES.why)}
                 sizes="(max-width: 1024px) 100vw, 45vw"
               />
             </Reveal>
 
             <div>
               <Reveal>
-                <p className="eyebrow">Why Marlo Spa</p>
+                <p className="eyebrow">{why?.eyebrow || "Why Marlo Spa"}</p>
                 <h2 className="font-display mt-5 text-4xl font-medium text-forest-950 md:text-5xl">
-                  Why Choose Our Spa
+                  {why?.heading || "Why Choose Our Spa"}
                 </h2>
                 <p className="mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-                  Not an amenity checklist — a considered house of wellness within Marlo Hotels,
-                  where Himalayan tradition meets international five-star care.
+                  {why?.description || "Not an amenity checklist — a considered house of wellness within Marlo Hotels, where Himalayan tradition meets international five-star care."}
                 </p>
               </Reveal>
 
               <div className="mt-12 space-y-8 border-t border-forest-800/10 pt-2">
-                {WHY.map((item, index) => (
+                {(whyItems.length ? whyItems : WHY).map((item, index) => (
                   <Reveal key={item.title} delay={index * 0.04}>
                     <div className="border-b border-forest-800/10 pb-8">
                       <h3 className="font-display text-2xl font-medium text-forest-950">
@@ -388,18 +411,18 @@ export function SpaExperience() {
             </div>
           </div>
         </div>
-      </section>
+      </section> : null}
 
       {/* 7 — Wellness Journey */}
-      <section className="bg-ivory py-24 md:py-32 lg:py-36">
+      {journey?.enabled !== false ? <section className="bg-ivory py-24 md:py-32 lg:py-36">
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <Reveal className="mx-auto max-w-2xl text-center">
-            <p className="eyebrow gold-rule justify-center">Your Path</p>
+            <p className="eyebrow gold-rule justify-center">{journey?.eyebrow || "Your Path"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-forest-950 md:text-5xl">
-              Wellness Journey
+              {journey?.heading || "Wellness Journey"}
             </h2>
             <p className="mx-auto mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              A simple, elegant passage from arrival to refreshment — every step held with care.
+              {journey?.description || "A simple, elegant passage from arrival to refreshment — every step held with care."}
             </p>
           </Reveal>
 
@@ -407,9 +430,9 @@ export function SpaExperience() {
             stagger={0.1}
             className="relative mt-16 flex flex-col gap-0 md:mt-20 md:flex-row md:items-stretch md:justify-between md:gap-0"
           >
-            {JOURNEY.map((item, index) => (
+            {(journeyItems.length ? journeyItems : JOURNEY.map((item) => ({ title: item.step, description: item.detail }))).map((item, index, items) => (
               <StaggerItem
-                key={item.step}
+                key={item.title}
                 className="relative flex flex-1 flex-col items-center text-center"
               >
                 <div className="relative z-10 flex flex-col items-center">
@@ -419,14 +442,14 @@ export function SpaExperience() {
                     </span>
                   </span>
                   <h3 className="font-display mt-5 text-xl font-medium text-forest-950 md:mt-6 md:text-2xl">
-                    {item.step}
+                    {item.title}
                   </h3>
                   <p className="mt-3 max-w-[11rem] text-sm leading-relaxed font-light text-charcoal-900/65">
-                    {item.detail}
+                    {item.description}
                   </p>
                 </div>
 
-                {index < JOURNEY.length - 1 ? (
+                {index < items.length - 1 ? (
                   <>
                     <ArrowDown
                       className="my-5 size-4 text-gold-600/70 md:hidden"
@@ -442,13 +465,13 @@ export function SpaExperience() {
             ))}
           </Stagger>
         </div>
-      </section>
+      </section> : null}
 
       {/* 8 — Luxury CTA */}
-      <section className="relative overflow-hidden bg-forest-950 py-28 md:py-36">
+      {cta?.enabled !== false ? <section className="relative overflow-hidden bg-forest-950 py-28 md:py-36">
         <div className="absolute inset-0">
           <Image
-            src={IMAGES.cta.src}
+            src={resolveSectionImage(cta, IMAGES.cta).src}
             alt=""
             fill
             quality={100}
@@ -461,17 +484,16 @@ export function SpaExperience() {
 
         <div className="relative mx-auto max-w-3xl px-5 text-center md:px-8">
           <Reveal>
-            <p className="eyebrow text-gold-400 gold-rule justify-center">Reserve Quiet</p>
+            <p className="eyebrow text-gold-400 gold-rule justify-center">{cta?.eyebrow || "Reserve Quiet"}</p>
             <h2 className="font-display mt-6 text-4xl font-medium text-ivory md:text-5xl lg:text-[3.25rem]">
-              Restore Your Mind, Body &amp; Spirit
+              {cta?.heading || "Restore Your Mind, Body & Spirit"}
             </h2>
             <p className="mx-auto mt-7 max-w-xl text-[15.5px] leading-[1.85] font-light text-cream-200/80">
-              Speak with our spa desk to compose a ritual around your stay — private suites,
-              signature therapies and Himalayan calm, arranged with Marlo hospitality.
+              {cta?.description || "Speak with our spa desk to compose a ritual around your stay — private suites, signature therapies and Himalayan calm, arranged with Marlo hospitality."}
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5">
               <Button asChild variant="gold" size="lg">
-                <Link href="/contact?subject=Spa%20booking">Book Spa</Link>
+                <Link href={cta?.buttonLink || "/contact?subject=Spa%20booking"}>{cta?.buttonText || "Book Spa"}</Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link href="/contact">Contact Us</Link>
@@ -479,7 +501,7 @@ export function SpaExperience() {
             </div>
           </Reveal>
         </div>
-      </section>
+      </section> : null}
     </>
   );
 }
