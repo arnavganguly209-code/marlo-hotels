@@ -21,6 +21,7 @@ import {
 } from "@/components/orbit/page-cover-editor";
 import {
   ROOM_CATALOG,
+  normalizeRoomCatalogData,
   type RoomCatalogData,
 } from "@/lib/orbit/room-defaults";
 import type { RoomsPageContent } from "@/lib/rooms-page-content";
@@ -39,74 +40,14 @@ type Entry = {
   updatedAt: string;
 };
 
-type GalleryItem = { src: string; alt: string; assetId?: string | null };
-
 function asData(entry: Entry): RoomCatalogData {
   const seed = ROOM_CATALOG.find(
     (item) => item.key === entry.key || item.slug === entry.slug
   );
-  const base = seed?.data;
-  const data = entry.data || {};
-  const number = (key: keyof RoomCatalogData, fallback: number) => {
-    const value = data[key];
-    return typeof value === "number" && Number.isFinite(value)
-      ? value
-      : fallback;
-  };
-  const text = (key: keyof RoomCatalogData, fallback: string) => {
-    const value = data[key];
-    return typeof value === "string" ? value : fallback;
-  };
-  const gallery = Array.isArray(data.gallery)
-    ? (data.gallery as GalleryItem[]).filter((item) => item?.src)
-    : base?.gallery || [];
-
-  return {
-    roomType: (text("roomType", base?.roomType || "Room") as "Room" | "Suite"),
-    subheading: text("subheading", base?.subheading || ""),
-    shortDescription: text("shortDescription", base?.shortDescription || ""),
-    description: text("description", base?.description || ""),
-    price: number("price", base?.price ?? 0),
-    currency: text("currency", base?.currency || "USD"),
-    breakfastPrice: number("breakfastPrice", base?.breakfastPrice ?? 5),
-    inventory: number("inventory", base?.inventory ?? 0),
-    includedAdults: number("includedAdults", base?.includedAdults ?? 2),
-    includedChildren: number("includedChildren", base?.includedChildren ?? 0),
-    extraAdultPrice: number("extraAdultPrice", base?.extraAdultPrice ?? 5),
-    extraChildPrice: number("extraChildPrice", base?.extraChildPrice ?? 5),
-    available: data.available !== false,
-    featured: data.featured === true,
-    sortOrder: number("sortOrder", base?.sortOrder ?? 100),
-    maxGuests: number("maxGuests", base?.maxGuests ?? 4),
-    beds: text("beds", base?.beds || ""),
-    floorSize: text("floorSize", base?.floorSize || ""),
-    floor: text("floor", base?.floor || ""),
-    view: text("view", base?.view || ""),
-    amenities: text("amenities", base?.amenities || ""),
-    facilities: text("facilities", base?.facilities || ""),
-    policies: text("policies", base?.policies || ""),
-    cancellationPolicy: text(
-      "cancellationPolicy",
-      base?.cancellationPolicy || ""
-    ),
-    checkIn: text("checkIn", base?.checkIn || "2:00 PM"),
-    checkOut: text("checkOut", base?.checkOut || "12:00 PM"),
-    buttonText: text("buttonText", base?.buttonText || "Book Now"),
-    buttonLink: text(
-      "buttonLink",
-      base?.buttonLink || `/rooms/${entry.slug || entry.key}`
-    ),
-    imageUrl: text("imageUrl", base?.imageUrl || ""),
-    imageAlt: text("imageAlt", base?.imageAlt || entry.title),
-    mediaAssetId:
-      typeof data.mediaAssetId === "string" ? data.mediaAssetId : null,
-    gallery,
-    metaTitle: text("metaTitle", base?.metaTitle || entry.title),
-    metaDescription: text(
-      "metaDescription",
-      base?.metaDescription || ""
-    ),
-  };
+  return normalizeRoomCatalogData(
+    entry.data as Partial<RoomCatalogData>,
+    seed?.data
+  );
 }
 
 export function RoomsStudioEditor({

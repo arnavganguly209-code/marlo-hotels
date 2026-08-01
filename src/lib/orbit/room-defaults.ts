@@ -6,28 +6,39 @@ export type RoomCatalogData = {
   shortDescription: string;
   description: string;
   price: number;
+  discountPrice?: number | null;
   currency: string;
   breakfastPrice: number;
   inventory: number;
   includedAdults: number;
   includedChildren: number;
+  maxAdults?: number;
+  maxChildren?: number;
   extraAdultPrice: number;
   extraChildPrice: number;
   available: boolean;
   featured: boolean;
   sortOrder: number;
   maxGuests: number;
-  maxChildren?: number;
   beds: string;
+  bathroom?: string;
   floorSize: string;
   floor: string;
   view: string;
+  roomStatus?: "available" | "maintenance" | "hidden";
   amenities: string;
   facilities: string;
+  services?: string;
   policies: string;
   cancellationPolicy: string;
   checkIn: string;
   checkOut: string;
+  minStay?: number;
+  maxStay?: number;
+  weekendPrice?: number | null;
+  weekdayPrice?: number | null;
+  holidayPrice?: number | null;
+  bookingEnabled?: boolean;
   buttonText: string;
   buttonLink: string;
   imageUrl: string;
@@ -36,7 +47,94 @@ export type RoomCatalogData = {
   gallery: { src: string; alt: string; assetId?: string | null }[];
   metaTitle: string;
   metaDescription: string;
+  keywords?: string;
+  ogImage?: string;
 };
+
+/** Fill optional CMS fields so admin / Orbit editors always have complete forms. */
+export function normalizeRoomCatalogData(
+  data: Partial<RoomCatalogData> | null | undefined,
+  fallbacks?: Partial<RoomCatalogData>
+): RoomCatalogData {
+  const base = { ...(fallbacks || {}), ...(data || {}) };
+  const includedAdults =
+    typeof base.includedAdults === "number" ? base.includedAdults : 2;
+  const includedChildren =
+    typeof base.includedChildren === "number" ? base.includedChildren : 0;
+  const maxGuests =
+    typeof base.maxGuests === "number"
+      ? base.maxGuests
+      : includedAdults + includedChildren;
+  const maxAdults =
+    typeof base.maxAdults === "number" ? base.maxAdults : includedAdults;
+  const maxChildren =
+    typeof base.maxChildren === "number"
+      ? base.maxChildren
+      : Math.max(includedChildren, maxGuests - maxAdults);
+
+  const available = base.available !== false;
+  const roomStatus =
+    base.roomStatus ||
+    (available ? "available" : "hidden");
+
+  return {
+    roomType: base.roomType === "Suite" ? "Suite" : "Room",
+    subheading: base.subheading || "",
+    shortDescription: base.shortDescription || "",
+    description: base.description || "",
+    price: typeof base.price === "number" ? base.price : 0,
+    discountPrice:
+      typeof base.discountPrice === "number" ? base.discountPrice : null,
+    currency: base.currency || "USD",
+    breakfastPrice:
+      typeof base.breakfastPrice === "number" ? base.breakfastPrice : 5,
+    inventory: typeof base.inventory === "number" ? base.inventory : 0,
+    includedAdults,
+    includedChildren,
+    maxAdults,
+    maxChildren,
+    extraAdultPrice:
+      typeof base.extraAdultPrice === "number" ? base.extraAdultPrice : 5,
+    extraChildPrice:
+      typeof base.extraChildPrice === "number" ? base.extraChildPrice : 5,
+    available: roomStatus === "available",
+    featured: base.featured === true,
+    sortOrder: typeof base.sortOrder === "number" ? base.sortOrder : 100,
+    maxGuests: Math.max(maxGuests, maxAdults + maxChildren),
+    beds: base.beds || "",
+    bathroom: base.bathroom || "",
+    floorSize: base.floorSize || "",
+    floor: base.floor || "",
+    view: base.view || "",
+    roomStatus,
+    amenities: base.amenities || "",
+    facilities: base.facilities || "",
+    services: base.services || "",
+    policies: base.policies || "",
+    cancellationPolicy: base.cancellationPolicy || "",
+    checkIn: base.checkIn || "2:00 PM",
+    checkOut: base.checkOut || "12:00 PM",
+    minStay: typeof base.minStay === "number" ? base.minStay : 1,
+    maxStay: typeof base.maxStay === "number" ? base.maxStay : 30,
+    weekendPrice:
+      typeof base.weekendPrice === "number" ? base.weekendPrice : null,
+    weekdayPrice:
+      typeof base.weekdayPrice === "number" ? base.weekdayPrice : null,
+    holidayPrice:
+      typeof base.holidayPrice === "number" ? base.holidayPrice : null,
+    bookingEnabled: base.bookingEnabled !== false,
+    buttonText: base.buttonText || "Book Now",
+    buttonLink: base.buttonLink || "",
+    imageUrl: base.imageUrl || "",
+    imageAlt: base.imageAlt || "",
+    mediaAssetId: base.mediaAssetId ?? null,
+    gallery: Array.isArray(base.gallery) ? base.gallery : [],
+    metaTitle: base.metaTitle || "",
+    metaDescription: base.metaDescription || "",
+    keywords: base.keywords || "",
+    ogImage: base.ogImage || "",
+  };
+}
 
 export type RoomCatalogSeed = {
   key: string;
@@ -373,7 +471,7 @@ export const ROOM_CATALOG: RoomCatalogSeed[] = [
 ];
 
 export function catalogToRoom(seed: RoomCatalogSeed): Room {
-  const { data } = seed;
+  const data = normalizeRoomCatalogData(seed.data);
   const gallery = (data.gallery || [])
     .map((item) => ({
       src: String(item.src || "").trim(),
@@ -396,19 +494,19 @@ export function catalogToRoom(seed: RoomCatalogSeed): Room {
     inventory: Math.max(0, data.inventory),
     includedAdults: data.includedAdults,
     includedChildren: data.includedChildren,
-    maxAdults: Math.max(1, data.includedAdults),
-    maxChildren: Math.max(
-      0,
-      data.maxChildren ??
-        Math.max(data.includedChildren, data.maxGuests - data.includedAdults)
-    ),
+    maxAdults: Math.max(1, data.maxAdults ?? data.includedAdults),
+    maxChildren: Math.max(0, data.maxChildren ?? data.includedChildren),
     maxGuests: Math.max(
       data.maxGuests,
-      data.includedAdults + data.includedChildren
+      (data.maxAdults ?? data.includedAdults) +
+        (data.maxChildren ?? data.includedChildren)
     ),
     extraAdultPrice: data.extraAdultPrice,
     extraChildPrice: data.extraChildPrice,
-    published: data.available !== false,
+    published:
+      data.roomStatus === "available" &&
+      data.available !== false &&
+      data.bookingEnabled !== false,
     sortOrder: data.sortOrder,
     size: data.floorSize,
     floor: data.floor,
@@ -417,14 +515,23 @@ export function catalogToRoom(seed: RoomCatalogSeed): Room {
     view: data.view,
     featured: Boolean(data.featured),
     images: [...cover, ...gallery],
-    amenities: data.amenities
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean),
-    features: data.facilities
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean),
+    amenities: [
+      ...data.amenities
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+      ...(data.bathroom ? [data.bathroom] : []),
+    ],
+    features: [
+      ...data.facilities
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+      ...(data.services || "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+    ],
     policies: data.policies
       .split("\n")
       .map((line) => line.trim())

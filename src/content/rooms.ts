@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import {
   ROOM_CATALOG,
   catalogToRoom,
+  normalizeRoomCatalogData,
   type RoomCatalogData,
 } from "@/lib/orbit/room-defaults";
 import { formatOccupancyLabel } from "@/lib/booking-pricing";
@@ -16,7 +17,12 @@ function mapEntryToRoom(entry: {
   status: string;
   data: unknown;
 }): Room {
-  const data = (entry.data || {}) as Partial<RoomCatalogData> &
+  const rawData = (entry.data || {}) as Partial<RoomCatalogData> &
+    Record<string, unknown>;
+  const seed = ROOM_CATALOG.find(
+    (item) => item.slug === (entry.slug || entry.key) || item.key === entry.key
+  );
+  const data = normalizeRoomCatalogData(rawData, seed?.data) as RoomCatalogData &
     Record<string, unknown>;
   const text = (key: string, fallback = "") => {
     const value = data[key];
@@ -32,9 +38,6 @@ function mapEntryToRoom(entry: {
       .map((item) => item.trim())
       .filter(Boolean);
 
-  const seed = ROOM_CATALOG.find(
-    (item) => item.slug === (entry.slug || entry.key) || item.key === entry.key
-  );
   const defaults = seed?.data;
 
   const includedAdults = number(
@@ -49,7 +52,7 @@ function mapEntryToRoom(entry: {
     "maxGuests",
     defaults?.maxGuests ?? includedAdults + includedChildren
   );
-  const maxAdults = number("maxAdults", includedAdults);
+  const maxAdults = number("maxAdults", defaults?.maxAdults ?? includedAdults);
   const maxChildren = number(
     "maxChildren",
     Math.max(includedChildren, maxGuests - maxAdults)
@@ -111,7 +114,10 @@ function mapEntryToRoom(entry: {
       "extraChildPrice",
       defaults?.extraChildPrice ?? 5
     ),
-    published: entry.status === "PUBLISHED" && data.available !== false,
+    published:
+      data.roomStatus === "available" &&
+      data.available !== false &&
+      entry.status === "PUBLISHED",
     sortOrder: number("sortOrder", defaults?.sortOrder ?? 100),
     size: text("floorSize", defaults?.floorSize || "—"),
     floor: text("floor", defaults?.floor || ""),
@@ -132,13 +138,14 @@ function mapEntryToRoom(entry: {
             },
           ],
     amenities: lines("amenities").length
-      ? lines("amenities")
+      ? [...lines("amenities"), ...(data.bathroom ? [data.bathroom] : [])]
       : (defaults?.amenities || "")
           .split("\n")
           .map((line) => line.trim())
-          .filter(Boolean),
-    features: lines("facilities").length
-      ? lines("facilities")
+          .filter(Boolean)
+          .concat(data.bathroom ? [data.bathroom] : []),
+    features: lines("facilities").length || lines("services").length
+      ? [...lines("facilities"), ...lines("services")]
       : lines("policies").length
         ? lines("policies")
         : (defaults?.facilities || "")
@@ -169,7 +176,10 @@ export async function getRooms(): Promise<Room[]> {
         orderBy: { updatedAt: "desc" },
       });
       const inventory = entries.filter(
-        (entry) => entry.key !== "page-studio" && entry.slug
+        (entry) =>
+          entry.key !== "page-studio" &&
+          entry.key !== "page-content" &&
+          entry.slug
       );
       if (inventory.length) {
         const mapped = inventory
@@ -211,7 +221,9 @@ export async function getOrbitRoomEntries() {
     where: { module: "rooms" },
     orderBy: { updatedAt: "asc" },
   });
-  const inventory = entries.filter((entry) => entry.key !== "page-studio");
+  const inventory = entries.filter(
+    (entry) => entry.key !== "page-studio" && entry.key !== "page-content"
+  );
 
   // Seed any missing catalog rooms so Orbit always shows all 7.
   const existingKeys = new Set(inventory.map((entry) => entry.key));
@@ -241,7 +253,12 @@ export async function getOrbitRoomEntries() {
   });
 
   return refreshed
-    .filter((entry) => entry.key !== "page-studio" && entry.slug)
+    .filter(
+      (entry) =>
+        entry.key !== "page-studio" &&
+        entry.key !== "page-content" &&
+        entry.slug
+    )
     .map((entry) => ({
       id: entry.id,
       module: entry.module,

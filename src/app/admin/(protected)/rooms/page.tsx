@@ -1,41 +1,16 @@
-import {
-  AdminModulePage,
-  AdminTable,
-  getDb,
-} from "@/components/admin/admin-module-page";
-import { formatCurrency } from "@/lib/utils";
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+import { AdminRoomsManager } from "@/components/admin/admin-rooms-manager";
+import { getOrbitRoomEntries } from "@/content/rooms";
 
 export default async function AdminRoomsPage() {
-  const db = getDb();
-  const rooms = db
-    ? await db.room.findMany({
-        orderBy: { name: "asc" },
-        select: {
-          name: true,
-          category: true,
-          priceFrom: true,
-          occupancy: true,
-          published: true,
-        },
-      })
-    : [];
+  const entries = await getOrbitRoomEntries();
 
   return (
     <AdminModulePage
       title="Rooms"
-      description="Published and draft room inventory from the Marlo catalogue."
+      description="Manage the room catalogue that powers the public Marlo Hotels rooms pages."
     >
-      <AdminTable
-        headers={["Room", "Category", "From", "Occupancy", "Status"]}
-        empty="No rooms found in the database."
-        rows={rooms.map((room) => [
-          room.name,
-          room.category,
-          formatCurrency(Number(room.priceFrom)),
-          room.occupancy,
-          room.published ? "Published" : "Hidden",
-        ])}
-      />
+      <AdminRoomsManager initialEntries={entries} />
     </AdminModulePage>
   );
 }
