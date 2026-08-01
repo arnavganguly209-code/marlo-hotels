@@ -145,7 +145,7 @@ export function BookingWidget({
     "flex items-center gap-2 text-[9px] font-semibold tracking-[0.3em] uppercase text-[#D9B46B] lg:text-[8px] lg:tracking-[0.26em]";
 
   const fieldUnderline =
-    "mt-2.5 flex min-h-11 w-full items-center justify-between border-b border-white/[0.18] pb-2 text-sm font-medium text-[#F8F4EC] transition-colors focus-visible:border-white/40 focus-visible:outline-none lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]";
+    "mt-2.5 flex min-h-11 w-full items-center justify-between border-b border-white/[0.18] pb-2 text-sm font-semibold text-[#F8F4EC] transition-colors focus-visible:border-white/40 focus-visible:outline-none lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px] lg:font-medium";
 
   const dropdown =
     mounted && guestsOpen && menuPos
@@ -277,7 +277,7 @@ export function BookingWidget({
           placeholder={content.promoPlaceholder}
           value={promo}
           onChange={(event) => setPromo(event.target.value)}
-          className="mt-2.5 min-h-11 w-full border-b border-white/[0.18] bg-transparent pb-2 text-sm font-medium tracking-widest text-[#F8F4EC] uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:text-white/55 focus:border-white/40 lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px]"
+          className="mt-2.5 min-h-11 w-full border-b border-white/[0.18] bg-transparent pb-2 text-sm font-semibold tracking-widest text-[#F8F4EC] uppercase outline-none placeholder:normal-case placeholder:tracking-wide placeholder:font-medium placeholder:text-[#F8F4EC]/70 focus:border-white/40 lg:mt-1 lg:min-h-8 lg:pb-1.5 lg:text-[13px] lg:font-medium"
         />
       </div>
 

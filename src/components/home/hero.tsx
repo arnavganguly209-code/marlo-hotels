@@ -57,8 +57,8 @@ export function Hero({
 
   return (
     <>
-      {/* —— Mobile: video, then booking below (no overlay) —— */}
-      <div className="bg-ivory pt-[4.5rem] lg:hidden">
+      {/* —— Mobile: video, then booking on dark strip (same glass as desktop) —— */}
+      <div className="pt-[4.5rem] lg:hidden">
         <section
           aria-label="Welcome to Marlo Hotels"
           className="relative h-[56svh] min-h-[280px] overflow-hidden bg-forest-950"
@@ -68,9 +68,18 @@ export function Hero({
         {content.bookingWidget !== false ? (
           <div
             aria-label="Check availability"
-            className="relative z-20 px-4 pb-6 pt-4 sm:px-6"
+            className="relative z-20 overflow-hidden bg-[#0B1713] px-4 pb-7 pt-5 sm:px-6"
           >
-            {renderBooking()}
+            {/* Same dark atmosphere as desktop video overlay so frost glass + ivory text read. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#12201c] via-[#0B1713] to-[#08110e]"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/35 to-transparent"
+            />
+            <div className="relative z-10">{renderBooking()}</div>
           </div>
         ) : null}
       </div>

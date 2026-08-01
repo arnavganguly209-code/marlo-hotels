@@ -344,12 +344,12 @@ export function DateField({
         aria-required={required}
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "mt-2.5 flex min-h-11 w-full items-center justify-between text-left text-sm font-light outline-none transition-colors focus-visible:ring-2 focus-visible:ring-gold-400/50",
+          "mt-2.5 flex min-h-11 w-full items-center justify-between text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-gold-400/50",
           dark
-            ? "border-b border-ivory/25 pb-2 text-ivory focus:border-gold-400"
+            ? "border-b border-ivory/25 pb-2 font-light text-ivory focus:border-gold-400"
             : frost
-              ? "border-b border-white/[0.18] pb-2 font-medium text-[#F8F4EC] focus:border-white/40"
-              : "rounded-xl border border-forest-800/15 bg-white px-3 text-forest-950",
+              ? "border-b border-white/[0.18] pb-2 font-semibold text-[#F8F4EC] focus:border-white/40"
+              : "rounded-xl border border-forest-800/15 bg-white px-3 font-light text-forest-950",
           buttonClassName
         )}
       >
