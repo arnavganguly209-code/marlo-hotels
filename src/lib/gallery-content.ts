@@ -71,7 +71,13 @@ function mergeGallery(
       Array.isArray(patch.categories) && patch.categories.length
         ? patch.categories
         : base.categories,
-    images: Array.isArray(patch.images) ? patch.images : base.images,
+    images:
+      Array.isArray(patch.images) && patch.images.length
+        ? patch.images.map((image) => ({
+            ...image,
+            category: displayCategory(image.category || "Rooms"),
+          }))
+        : base.images,
   };
 }
 

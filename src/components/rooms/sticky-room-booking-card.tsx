@@ -109,14 +109,14 @@ export function StickyRoomBookingCard({
       <p className="font-display mt-2 text-3xl font-medium text-forest-950">
         {formatCurrency(quote.total, room.currency)}
       </p>
-      <p className="mt-1 text-xs text-charcoal-900/55">
+      <p className="mt-1 text-xs font-medium text-charcoal-900/70">
         {quote.nights} night{quote.nights > 1 ? "s" : ""} ·{" "}
         {room.includedAdults}A / {room.includedChildren}C included · Without
         Breakfast base
       </p>
 
       <div className="mt-6 space-y-4">
-        <label className="block text-[10px] tracking-[0.2em] text-charcoal-900/50 uppercase">
+        <label className="block text-[10px] font-semibold tracking-[0.2em] text-forest-900/70 uppercase">
           Check In
           <input
             type="date"
@@ -130,25 +130,46 @@ export function StickyRoomBookingCard({
                 );
               }
             }}
-            className="mt-2 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
+            className="mt-2 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm font-medium text-forest-950"
           />
         </label>
-        <label className="block text-[10px] tracking-[0.2em] text-charcoal-900/50 uppercase">
+        <label className="block text-[10px] font-semibold tracking-[0.2em] text-forest-900/70 uppercase">
           Check Out
           <input
             type="date"
             value={checkOut}
             min={toISODateString(addDays(new Date(checkIn), 1))}
             onChange={(event) => setCheckOut(event.target.value)}
-            className="mt-2 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm"
+            className="mt-2 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm font-medium text-forest-950"
           />
         </label>
-        <CounterField label="Adults" value={adults} min={1} max={siteConfig.booking.maxAdults} onChange={setAdults} />
-        <CounterField label="Children" value={children} min={0} max={Math.max(0, room.maxChildren * rooms)} onChange={setChildren} />
-        <CounterField label="Rooms" value={rooms} min={1} max={Math.min(siteConfig.booking.maxRooms, Math.max(1, room.inventory))} onChange={setRooms} />
+        <CounterField
+          label="Adults"
+          tone="dark"
+          value={adults}
+          min={1}
+          max={siteConfig.booking.maxAdults}
+          onChange={setAdults}
+        />
+        <CounterField
+          label="Children"
+          tone="dark"
+          value={children}
+          min={0}
+          max={Math.max(0, room.maxChildren * rooms)}
+          onChange={setChildren}
+        />
+        <CounterField
+          label="Rooms"
+          tone="dark"
+          value={rooms}
+          min={1}
+          max={Math.min(siteConfig.booking.maxRooms, Math.max(1, room.inventory))}
+          onChange={setRooms}
+        />
 
         <div>
-          <p className="text-[10px] tracking-[0.2em] text-charcoal-900/50 uppercase">
+          <p className="text-[10px] font-semibold tracking-[0.2em] text-forest-900/70 uppercase">
             Breakfast
           </p>
           <div className="mt-2 space-y-2">
@@ -166,10 +187,10 @@ export function StickyRoomBookingCard({
                 type="button"
                 onClick={() => setBreakfast(option.value)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm",
+                  "flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm font-medium",
                   breakfast === option.value
                     ? "border-gold-500 bg-gold-50 text-forest-950"
-                    : "border-forest-800/10 text-charcoal-900/70"
+                    : "border-forest-800/15 text-forest-950"
                 )}
               >
                 <span
@@ -177,7 +198,7 @@ export function StickyRoomBookingCard({
                     "grid size-4 place-items-center rounded-full border",
                     breakfast === option.value
                       ? "border-gold-600"
-                      : "border-forest-800/25"
+                      : "border-forest-800/30"
                   )}
                 >
                   {breakfast === option.value ? (
@@ -190,18 +211,18 @@ export function StickyRoomBookingCard({
           </div>
         </div>
 
-        <label className="block text-[10px] tracking-[0.2em] text-charcoal-900/50 uppercase">
+        <label className="block text-[10px] font-semibold tracking-[0.2em] text-forest-900/70 uppercase">
           Promo
           <input
             value={promo}
             onChange={(event) => setPromo(event.target.value)}
-            className="mt-2 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm uppercase tracking-widest"
+            className="mt-2 h-11 w-full rounded-xl border border-forest-800/15 px-3 text-sm font-medium text-forest-950 uppercase tracking-widest"
             placeholder="Optional"
           />
         </label>
       </div>
 
-      <dl className="mt-5 space-y-1.5 border-t border-forest-800/10 pt-4 text-xs text-charcoal-900/70">
+      <dl className="mt-5 space-y-1.5 border-t border-forest-800/10 pt-4 text-xs font-medium text-forest-950/75">
         <div className="flex justify-between">
           <dt>
             Room ({room.priceFrom} × {quote.nights})

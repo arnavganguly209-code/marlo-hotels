@@ -13,6 +13,8 @@ const spans = [
   "md:row-span-2",
   "",
   "",
+  "",
+  "",
 ];
 
 export function GalleryPreview({
@@ -21,6 +23,8 @@ export function GalleryPreview({
   content: HomepageContent["gallery"];
 }) {
   if (!content.enabled) return null;
+  const items = content.items.filter((image) => Boolean(image?.src));
+  if (!items.length) return null;
 
   return (
     <section className="bg-forest-950 py-24 md:py-36">
@@ -36,8 +40,11 @@ export function GalleryPreview({
           stagger={0.08}
           className="mt-16 grid auto-rows-[200px] grid-cols-2 gap-4 md:auto-rows-[220px] md:grid-cols-4"
         >
-          {content.items.map((image, index) => (
-            <StaggerItem key={image.src} className={spans[index]}>
+          {items.map((image, index) => (
+            <StaggerItem
+              key={`${image.src}-${index}`}
+              className={spans[index] || ""}
+            >
               <Link
                 href={content.buttonLink ?? "/gallery"}
                 aria-label={`Open gallery — ${image.alt}`}

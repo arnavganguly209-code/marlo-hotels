@@ -74,7 +74,7 @@ export function RoomsSearchBar({
   }
 
   const fieldLabel =
-    "text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase";
+    "text-[10px] font-semibold tracking-[0.16em] text-forest-900/75 uppercase";
 
   return (
     <form

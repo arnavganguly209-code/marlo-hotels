@@ -11,15 +11,34 @@ import { RoomsShowcase } from "@/components/home/rooms-showcase";
 import { TestimonialsSection } from "@/components/home/testimonials-section";
 import { WellnessSection } from "@/components/home/wellness-section";
 import { getHomepageContent } from "@/lib/homepage-content";
+import { getGalleryContent } from "@/lib/gallery-content";
 import { occupancyIndexFromRooms } from "@/lib/booking-occupancy";
 import { getPlacement } from "@/lib/orbit/media";
 import { getRooms } from "@/content/rooms";
+import type { GalleryImage } from "@/types/content";
+
+const GALLERY_PREVIEW_CATEGORIES = new Set<GalleryImage["category"]>([
+  "Rooms",
+  "Dining",
+  "Wellness",
+  "Spa",
+  "Architecture",
+  "Events",
+]);
+
+function toPreviewCategory(category: string): GalleryImage["category"] {
+  if (GALLERY_PREVIEW_CATEGORIES.has(category as GalleryImage["category"])) {
+    return category as GalleryImage["category"];
+  }
+  return "Rooms";
+}
 
 export default async function HomePage() {
-  const [homepage, heroMedia, allRooms] = await Promise.all([
+  const [homepage, heroMedia, allRooms, galleryPage] = await Promise.all([
     getHomepageContent(),
     getPlacement("home.hero"),
     getRooms(),
+    getGalleryContent(),
   ]);
   const occupancy = occupancyIndexFromRooms(
     allRooms.filter((room) => room.published !== false)
@@ -117,7 +136,24 @@ export default async function HomePage() {
       <AttractionsSection content={homepage.attractions} />
       <TestimonialsSection content={homepage.testimonials} />
       <OffersSection content={homepage.offers} />
-      <GalleryPreview content={homepage.gallery} />
+      <GalleryPreview
+        content={{
+          ...homepage.gallery,
+          enabled: true,
+          eyebrow: homepage.gallery.eyebrow || galleryPage.cover.eyebrow,
+          heading: homepage.gallery.heading || galleryPage.cover.title,
+          description:
+            homepage.gallery.description || galleryPage.cover.description,
+          buttonText: homepage.gallery.buttonText || "View Full Gallery",
+          buttonLink: homepage.gallery.buttonLink || "/gallery",
+          // Always mirror the live /gallery library (6–8 premium tiles).
+          items: galleryPage.images.slice(0, 8).map((image) => ({
+            src: image.src,
+            alt: image.alt,
+            category: toPreviewCategory(image.category),
+          })),
+        }}
+      />
       <LocationSection content={homepage.location} />
     </>
   );

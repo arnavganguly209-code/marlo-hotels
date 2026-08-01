@@ -126,7 +126,7 @@ export type Post = {
 };
 
 export type GalleryImage = ImageAsset & {
-  category: "Rooms" | "Dining" | "Wellness" | "Architecture" | "Events";
+  category: "Rooms" | "Dining" | "Wellness" | "Spa" | "Architecture" | "Events";
 };
 
 export type Testimonial = {

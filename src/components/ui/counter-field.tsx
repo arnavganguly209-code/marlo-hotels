@@ -9,6 +9,7 @@ type CounterFieldProps = {
   min: number;
   max: number;
   onChange: (value: number) => void;
+  /** light = on dark glass surfaces; dark = on white/cream cards */
   tone?: "light" | "dark";
 };
 
@@ -18,7 +19,7 @@ export function CounterField({
   min,
   max,
   onChange,
-  tone = "light",
+  tone = "dark",
 }: CounterFieldProps) {
   const isLight = tone === "light";
 
@@ -26,16 +27,16 @@ export function CounterField({
     <div className="flex items-center justify-between gap-4">
       <span
         className={cn(
-          "text-sm font-light tracking-wide",
-          isLight ? "text-cream-100" : "text-forest-950"
+          "text-sm font-semibold tracking-[0.04em]",
+          isLight ? "text-[#F8F4EC]" : "text-forest-950"
         )}
       >
         {label}
       </span>
       <div
         className={cn(
-          "flex items-center gap-3 border px-2 py-1",
-          isLight ? "border-ivory/25" : "border-forest-800/25"
+          "flex items-center gap-3 rounded-lg border px-2.5 py-1.5",
+          isLight ? "border-white/35" : "border-forest-800/25 bg-cream-50/80"
         )}
       >
         <button
@@ -46,16 +47,16 @@ export function CounterField({
           className={cn(
             "grid size-7 place-items-center transition-colors disabled:opacity-30",
             isLight
-              ? "text-cream-100 hover:text-gold-400"
-              : "text-forest-900 hover:text-gold-600"
+              ? "text-[#F8F4EC] hover:text-gold-400"
+              : "text-forest-950 hover:text-gold-700"
           )}
         >
-          <Minus className="size-3.5" />
+          <Minus className="size-3.5 stroke-[2.5]" />
         </button>
         <span
           aria-live="polite"
           className={cn(
-            "w-5 text-center text-sm tabular-nums",
+            "w-6 text-center text-sm font-semibold tabular-nums",
             isLight ? "text-ivory" : "text-forest-950"
           )}
         >
@@ -69,11 +70,11 @@ export function CounterField({
           className={cn(
             "grid size-7 place-items-center transition-colors disabled:opacity-30",
             isLight
-              ? "text-cream-100 hover:text-gold-400"
-              : "text-forest-900 hover:text-gold-600"
+              ? "text-[#F8F4EC] hover:text-gold-400"
+              : "text-forest-950 hover:text-gold-700"
           )}
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-3.5 stroke-[2.5]" />
         </button>
       </div>
     </div>
