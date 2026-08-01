@@ -51,6 +51,10 @@ export function RoyalImageFrame({
                 quality={100}
                 sizes={sizes}
                 className="object-contain object-center"
+                unoptimized={
+                  image.src.startsWith("/media/") ||
+                  image.src.includes("?")
+                }
               />
               <span
                 aria-hidden

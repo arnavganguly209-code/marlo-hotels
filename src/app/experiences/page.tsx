@@ -1,29 +1,125 @@
 import type { Metadata } from "next";
-import { LuxuryStudioPage } from "@/components/shared/luxury-studio-page";
-import { getPageStudioDocument } from "@/lib/page-studio-content";
-import { PAGE_STUDIO_SECTIONS } from "@/lib/orbit/page-studio";
+import {
+  ExperiencesShowcase,
+  type ExperienceCard,
+  type ExperienceImage,
+} from "@/components/experiences/experiences-showcase";
+import { PageHero } from "@/components/shared/page-hero";
+import { getGalleryContent } from "@/lib/gallery-content";
+import {
+  getPageStudioDocument,
+  sectionItems,
+} from "@/lib/page-studio-content";
 import { buildMetadata } from "@/lib/seo";
+import { withMediaCacheBust } from "@/lib/media-cache";
 
 export async function generateMetadata(): Promise<Metadata> {
   const doc = await getPageStudioDocument("experiences");
   const seo = doc.seo;
+  const hero = doc.hero;
   return buildMetadata({
-    title: seo?.seoTitle || "Experiences",
+    title: seo?.seoTitle || hero?.seoTitle || "Experiences",
     description:
       seo?.seoDescription ||
+      hero?.seoDescription ||
       "Private luxury experiences in Kathmandu — arranged by the Marlo Hotels concierge.",
     path: "/experiences",
   });
 }
 
+function pickGalleryImage(
+  images: { src: string; alt: string; category: string }[],
+  matchers: RegExp[],
+  used: Set<string>
+): ExperienceImage | null {
+  for (const matcher of matchers) {
+    const hit = images.find(
+      (image) =>
+        image.src &&
+        !used.has(image.src) &&
+        (matcher.test(image.src) ||
+          matcher.test(image.alt) ||
+          matcher.test(image.category))
+    );
+    if (hit) {
+      used.add(hit.src);
+      return {
+        src: withMediaCacheBust(hit.src),
+        alt: hit.alt || "Marlo Hotels experience",
+      };
+    }
+  }
+  const fallback = images.find((image) => image.src && !used.has(image.src));
+  if (!fallback) return null;
+  used.add(fallback.src);
+  return {
+    src: withMediaCacheBust(fallback.src),
+    alt: fallback.alt || "Marlo Hotels experience",
+  };
+}
+
 export default async function ExperiencesPage() {
-  const doc = await getPageStudioDocument("experiences");
+  const [doc, gallery] = await Promise.all([
+    getPageStudioDocument("experiences"),
+    getGalleryContent(),
+  ]);
+  const hero = doc.hero;
+
+  const listing = sectionItems(doc.listing).map(
+    (item): ExperienceCard => ({
+      title: item.title,
+      description: item.description || "",
+    })
+  );
+
+  const used = new Set<string>();
+  const galleryImages = gallery.images.filter((image) => Boolean(image.src));
+
+  const fallbackFrame: ExperienceImage = {
+    src: "/images/dining/seating-palm.png",
+    alt: "Marlo Hotels hospitality",
+  };
+
+  // Only three gallery photographs — clear frames, never a crowded collage.
+  const editorial =
+    pickGalleryImage(galleryImages, [/gate/i, /architecture/i, /entrance/i], used) ||
+    pickGalleryImage(galleryImages, [/./], used) ||
+    fallbackFrame;
+
+  const accent =
+    pickGalleryImage(
+      galleryImages,
+      [/expri/i, /restro/i, /dining/i, /terrace/i, /spa/i],
+      used
+    ) ||
+    pickGalleryImage(galleryImages, [/./], used) ||
+    fallbackFrame;
+
+  const cta =
+    pickGalleryImage(galleryImages, [/spa/i, /room/i, /gate/i], used) || accent;
+
   return (
-    <LuxuryStudioPage
-      moduleLabel="Experiences"
-      path="/experiences"
-      doc={doc}
-      sectionDefs={PAGE_STUDIO_SECTIONS.experiences}
-    />
+    <>
+      {/* Hero cover — Orbit / studio image unchanged */}
+      <PageHero
+        eyebrow={hero?.eyebrow || "Experiences"}
+        title={hero?.heading || "The valley, opened for you"}
+        description={hero?.description}
+        image={{
+          src: hero?.image?.src || "",
+          alt: hero?.image?.alt || "Experiences at Marlo Hotels",
+        }}
+        videoUrl={hero?.videoUrl || undefined}
+        crumbs={[
+          { label: "Home", href: "/" },
+          { label: "Experiences", href: "/experiences" },
+        ]}
+      />
+
+      <ExperiencesShowcase
+        experiences={listing}
+        images={{ editorial, accent, cta }}
+      />
+    </>
   );
 }
