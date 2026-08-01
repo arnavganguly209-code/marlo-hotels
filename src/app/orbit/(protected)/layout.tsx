@@ -1,6 +1,7 @@
 import { OrbitHeader } from "@/components/orbit/orbit-header";
 import { OrbitShell } from "@/components/orbit/orbit-shell";
 import { OrbitSidebar } from "@/components/orbit/orbit-sidebar";
+import { OrbitSessionKeepAlive } from "@/components/orbit/session-keepalive";
 import { requireOrbitSession } from "@/lib/orbit/auth";
 import { isNextNavigationError, orbitLog } from "@/lib/orbit/logger";
 import { redirect } from "next/navigation";
@@ -27,6 +28,7 @@ export default async function ProtectedOrbitLayout({
   // static logo so a Prisma/env failure cannot crash the dashboard chrome.
   return (
     <OrbitShell>
+      <OrbitSessionKeepAlive />
       <div className="orbit-app-shell min-h-svh">
         <OrbitSidebar logoUrl={DEFAULT_LOGO} />
         <div className="min-h-svh lg:pl-[300px]">

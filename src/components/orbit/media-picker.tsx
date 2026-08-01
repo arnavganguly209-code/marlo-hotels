@@ -109,8 +109,9 @@ export function MediaPicker({
     const xhr = new XMLHttpRequest();
     xhrRef.current = xhr;
     xhr.open("POST", "/api/orbit/media");
+    xhr.withCredentials = true;
     xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
+      if (event.loaded && event.lengthComputable) {
         setProgress(Math.round((event.loaded / event.total) * 100));
       }
     };
@@ -129,6 +130,11 @@ export function MediaPicker({
           setAssets((current) => [result.asset!, ...current]);
           onSelect(result.asset);
           onClose();
+        } else if (xhr.status === 401) {
+          push("Session expired — please sign in again.", "error");
+          window.setTimeout(() => {
+            window.location.href = "/orbit?reason=session-expired";
+          }, 600);
         } else {
           push(
             result.error ||

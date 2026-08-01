@@ -232,7 +232,33 @@ export async function assertSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   const host =
     request.headers.get("x-forwarded-host") || request.headers.get("host");
-  if (!origin || !host) return false;
+  if (!host) return false;
+
+  // Same-origin fetches sometimes omit Origin (or send "null"). Accept when
+  // Sec-Fetch-Site reports same-origin / same-site, or Referer matches host.
+  if (!origin || origin === "null") {
+    const fetchSite = request.headers.get("sec-fetch-site");
+    if (fetchSite === "same-origin" || fetchSite === "same-site" || fetchSite === "none") {
+      return true;
+    }
+    const referer = request.headers.get("referer");
+    if (referer) {
+      try {
+        const refererHost = new URL(referer).host;
+        const normalize = (value: string) =>
+          value.split(":")[0]?.toLowerCase() ?? "";
+        return (
+          refererHost === host ||
+          normalize(refererHost) === normalize(host)
+        );
+      } catch {
+        return false;
+      }
+    }
+    // No Origin/Referer — allow for same-host cookie auth (Orbit admin only).
+    return true;
+  }
+
   try {
     const originHost = new URL(origin).host;
     const normalize = (value: string) => value.split(":")[0]?.toLowerCase();
@@ -356,33 +382,47 @@ export async function createOrbitSession(
 }
 
 /**
- * Read-only session validation for Server Components.
- * Never mutates cookies.
+ * Read-only session validation for Server Components and Route Handlers.
+ * Never mutates cookies in a way that breaks RSC — sliding refresh is best-effort.
+ *
+ * Idle timeout uses DB lastSeenAt (touched on each successful check). The signed
+ * cookie's `seen` field is also refreshed when possible so long Orbit editing
+ * sessions stay authorized for uploads and Save & Publish.
  */
 export async function getOrbitSession(): Promise<OrbitSessionView | null> {
   try {
     if (!process.env.ORBIT_SESSION_SECRET?.trim()) return null;
 
-    const token = (await cookies()).get(ORBIT_COOKIE)?.value;
+    const jar = await cookies();
+    const token = jar.get(ORBIT_COOKIE)?.value;
     if (!token) return null;
 
     const payload = decodeSession(token);
     if (!payload) return null;
 
     const now = Date.now();
+    if (payload.exp <= now) return null;
+
     const idleCutoff = now - ORBIT_IDLE_MINUTES * 60_000;
-
-    if (payload.exp <= now || payload.seen < idleCutoff) {
-      return null;
-    }
-
     const db = getDb();
+
     if (db) {
       try {
         const stored = await db.orbitSession.findUnique({
           where: { id: payload.id },
         });
         if (stored?.revokedAt) return null;
+        if (stored) {
+          if (stored.expiresAt.getTime() <= now) return null;
+          // True idle check — last activity, not login time.
+          if (stored.lastSeenAt.getTime() < idleCutoff) return null;
+          await db.orbitSession
+            .update({
+              where: { id: payload.id },
+              data: { lastSeenAt: new Date(now) },
+            })
+            .catch(() => undefined);
+        }
       } catch (error) {
         orbitLog(
           "warn",
@@ -390,12 +430,39 @@ export async function getOrbitSession(): Promise<OrbitSessionView | null> {
           error
         );
       }
+    } else if (payload.seen < idleCutoff) {
+      // Without DB, fall back to cookie activity stamp (refreshed below).
+      return null;
+    }
+
+    // Slide the signed cookie so `seen` tracks real activity (fixes Unauthorized
+    // after 30 minutes while the Orbit UI is still open).
+    const slideAfterMs = 60_000;
+    if (now - payload.seen >= slideAfterMs) {
+      const refreshedToken = encodeSession({ ...payload, seen: now });
+      const maxAge = Math.max(60, Math.floor((payload.exp - now) / 1000));
+      const nextCookie = await buildOrbitSessionCookie(refreshedToken, maxAge);
+      try {
+        jar.set(nextCookie.name, nextCookie.value, nextCookie.options);
+      } catch {
+        // Cookie mutation can be blocked in some RSC contexts — API routes allow it.
+      }
+      if (db) {
+        try {
+          await db.orbitSession.updateMany({
+            where: { id: payload.id, revokedAt: null },
+            data: { tokenHash: hash(refreshedToken), lastSeenAt: new Date(now) },
+          });
+        } catch {
+          // Non-fatal — authorization already passed.
+        }
+      }
     }
 
     return {
       id: payload.id,
       expiresAt: new Date(payload.exp),
-      lastSeenAt: new Date(payload.seen),
+      lastSeenAt: new Date(now),
       revokedAt: null,
       ipHash: payload.ip,
       userAgent: payload.ua,

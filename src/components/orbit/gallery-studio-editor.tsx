@@ -102,6 +102,7 @@ export function GalleryStudioEditor({
     try {
       const response = await fetch("/api/orbit/content", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           module: "gallery",
@@ -116,6 +117,13 @@ export function GalleryStudioEditor({
         message?: string;
       };
       if (!response.ok) {
+        if (response.status === 401) {
+          push("Session expired — please sign in again.", "error");
+          window.setTimeout(() => {
+            window.location.href = "/orbit?reason=session-expired&next=/orbit/gallery";
+          }, 600);
+          return;
+        }
         push(result.error || "Save failed", "error");
         return;
       }
