@@ -14,8 +14,8 @@ import {
   Wind,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RoyalImageFrame } from "@/components/shared/royal-image-frame";
 import { Reveal, Stagger, StaggerItem } from "@/components/ui/reveal";
-import { cn } from "@/lib/utils";
 
 const IMAGES = {
   sanctuary: {
@@ -175,93 +175,6 @@ const EXPERIENCE_POINTS = [
   },
 ] as const;
 
-function SpaRoyalFrame({
-  image,
-  priority = false,
-  sizes = "(max-width: 1024px) 100vw, 50vw",
-  className,
-  /** wide = full-bleed editorial; portrait layouts still use native 3/2 */
-  tone = "light",
-}: {
-  image: { src: string; alt: string };
-  priority?: boolean;
-  sizes?: string;
-  className?: string;
-  tone?: "light" | "dark";
-}) {
-  const dark = tone === "dark";
-
-  return (
-    <figure
-      className={cn(
-        "group relative w-full",
-        className
-      )}
-    >
-      {/* Outer champagne-gold royal rim */}
-      <div
-        className={cn(
-          "rounded-[2px] p-[3px] shadow-[0_22px_50px_-24px_rgb(12_26_24_/_0.45)]",
-          dark
-            ? "bg-gradient-to-br from-[#E8D5A3] via-[#C9A24A] to-[#8B7340]"
-            : "bg-gradient-to-br from-[#EDE0BE] via-[#D4B56A] to-[#A8894A]"
-        )}
-      >
-        {/* Forest inner fillet */}
-        <div
-          className={cn(
-            "rounded-[1px] p-[1px]",
-            dark ? "bg-forest-950" : "bg-forest-900/80"
-          )}
-        >
-          {/* Ivory / cream museum matte — keeps the full photo visible */}
-          <div
-            className={cn(
-              "p-2.5 sm:p-3.5 md:p-4",
-              dark ? "bg-[#1A2A24]" : "bg-[#F7F1E6]"
-            )}
-          >
-            {/* Native 3:2 frame — matches all spa photos (1024×682), no forced zoom crop */}
-            <div className="relative aspect-[3/2] w-full overflow-hidden bg-[#EDE6D8]">
-              <Image
-                src={image.src}
-                alt={image.alt}
-                fill
-                priority={priority}
-                quality={100}
-                sizes={sizes}
-                className="object-contain object-center"
-              />
-              {/* Soft vignette edge — luxury, not a crop */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-forest-950/10"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Corner ornaments */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -top-1 -left-1 size-3 border-t border-l border-gold-600/70"
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -top-1 -right-1 size-3 border-t border-r border-gold-600/70"
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -bottom-1 -left-1 size-3 border-b border-l border-gold-600/70"
-      />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -bottom-1 -right-1 size-3 border-b border-r border-gold-600/70"
-      />
-    </figure>
-  );
-}
-
 export function SpaExperience() {
   return (
     <>
@@ -287,7 +200,7 @@ export function SpaExperience() {
       <section className="bg-cream-100 py-24 md:py-32 lg:py-36">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 md:gap-16 md:px-8 lg:grid-cols-2 lg:gap-20">
           <Reveal direction="left">
-            <SpaRoyalFrame
+            <RoyalImageFrame
               image={IMAGES.sanctuary}
               sizes="(max-width: 1024px) 100vw, 48vw"
             />
@@ -327,7 +240,7 @@ export function SpaExperience() {
           </Reveal>
 
           <Reveal className="mt-14 md:mt-16">
-            <SpaRoyalFrame
+            <RoyalImageFrame
               image={IMAGES.experience}
               sizes="(max-width: 768px) 100vw, min(1200px, 92vw)"
               className="mx-auto max-w-6xl"
@@ -426,7 +339,7 @@ export function SpaExperience() {
             </div>
 
             <Reveal direction="left" className="order-first lg:order-last">
-              <SpaRoyalFrame
+              <RoyalImageFrame
                 image={IMAGES.facilities}
                 sizes="(max-width: 1024px) 100vw, 42vw"
               />
@@ -440,7 +353,7 @@ export function SpaExperience() {
         <div className="mx-auto max-w-7xl px-5 md:px-8">
           <div className="grid items-start gap-14 lg:grid-cols-2 lg:gap-20">
             <Reveal className="lg:sticky lg:top-32">
-              <SpaRoyalFrame
+              <RoyalImageFrame
                 image={IMAGES.why}
                 sizes="(max-width: 1024px) 100vw, 45vw"
               />
