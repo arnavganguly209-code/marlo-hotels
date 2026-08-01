@@ -89,7 +89,6 @@ jobs:
 
       - name: Deploy Marlo over SSH
         id: deploy_ssh
-        continue-on-error: true
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -97,8 +96,10 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
           script_stop: true
-          timeout: 120s
-          command_timeout: 30m
+          # Connection handshake timeout (not the remote build).
+          timeout: 300s
+          # Full remote build + PM2 health can take 10–20 minutes.
+          command_timeout: 45m
           script: |
             set -euo pipefail
             # Marlo Hotels ONLY — never cd into Hotel Thamel Park paths.
@@ -111,34 +112,8 @@ jobs:
             chmod +x scripts/deploy-vps.sh
             bash scripts/deploy-vps.sh
 
-      - name: Retry Deploy Marlo over SSH
-        id: deploy_ssh_retry
-        if: steps.deploy_ssh.outcome == 'failure'
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USERNAME }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
-          script_stop: true
-          timeout: 120s
-          command_timeout: 30m
-          script: |
-            set -euo pipefail
-            cd /var/www/marlo-hotels
-            git fetch origin main
-            git reset --hard origin/main
-            chmod +x scripts/deploy-vps.sh
-            bash scripts/deploy-vps.sh
-
-      - name: Fail if SSH deploy never succeeded
-        if: steps.deploy_ssh.outcome == 'failure' && steps.deploy_ssh_retry.outcome != 'success'
-        run: |
-          echo "::error::SSH deploy failed on first attempt and retry."
-          exit 1
-
       - name: Post-deploy public verification
-        if: steps.deploy_ssh.outcome == 'success' || steps.deploy_ssh_retry.outcome == 'success'
+        if: success()
         run: |
           set -euo pipefail
           echo "==> Verifying live site from GitHub runner (HTTP 200)"
