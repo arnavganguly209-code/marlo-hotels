@@ -3,6 +3,7 @@ import { getRoomBySlug } from "@/content/rooms";
 import { generateMarloBookingId } from "@/lib/booking-id";
 import { sendBookingEmails } from "@/lib/booking-mail";
 import { getDb } from "@/lib/db";
+import { getAvailableCapacity } from "@/lib/admin/availability";
 import { bookingRequestSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
@@ -28,11 +29,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const reference = await generateMarloBookingId();
-  const db = getDb();
   const checkIn = new Date(parsed.data.checkIn);
   const checkOut = new Date(parsed.data.checkOut);
   const roomsRequested = Math.max(1, parsed.data.rooms);
+  const availability = await getAvailableCapacity(room.slug, checkIn, checkOut);
+  if (roomsRequested > availability.available) {
+    return NextResponse.json(
+      { error: "Sold Out", message: "No Rooms Available" },
+      { status: 409 }
+    );
+  }
+  const reference = await generateMarloBookingId();
+  const db = getDb();
   const notesText = (parsed.data.notes || "").trim() || "None";
 
   const notesPayload = [
@@ -81,31 +89,6 @@ export async function POST(request: Request) {
       },
     });
 
-    const overlapping = await db.booking.findMany({
-      where: {
-        roomId: roomRecord.id,
-        status: { in: ["PENDING", "CONFIRMED"] },
-        checkIn: { lt: checkOut },
-        checkOut: { gt: checkIn },
-      },
-      select: { rooms: true },
-    });
-    const bookedUnits = overlapping.reduce(
-      (sum, item) => sum + Math.max(1, item.rooms),
-      0
-    );
-    if (bookedUnits + roomsRequested > room.inventory) {
-      return NextResponse.json(
-        {
-          error: "Sold Out",
-          message: "No Rooms Available",
-          inventory: room.inventory,
-          booked: bookedUnits,
-        },
-        { status: 409 }
-      );
-    }
-
     await db.booking.create({
       data: {
         reference,
@@ -122,6 +105,7 @@ export async function POST(request: Request) {
         totalAmount: parsed.data.totalAmount ?? null,
         paymentStatus: "UNPAID",
         status: "PENDING",
+        source: "ONLINE",
         roomId: roomRecord.id,
       },
     });

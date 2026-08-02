@@ -25,6 +25,7 @@ export default async function AdminOnlineBookingsPage() {
           "Reference",
           "Guest",
           "Room",
+          "Source",
           "Check-in",
           "Status",
           "Total",
@@ -34,6 +35,7 @@ export default async function AdminOnlineBookingsPage() {
           booking.reference,
           booking.guestName,
           booking.room.name,
+          booking.source,
           booking.checkIn.toISOString().slice(0, 10),
           booking.status,
           booking.totalAmount

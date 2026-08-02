@@ -65,12 +65,13 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
       pendingBookings,
       confirmedBookings,
       cancelledBookings,
+      offlineBookings,
       onlineBookings,
       todaysPaid,
       monthlyPaid,
       pendingPayments,
       paidPayments,
-      publishedRooms,
+      availablePhysicalRooms,
       todaysInquiries,
       newsletterCount,
     ] = await Promise.all([
@@ -80,7 +81,8 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
       db.booking.count({ where: { status: "PENDING" } }),
       db.booking.count({ where: { status: "CONFIRMED" } }),
       db.booking.count({ where: { status: "CANCELLED" } }),
-      db.booking.count(),
+      db.booking.count({ where: { source: "OFFLINE" } }),
+      db.booking.count({ where: { source: { not: "OFFLINE" } } }),
       db.booking.findMany({
         where: {
           createdAt: { gte: today, lt: tomorrow },
@@ -97,7 +99,7 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
       }),
       db.booking.count({ where: { paymentStatus: "UNPAID" } }),
       db.booking.count({ where: { paymentStatus: "PAID" } }),
-      db.room.count({ where: { published: true } }),
+      db.physicalRoom.count({ where: { status: "AVAILABLE" } }).catch(() => 0),
       db.contactMessage.count({
         where: { createdAt: { gte: today, lt: tomorrow } },
       }),
@@ -107,6 +109,7 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     const sum = (rows: { totalAmount: unknown }[]) =>
       rows.reduce((acc, row) => acc + Number(row.totalAmount || 0), 0);
 
+    const publishedRooms = await db.room.count({ where: { published: true } });
     const confirmedOrPending = confirmedBookings + pendingBookings;
     const occupancyPercent =
       publishedRooms > 0
@@ -121,13 +124,15 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
       pendingBookings,
       confirmedBookings,
       cancelledBookings,
-      offlineBookings: 0,
+      offlineBookings,
       onlineBookings,
       todaysRevenue: sum(todaysPaid),
       monthlyRevenue: sum(monthlyPaid),
       occupancyPercent,
-      availableRooms: Math.max(publishedRooms - confirmedBookings, 0),
-      activeDateBlocks: 0,
+      availableRooms: availablePhysicalRooms || Math.max(publishedRooms - confirmedBookings, 0),
+      activeDateBlocks: await db.dateBlock.count({
+        where: { status: "ACTIVE", endDate: { gte: today } },
+      }).catch(() => 0),
       pendingPayments,
       paidPayments,
       websiteVisitors: newsletterCount * 12 + onlineBookings * 8,

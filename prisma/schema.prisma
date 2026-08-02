@@ -20,6 +20,8 @@ enum RoomCategory {
 enum BookingStatus {
   PENDING
   CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
   CANCELLED
   COMPLETED
 }
@@ -41,6 +43,8 @@ enum PaymentStatus {
   UNPAID
   PENDING
   PAID
+  PARTIAL
+  OFFLINE
   REFUNDED
   FAILED
 }
@@ -76,27 +80,35 @@ model Room {
 }
 
 model Booking {
-  id            String        @id @default(cuid())
-  reference     String        @unique
-  status        BookingStatus @default(PENDING)
-  paymentStatus PaymentStatus @default(UNPAID)
-  checkIn       DateTime
-  checkOut      DateTime
-  adults        Int
-  children      Int           @default(0)
-  rooms         Int           @default(1)
-  promoCode     String?
-  totalAmount   Decimal?      @db.Decimal(12, 2)
-  guestName     String
-  guestEmail    String
-  guestPhone    String
-  notes         String?
-  room          Room          @relation(fields: [roomId], references: [id])
-  roomId        String
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                 String        @id @default(cuid())
+  reference          String        @unique
+  status             BookingStatus @default(PENDING)
+  paymentStatus      PaymentStatus @default(UNPAID)
+  source             String        @default("ONLINE")
+  checkIn            DateTime
+  checkOut           DateTime
+  adults             Int
+  children           Int           @default(0)
+  rooms              Int           @default(1)
+  promoCode          String?
+  totalAmount        Decimal?      @db.Decimal(12, 2)
+  guestName          String
+  guestEmail         String
+  guestPhone         String
+  country            String?
+  breakfast          Boolean       @default(false)
+  physicalRoomNumber String?
+  notes              String?
+  internalRemarks    String?
+  createdBy          String?
+  room               Room          @relation(fields: [roomId], references: [id])
+  roomId             String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   @@index([status, checkIn])
+  @@index([source, createdAt])
+  @@index([physicalRoomNumber, checkIn])
 }
 
 model Restaurant {
@@ -474,4 +486,40 @@ model PhysicalRoom {
   @@unique([roomCategorySlug, number])
   @@index([roomCategorySlug, status])
   @@index([status])
+}
+
+enum DateBlockReason {
+  MAINTENANCE
+  RENOVATION
+  DEEP_CLEANING
+  PRIVATE_BOOKING
+  VIP_RESERVATION
+  OWNER_USE
+  BLOCKED
+  OTHER
+}
+
+enum DateBlockStatus {
+  ACTIVE
+  CANCELLED
+}
+
+/** Date / room blocks for Marlo PMS — category-wide or single physical room. */
+model DateBlock {
+  id                 String          @id @default(cuid())
+  roomCategorySlug   String
+  roomCategoryName   String
+  physicalRoomNumber String?
+  startDate          DateTime        @db.Date
+  endDate            DateTime        @db.Date
+  reason             DateBlockReason
+  notes              String          @default("")
+  status             DateBlockStatus @default(ACTIVE)
+  createdBy          String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([roomCategorySlug, startDate, endDate])
+  @@index([status, startDate, endDate])
+  @@index([physicalRoomNumber])
 }
