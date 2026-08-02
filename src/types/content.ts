@@ -123,6 +123,11 @@ export type Post = {
   tags: string[];
   /** Rich HTML body from CMS when available */
   htmlBody?: string;
+  updatedAt?: string;
+  /** Detail-page hero image; listing cards continue using image. */
+  bannerImage?: ImageAsset;
+  featured?: boolean;
+  relatedPostSlugs?: string[];
 };
 
 export type GalleryImage = ImageAsset & {

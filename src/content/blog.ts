@@ -181,7 +181,12 @@ export async function getPosts(): Promise<Post[]> {
       });
       if (entries.length) {
         return entries
-          .filter((entry) => entry.key !== "blog-settings")
+          .filter(
+            (entry) =>
+              !["blog-settings", "page-studio", "page-settings"].includes(
+                entry.key
+              )
+          )
           .map((entry) => {
             const data = entry.data as Record<string, unknown>;
             const text = (key: string, fallback = "") =>
@@ -245,9 +250,23 @@ export async function getPosts(): Promise<Post[]> {
                 alt:
                   text("coverAlt") || text("imageAlt", entry.title),
               },
+              bannerImage:
+                text("imageUrl") || text("bannerUrl")
+                  ? {
+                      src: text("imageUrl") || text("bannerUrl"),
+                      alt: text("imageAlt") || text("coverAlt", entry.title),
+                    }
+                  : undefined,
               content,
               htmlBody: hasHtml ? html : undefined,
               tags,
+              updatedAt: entry.updatedAt.toISOString(),
+              featured: data.featured === true,
+              relatedPostSlugs: Array.isArray(data.relatedPostSlugs)
+                ? (data.relatedPostSlugs as string[]).filter(
+                    (value): value is string => typeof value === "string"
+                  )
+                : [],
             };
           });
       }
@@ -263,7 +282,17 @@ export async function getPostBySlug(slug: string): Promise<Post | undefined> {
 }
 
 export async function getRelatedPosts(slug: string, limit = 3): Promise<Post[]> {
-  return (await getPosts()).filter((post) => post.slug !== slug).slice(0, limit);
+  const all = await getPosts();
+  const current = all.find((post) => post.slug === slug);
+  const requested = current?.relatedPostSlugs ?? [];
+  if (requested.length) {
+    const bySlug = new Map(all.map((post) => [post.slug, post]));
+    const related = requested
+      .map((relatedSlug) => bySlug.get(relatedSlug))
+      .filter((post): post is Post => Boolean(post));
+    if (related.length) return related.slice(0, limit);
+  }
+  return all.filter((post) => post.slug !== slug).slice(0, limit);
 }
 
 export async function getPostCategories(): Promise<string[]> {

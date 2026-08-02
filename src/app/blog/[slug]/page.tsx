@@ -1,5 +1,6 @@
 import { Clock, UserRound } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShareButtons } from "@/components/blog/share-buttons";
 import { PostCard } from "@/components/cards/post-card";
@@ -39,6 +40,27 @@ export default async function BlogPostPage({ params }: PageProps) {
   if (!post) notFound();
 
   const related = await getRelatedPosts(post.slug);
+  const allPosts = await getPosts();
+  const index = allPosts.findIndex((item) => item.slug === post.slug);
+  const previous = index > 0 ? allPosts[index - 1] : undefined;
+  const next = index >= 0 ? allPosts[index + 1] : undefined;
+  const toc = post.htmlBody
+    ? [...post.htmlBody.matchAll(/<h([23])[^>]*>(.*?)<\/h\1>/gi)].map(
+        ([, level, title], index) => ({
+          id: `section-${index + 1}`,
+          level,
+          title: title.replace(/<[^>]+>/g, "").trim(),
+        })
+      )
+    : [];
+  let headingIndex = 0;
+  const htmlBodyWithIds = post.htmlBody?.replace(
+    /<h([23])([^>]*)>/gi,
+    (_match, level, attributes) => {
+      headingIndex += 1;
+      return `<h${level}${attributes} id="section-${headingIndex}">`;
+    }
+  );
 
   return (
     <>
@@ -56,7 +78,7 @@ export default async function BlogPostPage({ params }: PageProps) {
       <PageHero
         eyebrow={post.category}
         title={post.title}
-        image={post.image}
+        image={post.bannerImage ?? post.image}
         crumbs={[
           { label: "Home", href: "/" },
           { label: "Blog", href: "/blog" },
@@ -83,6 +105,14 @@ export default async function BlogPostPage({ params }: PageProps) {
               </div>
               <div className="flex items-center gap-4 text-xs font-light tracking-wider text-charcoal-900/55">
                 <time dateTime={post.date}>{formatDate(post.date)}</time>
+                {post.updatedAt ? (
+                  <>
+                    <span aria-hidden="true" className="text-gold-500">·</span>
+                    <time dateTime={post.updatedAt}>
+                      Updated {formatDate(post.updatedAt)}
+                    </time>
+                  </>
+                ) : null}
                 <span aria-hidden="true" className="text-gold-500">
                   ·
                 </span>
@@ -99,10 +129,36 @@ export default async function BlogPostPage({ params }: PageProps) {
               {post.excerpt}
             </p>
 
+            {toc.length ? (
+              <nav
+                aria-label="On this page"
+                className="mt-10 border-l border-gold-500/60 pl-5"
+              >
+                <p className="text-[10px] font-medium tracking-[0.22em] text-forest-800 uppercase">
+                  On this page
+                </p>
+                <ol className="mt-3 space-y-2">
+                  {toc.map((item) => (
+                    <li
+                      key={item.id}
+                      className={item.level === "3" ? "ml-4" : ""}
+                    >
+                      <a
+                        href={`#${item.id}`}
+                        className="text-sm font-light text-charcoal-900/65 hover:text-gold-600"
+                      >
+                        {item.title}
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            ) : null}
+
             {post.htmlBody ? (
               <div
                 className="prose prose-forest mt-10 max-w-none prose-headings:font-display prose-headings:font-medium prose-headings:text-forest-950 prose-p:font-light prose-p:leading-[1.9] prose-p:text-charcoal-900/75 prose-a:text-gold-600 prose-blockquote:border-gold-500 prose-blockquote:font-light prose-li:font-light"
-                dangerouslySetInnerHTML={{ __html: post.htmlBody }}
+                dangerouslySetInnerHTML={{ __html: htmlBodyWithIds ?? "" }}
               />
             ) : (
               post.content.map((section) => (
@@ -140,6 +196,22 @@ export default async function BlogPostPage({ params }: PageProps) {
             </ul>
             <ShareButtons title={post.title} path={`/blog/${post.slug}`} />
           </Reveal>
+          {previous || next ? (
+            <nav className="mt-8 grid gap-4 border-t border-forest-800/10 pt-8 sm:grid-cols-2">
+              {previous ? (
+                <Link href={`/blog/${previous.slug}`} className="text-sm font-light text-forest-800 hover:text-gold-600">
+                  <span className="block text-[10px] tracking-[0.18em] uppercase">Previous</span>
+                  {previous.title}
+                </Link>
+              ) : <span />}
+              {next ? (
+                <Link href={`/blog/${next.slug}`} className="text-right text-sm font-light text-forest-800 hover:text-gold-600">
+                  <span className="block text-[10px] tracking-[0.18em] uppercase">Next</span>
+                  {next.title}
+                </Link>
+              ) : null}
+            </nav>
+          ) : null}
         </div>
       </article>
 

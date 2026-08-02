@@ -12,5 +12,6 @@ export const adminNav = [
   { label: "Spa", href: "/admin/spa" },
   { label: "Meetings", href: "/admin/meetings" },
   { label: "Newsletter", href: "/admin/newsletter" },
+  { label: "Articles", href: "/admin/articles" },
   { label: "Settings", href: "/admin/settings" },
 ] as const;
