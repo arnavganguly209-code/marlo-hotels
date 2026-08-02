@@ -450,3 +450,28 @@ model WebsiteMetric {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+/** Physical hotel room units (PMS) linked to Marlo catalogue categories by slug. */
+enum PhysicalRoomStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+  OUT_OF_SERVICE
+  CLEANING
+  BLOCKED
+}
+
+model PhysicalRoom {
+  id               String             @id @default(cuid())
+  number           String
+  roomCategorySlug String
+  roomCategoryName String
+  status           PhysicalRoomStatus @default(AVAILABLE)
+  notes            String             @default("")
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@unique([roomCategorySlug, number])
+  @@index([roomCategorySlug, status])
+  @@index([status])
+}

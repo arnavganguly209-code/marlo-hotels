@@ -1,32 +1,26 @@
+import { AdminModulePage } from "@/components/admin/admin-module-page";
+import { AdminRoomNumbersManager } from "@/components/admin/admin-room-numbers-manager";
 import {
-  AdminModulePage,
-  AdminTable,
-  getDb,
-} from "@/components/admin/admin-module-page";
+  getMarloRoomCategories,
+  listPhysicalRooms,
+} from "@/lib/admin/physical-rooms";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminRoomNumbersPage() {
-  const db = getDb();
-  const rooms = db
-    ? await db.room.findMany({
-        orderBy: { name: "asc" },
-        select: { name: true, slug: true, category: true },
-      })
-    : [];
+  const [categories, rooms] = await Promise.all([
+    getMarloRoomCategories(),
+    listPhysicalRooms(),
+  ]);
 
   return (
     <AdminModulePage
       title="Room Numbers"
-      description="Physical room identifiers mapped to catalogue room types."
+      description="Physical room identifiers for every Marlo Hotels room category — add, edit, delete and set status."
     >
-      <AdminTable
-        headers={["Room Type", "Slug", "Category", "Assigned Numbers"]}
-        empty="Assign room numbers once physical inventory is configured."
-        rows={rooms.map((room, index) => [
-          room.name,
-          room.slug,
-          room.category,
-          `${101 + index}, ${201 + index}`,
-        ])}
+      <AdminRoomNumbersManager
+        categories={categories}
+        initialRooms={rooms}
       />
     </AdminModulePage>
   );
