@@ -123,10 +123,12 @@ export default async function RootLayout({
 }>) {
   const pathname = (await headers()).get("x-marlo-pathname") ?? "";
   const isOrbit = pathname.startsWith("/orbit");
+  const isPrintSurface = /\/print\/?$/.test(pathname);
 
   // Orbit routes skip brand DB lookups and hotel JSON-LD to avoid any
   // server-side exception path on the administration console.
-  if (isOrbit) {
+  // Print surfaces render the booking PDF only — no public site chrome.
+  if (isOrbit || isPrintSurface) {
     return (
       <html
         lang="en"

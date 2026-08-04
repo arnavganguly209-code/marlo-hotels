@@ -89,5 +89,6 @@ export const config = {
     "/admin",
     "/admin/:path*",
     "/api/admin/:path*",
+    "/booking/confirmation/:path*",
   ],
 };

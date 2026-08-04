@@ -1,13 +1,27 @@
 import { notFound } from "next/navigation";
-import { BookingConfirmationDocument } from "@/components/booking/booking-confirmation-document";
-import { BookingPrintTrigger } from "@/components/admin/booking-print-trigger";
+import { BookingPdfPrint } from "@/components/booking/booking-pdf-print";
 import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export default async function CustomerBookingPrintPage({ params }: { params: Promise<{ reference: string }> }) {
+export default async function CustomerBookingPrintPage({
+  params,
+}: {
+  params: Promise<{ reference: string }>;
+}) {
+  const reference = (await params).reference;
   const db = getDb();
-  const booking = db ? await db.booking.findUnique({ where: { reference: (await params).reference }, include: { room: { select: { name: true } } } }) : null;
+  const booking = db
+    ? await db.booking.findUnique({
+        where: { reference },
+        select: { id: true, source: true },
+      })
+    : null;
   if (!booking || booking.source === "OFFLINE") notFound();
-  return <><BookingPrintTrigger /><BookingConfirmationDocument {...booking} totalAmount={booking.totalAmount == null ? null : Number(booking.totalAmount)} /></>;
+
+  return (
+    <BookingPdfPrint
+      pdfUrl={`/api/booking/${encodeURIComponent(reference)}/pdf?mode=inline`}
+    />
+  );
 }

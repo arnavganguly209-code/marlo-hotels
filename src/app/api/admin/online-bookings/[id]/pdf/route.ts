@@ -15,7 +15,11 @@ export async function GET(_request: Request, { params }: Context) {
   return new NextResponse(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="marlo-confirmation-${booking.reference}.pdf"`,
+      "Content-Disposition": `${
+        new URL(_request.url).searchParams.get("mode") === "inline"
+          ? "inline"
+          : "attachment"
+      }; filename="marlo-confirmation-${booking.reference}.pdf"`,
       "Cache-Control": "private, no-store",
     },
   });

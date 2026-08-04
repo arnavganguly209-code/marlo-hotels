@@ -12,6 +12,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
+  // Booking print must be bare A4 PDF — no admin chrome.
+  if (/\/print\/?$/.test(pathname)) {
+    return <>{children}</>;
+  }
+
   async function logout() {
     await fetch("/api/admin/auth/logout", { method: "POST" });
     router.replace("/admin");
