@@ -109,15 +109,11 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
           </Reveal>
 
           <Reveal delay={0.15}>
-            <dl className="mt-12 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-forest-800/10 pt-10 sm:grid-cols-4">
+            <dl className="about-stats mt-14 grid grid-cols-2 lg:grid-cols-4">
               {content.stats.map((stat) => (
-                <div key={stat.label} className="text-left">
-                  <dd className="stat-figure text-[2.85rem] text-forest-900 md:text-[3.5rem]">
-                    {stat.value}
-                  </dd>
-                  <dt className="stat-caption mt-2.5 text-charcoal-900/60">
-                    {stat.label}
-                  </dt>
+                <div key={stat.label} className="about-stat">
+                  <dd className="about-stat-value font-display">{stat.value}</dd>
+                  <dt className="about-stat-label">{stat.label}</dt>
                 </div>
               ))}
             </dl>

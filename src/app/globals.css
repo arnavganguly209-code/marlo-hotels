@@ -281,6 +281,126 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Homepage About — statistics strip only (directly under hero narrative) */
+.about-stats {
+  border-top: 1px solid rgb(23 59 54 / 0.1);
+  padding-top: 2.75rem;
+  gap: 0;
+}
+
+.about-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: center;
+  padding: 1.15rem 1rem 1.35rem;
+  min-width: 0;
+}
+
+.about-stat:nth-child(odd)::after {
+  content: "";
+  position: absolute;
+  top: 18%;
+  right: 0;
+  width: 1px;
+  height: 64%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgb(201 150 63 / 0.45),
+    transparent
+  );
+}
+
+@media (min-width: 1024px) {
+  .about-stat:nth-child(odd)::after {
+    display: block;
+  }
+
+  .about-stat:nth-child(even)::after {
+    content: "";
+    position: absolute;
+    top: 18%;
+    right: 0;
+    width: 1px;
+    height: 64%;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(201 150 63 / 0.45),
+      transparent
+    );
+  }
+
+  .about-stat:nth-child(4n)::after {
+    display: none;
+  }
+}
+
+.site-typography .about-stat-value,
+.about-stat-value {
+  margin: 0;
+  font-family: var(--font-display) !important;
+  font-weight: 600;
+  font-size: clamp(2.65rem, 4.2vw, 3.65rem);
+  line-height: 0.92;
+  letter-spacing: -0.028em;
+  color: #173b36;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  transition: color 0.45s ease;
+}
+
+.site-typography .about-stat-label,
+.about-stat-label {
+  margin: 1.05rem 0 0;
+  max-width: 11rem;
+  font-family: var(--font-sans) !important;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: rgb(23 59 54 / 0.72);
+  transition: color 0.45s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .about-stat:hover .about-stat-value {
+    color: #9a7a3e;
+  }
+
+  .about-stat:hover .about-stat-label {
+    color: rgb(23 59 54 / 0.9);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .about-stat {
+    padding: 1.35rem 1.25rem 1.5rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .about-stat {
+    padding: 1rem 0.65rem 1.2rem;
+  }
+
+  .site-typography .about-stat-value,
+  .about-stat-value {
+    font-size: clamp(2.35rem, 11vw, 2.85rem);
+  }
+
+  .site-typography .about-stat-label,
+  .about-stat-label {
+    letter-spacing: 0.16em;
+    font-size: 0.58rem;
+  }
+}
+
 /* Frosted glass surfaces */
 @utility glass-dark {
   background: rgb(10 24 20 / 0.72);
