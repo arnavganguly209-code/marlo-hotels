@@ -4,106 +4,90 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { siteConfig } from "@/lib/site";
 
 export type BookingConfirmationPdfPayload = {
-  reference: string;
-  status: string;
-  guestName: string;
-  guestEmail: string;
-  guestPhone: string;
-  country?: string | null;
-  checkIn: Date | string;
-  checkOut: Date | string;
-  adults: number;
-  children: number;
-  rooms: number;
-  breakfast: boolean;
-  paymentStatus: string;
-  totalAmount?: number | null;
-  physicalRoomNumber?: string | null;
-  notes?: string | null;
-  room: { name: string };
+  reference: string; status: string; confirmationStatus?: string | null; createdAt?: Date | string | null;
+  guestName: string; guestEmail: string; guestPhone: string; country?: string | null;
+  checkIn: Date | string; checkOut: Date | string; adults: number; children: number; rooms: number; breakfast: boolean;
+  paymentStatus: string; totalAmount?: number | null; roomRate?: number | null; taxes?: number | null;
+  additionalCharges?: number | null; paymentMethod?: string | null; physicalRoomNumber?: string | null;
+  notes?: string | null; room: { name: string };
 };
 
-const hex = (value: string) => rgb(
-  parseInt(value.slice(1, 3), 16) / 255,
-  parseInt(value.slice(3, 5), 16) / 255,
-  parseInt(value.slice(5, 7), 16) / 255
-);
-const green = hex("#0c1a18");
-const gold = hex("#c9963f");
-const cream = hex("#f7f2e8");
-const muted = hex("#657069");
+const hex = (value: string) => rgb(parseInt(value.slice(1, 3), 16) / 255, parseInt(value.slice(3, 5), 16) / 255, parseInt(value.slice(5, 7), 16) / 255);
+const green = hex("#0c1a18"), gold = hex("#c9963f"), cream = hex("#f7f2e8"), muted = hex("#657069"), border = hex("#ded5c6");
 const date = (value: Date | string) => new Intl.DateTimeFormat("en", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(value));
+const money = (value?: number | null) => value == null ? "—" : new Intl.NumberFormat("en-US", { style: "currency", currency: siteConfig.currency }).format(value);
+const displayStatus = (value: string) => value.replaceAll("_", " ");
+const compact = (value?: string | null, limit = 52) => {
+  const normalized = value?.replace(/\s+/g, " ").trim() || "";
+  return normalized.length > limit ? `${normalized.slice(0, limit - 1).trimEnd()}…` : normalized || "—";
+};
 
-export async function generateBookingConfirmationPdf(
-  booking: BookingConfirmationPdfPayload
-): Promise<Uint8Array> {
+export function nightsBetween(checkIn: Date | string, checkOut: Date | string) {
+  return Math.max(0, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86_400_000));
+}
+
+export async function generateBookingConfirmationPdf(booking: BookingConfirmationPdfPayload): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const page = pdf.addPage([595.28, 841.89]);
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const serif = await pdf.embedFont(StandardFonts.TimesRoman);
-  const { width, height } = page.getSize();
-  const left = 48;
-  const right = width - 48;
-  let y = height - 52;
-  const text = (value: string, x: number, at: number, size = 10, font = regular, color = green) =>
-    page.drawText(value, { x, y: at, size, font, color });
-  const rule = (at: number) => page.drawLine({ start: { x: left, y: at }, end: { x: right, y: at }, thickness: 0.7, color: hex("#ded5c6") });
-  const field = (label: string, value: string, x: number, at: number, fieldWidth = 235) => {
-    text(label.toUpperCase(), x, at, 6.5, bold, gold);
-    text(value || "—", x, at - 14, 9, regular);
-    page.drawLine({ start: { x, y: at - 20 }, end: { x: x + fieldWidth, y: at - 20 }, thickness: 0.5, color: hex("#ded5c6") });
+  const { width, height } = page.getSize(), left = 40, right = width - 40, contentWidth = right - left;
+  let y = height - 42;
+  const text = (value: string, x: number, at: number, size = 9, font = regular, color = green) => page.drawText(value, { x, y: at, size, font, color });
+  const centered = (value: string, at: number, size: number, font = regular, color = green) => text(value, (width - font.widthOfTextAtSize(value, size)) / 2, at, size, font, color);
+  const rule = (at: number, color = border) => page.drawLine({ start: { x: left, y: at }, end: { x: right, y: at }, thickness: 0.7, color });
+  const section = (title: string) => { page.drawRectangle({ x: left, y: y - 17, width: contentWidth, height: 17, color: cream, borderColor: border, borderWidth: 0.5 }); text(title.toUpperCase(), left + 10, y - 11.5, 7, bold, gold); y -= 25; };
+  const field = (label: string, value: string, x: number, at: number, fieldWidth: number) => {
+    text(label.toUpperCase(), x, at, 6, bold, gold); text(compact(value, fieldWidth > 230 ? 88 : 42), x, at - 11, 8.2, regular);
+    page.drawLine({ start: { x, y: at - 16 }, end: { x: x + fieldWidth, y: at - 16 }, thickness: 0.45, color: border });
   };
 
   page.drawRectangle({ x: 0, y: height - 4, width, height: 4, color: gold });
-  text("MARLO HOTELS", left, y, 12, bold, gold);
-  text("STAY BEYOND EXTRAORDINARY", left, y - 15, 7, regular, muted);
-  text(siteConfig.contact.address, right - 178, y, 7, regular, muted);
-  text(siteConfig.contact.reservationsEmail, right - 178, y - 12, 7, regular, muted);
-  y -= 63;
-  text("Booking Confirmation", left, y, 25, serif);
-  text(`BOOKING ID  ${booking.reference}`, left, y - 20, 8, bold, gold);
-  text(booking.status.replaceAll("_", " "), right - 92, y - 18, 8, bold, green);
-  y -= 44;
-  rule(y);
-  y -= 22;
-  text("Guest details", left, y, 11, bold);
-  y -= 18;
-  field("Guest name", booking.guestName, left, y);
-  field("Email", booking.guestEmail, 310, y);
-  y -= 36;
-  field("Telephone", booking.guestPhone, left, y);
-  field("Country", booking.country || "—", 310, y);
-  y -= 44;
-  text("Stay at Marlo", left, y, 11, bold);
-  y -= 18;
-  field("Check-in", `${date(booking.checkIn)} · ${siteConfig.hours.checkIn || "2:00 PM"}`, left, y);
-  field("Check-out", `${date(booking.checkOut)} · ${siteConfig.hours.checkOut || "11:00 AM"}`, 310, y);
-  const nights = Math.max(0, Math.round((+new Date(booking.checkOut) - +new Date(booking.checkIn)) / 86_400_000));
-  y -= 36;
-  field("Accommodation", booking.room.name, left, y);
-  field("Room / guests", `${booking.physicalRoomNumber || "To be assigned"} · ${nights} night${nights === 1 ? "" : "s"} · ${booking.adults} adult${booking.adults === 1 ? "" : "s"}${booking.children ? `, ${booking.children} child${booking.children === 1 ? "" : "ren"}` : ""}`, 310, y);
-  y -= 44;
-  page.drawRectangle({ x: left, y: y - 69, width: right - left, height: 69, color: cream });
-  text("Payment summary", left + 14, y - 17, 10, bold);
-  text(`Breakfast: ${booking.breakfast ? "Included" : "Not included"} · ${booking.rooms} room${booking.rooms === 1 ? "" : "s"}`, left + 14, y - 34, 8, regular, muted);
-  text(`Payment: ${booking.paymentStatus === "UNPAID" ? "Pending" : booking.paymentStatus.replaceAll("_", " ")}`, left + 14, y - 50, 8, regular, muted);
-  const total = booking.totalAmount == null ? "Confirmed on request" : new Intl.NumberFormat("en-US", { style: "currency", currency: siteConfig.currency }).format(booking.totalAmount);
-  text("GRAND TOTAL", right - 150, y - 25, 7, bold, gold);
-  text(total, right - 150, y - 46, 14, bold);
-  y -= 94;
-  text("Arrival & policies", left, y, 11, bold);
-  y -= 15;
-  const policy = `Check-in from ${siteConfig.hours.checkIn || "14:00"}; check-out by ${siteConfig.hours.checkOut || "11:00"}. Please present a valid ID on arrival. Cancellations and amendments remain subject to the booking terms.`;
-  const policyLines = policy.match(/.{1,95}(?:\s|$)/g) || [policy];
-  policyLines.forEach((line, index) => text(line.trim(), left, y - index * 11, 8, regular, muted));
-  y -= 48;
-  page.drawRectangle({ x: left, y: y - 56, width: 56, height: 56, borderColor: gold, borderWidth: 1 });
-  text("QR", left + 19, y - 31, 9, bold, gold);
-  text("Present this confirmation at reception. Our team is pleased to welcome you.", left + 72, y - 18, 8.5, regular, muted);
-  text("Guest signature", left + 72, y - 43, 7, bold, gold);
-  page.drawLine({ start: { x: left + 155, y: y - 45 }, end: { x: right, y: y - 45 }, thickness: 0.6, color: hex("#b9b1a4") });
-  text("Thank you for choosing Marlo Hotels.", left, 62, 10, serif, green);
-  text("MARLO HOTELS  ·  KATHMANDU  ·  marlohotels.com", left, 45, 6.5, bold, gold);
+  // Typographic monogram mark (no QR / signature)
+  const markSize = 28;
+  const markX = (width - markSize) / 2;
+  page.drawRectangle({
+    x: markX,
+    y: y - markSize + 4,
+    width: markSize,
+    height: markSize,
+    borderColor: gold,
+    borderWidth: 1.1,
+  });
+  text("MH", markX + 5.2, y - 14, 11, bold, gold);
+  y -= 38;
+  centered(siteConfig.name.toUpperCase(), y, 16, serif, gold);
+  centered(siteConfig.tagline.toUpperCase(), y - 14, 6.5, bold, muted);
+  centered(siteConfig.contact.address, y - 26, 6.5, regular, muted);
+  centered(`${siteConfig.contact.phone}  ·  ${siteConfig.contact.reservationsEmail}`, y - 37, 6.5, regular, muted);
+  centered(siteConfig.url.replace(/^https?:\/\//, ""), y - 48, 6.5, regular, muted);
+  y -= 64; rule(y, gold); centered("BOOKING CONFIRMATION", y - 22, 19, serif); centered(`BOOKING NUMBER  ·  ${booking.reference}`, y - 36, 7, bold, gold); y -= 49;
+
+  const col = (contentWidth - 16) / 2;
+  section("Booking Information");
+  field("Booking Number", booking.reference, left + 8, y, col); field("Booking Date", date(booking.createdAt || new Date()), left + 8 + col + 16, y, col); y -= 25;
+  field("Booking Status", displayStatus(booking.status), left + 8, y, col); field("Confirmation Status", booking.confirmationStatus || (booking.status === "CONFIRMED" ? "Confirmed" : "Pending Confirmation"), left + 8 + col + 16, y, col); y -= 29;
+  section("Guest Information");
+  field("Name", booking.guestName, left + 8, y, col); field("Email", booking.guestEmail, left + 8 + col + 16, y, col); y -= 25;
+  field("Phone", booking.guestPhone, left + 8, y, col); field("Country", booking.country || "—", left + 8 + col + 16, y, col); y -= 25;
+  field("Special Requests", booking.notes || "—", left + 8, y, contentWidth - 16); y -= 29;
+  section("Stay Information");
+  field("Room Category", booking.room.name, left + 8, y, col); field("Room Number", booking.physicalRoomNumber || "To be assigned", left + 8 + col + 16, y, col); y -= 25;
+  field("Guests", `${booking.adults} adult${booking.adults === 1 ? "" : "s"}`, left + 8, y, col); field("Children", String(booking.children), left + 8 + col + 16, y, col); y -= 25;
+  field("Check-in", date(booking.checkIn), left + 8, y, col); field("Check-out", date(booking.checkOut), left + 8 + col + 16, y, col); y -= 25;
+  const nights = nightsBetween(booking.checkIn, booking.checkOut);
+  field("Nights", `${nights} night${nights === 1 ? "" : "s"}`, left + 8, y, col); field("Breakfast Included", booking.breakfast ? "Yes" : "No", left + 8 + col + 16, y, col); y -= 29;
+  section("Payment Information");
+  field("Room Rate", money(booking.roomRate), left + 8, y, col); field("Taxes", money(booking.taxes), left + 8 + col + 16, y, col); y -= 25;
+  field("Additional Charges", money(booking.additionalCharges), left + 8, y, col); field("Grand Total", booking.totalAmount == null ? "Confirmed on request" : money(booking.totalAmount), left + 8 + col + 16, y, col); y -= 25;
+  field("Payment Status", displayStatus(booking.paymentStatus), left + 8, y, col); field("Payment Method", booking.paymentMethod || "Website / Pay on arrival", left + 8 + col + 16, y, col); y -= 29;
+  section("Hotel Information");
+  field("Check-in Time", siteConfig.hours.checkIn, left + 8, y, col); field("Check-out Time", siteConfig.hours.checkOut, left + 8 + col + 16, y, col); y -= 25;
+  field("Cancellation Policy", "Cancellations and amendments are subject to your booking terms.", left + 8, y, contentWidth - 16); y -= 25;
+  field("Important Hotel Notes", "Please present valid identification on arrival. Our team is pleased to welcome you.", left + 8, y, contentWidth - 16);
+  rule(74, gold); centered("Thank you for choosing Marlo Hotels.", 58, 10, serif, green);
+  centered(`${siteConfig.name}  ·  ${siteConfig.url.replace(/^https?:\/\//, "")}  ·  ${siteConfig.contact.reservationsEmail}`, 44, 6.2, bold, gold);
+  centered(`${siteConfig.contact.phone}  ·  ${siteConfig.contact.address}`, 33, 6.2, regular, muted);
   return pdf.save();
 }

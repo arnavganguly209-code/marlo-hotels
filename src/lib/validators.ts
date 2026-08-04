@@ -8,6 +8,7 @@ export const contactSchema = z.object({
   name: z.string().min(2, "Please tell us your name"),
   email: z.email("Please enter a valid email address"),
   phone: z.string().optional(),
+  country: z.string().optional(),
   subject: z.string().min(3, "Please add a subject"),
   message: z.string().min(10, "Please write a few words for us"),
 });

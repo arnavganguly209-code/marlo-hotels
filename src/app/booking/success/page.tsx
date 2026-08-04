@@ -56,12 +56,25 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
           </p>
 
           {reference ? (
-            <p className="mt-8 inline-block rounded-2xl border border-gold-500/35 bg-cream-50 px-6 py-4 text-sm text-forest-950">
-              Booking ID{" "}
-              <strong className="tracking-[0.14em] text-gold-700">
-                {reference}
-              </strong>
-            </p>
+            <>
+              <p className="mt-8 inline-block rounded-2xl border border-gold-500/35 bg-cream-50 px-6 py-4 text-sm text-forest-950">
+                Booking ID{" "}
+                <strong className="tracking-[0.14em] text-gold-700">
+                  {reference}
+                </strong>
+              </p>
+              <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                <a href={`/api/booking/${encodeURIComponent(reference)}/pdf?mode=inline`} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center rounded-xl bg-forest-900 px-5 text-[10px] font-semibold tracking-[0.16em] text-ivory uppercase transition hover:bg-forest-800">
+                  View Booking PDF
+                </a>
+                <a href={`/api/booking/${encodeURIComponent(reference)}/pdf?mode=download`} className="inline-flex h-11 items-center justify-center rounded-xl border border-gold-600 bg-gold-500 px-5 text-[10px] font-semibold tracking-[0.16em] text-forest-950 uppercase transition hover:bg-gold-400">
+                  Download Booking PDF
+                </a>
+                <a href={`/booking/confirmation/${encodeURIComponent(reference)}/print`} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center rounded-xl border border-forest-900/25 px-5 text-[10px] font-semibold tracking-[0.16em] text-forest-950 uppercase transition hover:border-gold-600 hover:text-gold-700">
+                  Print Booking
+                </a>
+              </div>
+            </>
           ) : null}
 
           <div className="mt-10 rounded-2xl border border-forest-800/10 bg-cream-50 p-6 text-left">

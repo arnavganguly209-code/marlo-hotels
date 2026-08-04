@@ -130,6 +130,8 @@ export async function POST(request: Request) {
     rooms: roomsRequested,
     breakfast: Boolean(parsed.data.breakfast),
     totalAmount: parsed.data.totalAmount,
+    status: "PENDING",
+    createdAt: new Date(),
   });
 
   return NextResponse.json({ ok: true, reference });

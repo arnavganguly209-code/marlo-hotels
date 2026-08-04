@@ -15,7 +15,16 @@ export async function POST(request: Request) {
 
   const db = getDb();
   if (db) {
-    await db.contactMessage.create({ data: parsed.data });
+    await db.contactMessage.create({
+      data: {
+        name: parsed.data.name,
+        email: parsed.data.email,
+        phone: parsed.data.phone || null,
+        country: parsed.data.country || null,
+        subject: parsed.data.subject,
+        message: parsed.data.message,
+      },
+    });
   }
 
   return NextResponse.json({ ok: true });

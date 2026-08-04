@@ -362,12 +362,16 @@ model ContactMessage {
   name      String
   email     String
   phone     String?
+  country   String?
   subject   String
   message   String
   handled   Boolean       @default(false)
   status    MessageStatus @default(UNREAD)
   repliedAt DateTime?
   createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+  @@index([subject])
 }
 
 model Setting {

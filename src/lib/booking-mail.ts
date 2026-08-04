@@ -4,6 +4,7 @@ import {
   buildBookingConfirmationEmailHtml,
   type BookingConfirmationEmailPayload,
 } from "@/lib/booking-confirmation-email";
+import { generateBookingConfirmationPdf } from "@/lib/booking-confirmation-pdf";
 
 type BookingMailPayload = {
   reference: string;
@@ -22,6 +23,9 @@ type BookingMailPayload = {
   rooms: number;
   breakfast: boolean;
   totalAmount?: number;
+  status?: string;
+  createdAt?: string | Date;
+  physicalRoomNumber?: string | null;
 };
 
 export type PdfAttachment = {
@@ -78,15 +82,45 @@ export async function sendBookingEmails(payload: BookingMailPayload) {
     "info@marlohotels.com";
 
   try {
+    let pdf: Uint8Array | undefined;
+    if (process.env.RESEND_API_KEY) {
+      try {
+        pdf = await generateBookingConfirmationPdf({
+          reference: payload.reference,
+          status: payload.status || "PENDING",
+          createdAt: payload.createdAt,
+          guestName: payload.guestName,
+          guestEmail: payload.guestEmail,
+          guestPhone: payload.guestPhone,
+          country: payload.country,
+          checkIn: payload.checkIn,
+          checkOut: payload.checkOut,
+          adults: payload.adults,
+          children: payload.children,
+          rooms: payload.rooms,
+          breakfast: payload.breakfast,
+          paymentStatus: "UNPAID",
+          totalAmount: payload.totalAmount,
+          physicalRoomNumber: payload.physicalRoomNumber,
+          notes: payload.notes,
+          room: { name: payload.roomName },
+        });
+      } catch (error) {
+        console.error("[booking-mail] Failed to generate PDF attachment", error);
+      }
+    }
+    const attachment = pdf ? { filename: `marlo-confirmation-${payload.reference}.pdf`, content: pdf, contentType: "application/pdf" } : undefined;
     const guestOk = await sendViaResend(
       payload.guestEmail,
       `Marlo Hotels reservation ${payload.reference}`,
-      buildBookingConfirmationEmailHtml(payload)
+      buildBookingConfirmationEmailHtml({ ...payload, phone: payload.guestPhone, status: payload.status }),
+      attachment
     );
     const hotelOk = await sendViaResend(
       hotelTo,
       `New booking ${payload.reference} — ${payload.guestName}`,
-      buildBookingConfirmationEmailHtml(payload)
+      buildBookingConfirmationEmailHtml({ ...payload, phone: payload.guestPhone, status: payload.status }),
+      attachment
     );
     if (!guestOk && !hotelOk) {
       console.info("[booking-mail] No mail provider configured; booking saved.", {
@@ -98,7 +132,7 @@ export async function sendBookingEmails(payload: BookingMailPayload) {
   }
 }
 
-type ReadyBooking = BookingConfirmationEmailPayload & { status: string };
+type ReadyBooking = BookingConfirmationEmailPayload & { status: string; guestPhone?: string };
 
 /** Sends an already-confirmed reservation with its on-demand PDF attachment. */
 export async function sendBookingConfirmationReady({
@@ -118,7 +152,7 @@ export async function sendBookingConfirmationReady({
     const sent = await sendViaResend(
       booking.guestEmail,
       `Your Marlo Hotels confirmation — ${booking.reference}`,
-      buildBookingConfirmationEmailHtml(booking),
+      buildBookingConfirmationEmailHtml({ ...booking, phone: booking.phone || booking.guestPhone }),
       pdf
     );
     return sent ? { sent: true } : { sent: false, reason: "Email provider rejected the message" };

@@ -113,6 +113,20 @@ export function ContactForm({
           />
         </div>
         <div>
+          <Label htmlFor="contact-country" className="text-forest-900">
+            Country <span className="normal-case opacity-50">(optional)</span>
+          </Label>
+          <Input
+            id="contact-country"
+            autoComplete="country-name"
+            placeholder="Nepal"
+            className={fieldClass}
+            {...register("country")}
+          />
+        </div>
+      </div>
+
+      <div>
           <Label htmlFor="contact-subject" className="text-forest-900">
             Subject
           </Label>
@@ -123,7 +137,6 @@ export function ContactForm({
             {...register("subject")}
           />
           <FieldError message={errors.subject?.message} />
-        </div>
       </div>
 
       <div>

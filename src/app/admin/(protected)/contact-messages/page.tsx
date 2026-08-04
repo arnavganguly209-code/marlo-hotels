@@ -1,33 +1,53 @@
 import {
   AdminModulePage,
-  AdminTable,
   getDb,
 } from "@/components/admin/admin-module-page";
+import {
+  AdminInquiriesManager,
+  type InquiryRow,
+} from "@/components/admin/admin-inquiries-manager";
+
+function toRow(message: {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  country: string | null;
+  subject: string;
+  message: string;
+  status: string;
+  createdAt: Date;
+}): InquiryRow {
+  return {
+    id: message.id,
+    name: message.name,
+    email: message.email,
+    phone: message.phone,
+    country: message.country,
+    subject: message.subject,
+    message: message.message,
+    status: message.status,
+    createdAt: message.createdAt.toISOString(),
+  };
+}
 
 export default async function AdminContactMessagesPage() {
   const db = getDb();
   const messages = db
     ? await db.contactMessage.findMany({
         orderBy: { createdAt: "desc" },
-        take: 50,
+        take: 200,
       })
     : [];
 
   return (
     <AdminModulePage
       title="Contact Messages"
-      description="Inquiries submitted through the website contact form."
+      description="Every website inquiry, contact, and request submitted through Marlo forms."
     >
-      <AdminTable
-        headers={["Name", "Email", "Subject", "Status", "Received"]}
-        empty="No contact messages yet."
-        rows={messages.map((message) => [
-          message.name,
-          message.email,
-          message.subject || "—",
-          message.status,
-          message.createdAt.toISOString().slice(0, 10),
-        ])}
+      <AdminInquiriesManager
+        initialMessages={messages.map(toRow)}
+        emptyLabel="No contact messages yet."
       />
     </AdminModulePage>
   );
