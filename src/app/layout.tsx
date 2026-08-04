@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import {
   Cormorant_Garamond,
+  DM_Sans,
   Jost,
-  Playfair_Display,
-  Source_Sans_3,
+  Libre_Bodoni,
 } from "next/font/google";
 import { headers } from "next/headers";
 import { SiteShell } from "@/components/layout/site-shell";
@@ -14,7 +14,7 @@ import { siteConfig } from "@/lib/site";
 import { getBrandSettings, getPaymentLogoSettings } from "@/lib/site-settings";
 import "./globals.css";
 
-/** Locked for Header / Hero / Footer — do not replace. */
+/** Locked for Header / Homepage Hero / Footer — do not replace. */
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
@@ -23,7 +23,7 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
-/** Locked for Header / Hero / Footer — do not replace. */
+/** Locked for Header / Homepage Hero / Footer — do not replace. */
 const jost = Jost({
   variable: "--font-jost",
   subsets: ["latin"],
@@ -32,18 +32,18 @@ const jost = Jost({
   preload: true,
 });
 
-/** Premium content headings (site body only). */
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+/** Luxury content headings — JW / Four Seasons serif character. */
+const libreBodoni = Libre_Bodoni({
+  variable: "--font-libre-bodoni",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
   style: ["normal", "italic"],
   display: "swap",
 });
 
-/** Premium content body (site body only). */
-const sourceSans = Source_Sans_3({
-  variable: "--font-source-sans",
+/** Premium content body — clean hotel brochure sans. */
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
@@ -130,7 +130,7 @@ export default async function RootLayout({
     return (
       <html
         lang="en"
-        className={`${cormorant.variable} ${jost.variable} ${playfair.variable} ${sourceSans.variable}`}
+        className={`${cormorant.variable} ${jost.variable} ${libreBodoni.variable} ${dmSans.variable}`}
       >
         <body className="antialiased">{children}</body>
       </html>
@@ -162,7 +162,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${jost.variable} ${playfair.variable} ${sourceSans.variable}`}
+      className={`${cormorant.variable} ${jost.variable} ${libreBodoni.variable} ${dmSans.variable}`}
     >
       <body className="antialiased">
         <JsonLd data={hotelJsonLd()} />

@@ -79,10 +79,10 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
             delay={0.4}
             className="glass-light shadow-luxury-sm absolute -bottom-6 left-6 hidden rounded-xl px-6 py-4 md:block"
           >
-            <p className="font-display stat-figure text-5xl text-forest-800">
+            <p className="font-display stat-figure text-[3.35rem] text-forest-900 md:text-6xl">
               {content.badgeValue}
             </p>
-            <p className="stat-caption mt-1 text-gold-600">
+            <p className="stat-caption mt-1.5 text-gold-600">
               {content.badgeLabel}
             </p>
           </Reveal>
@@ -112,10 +112,10 @@ export function AboutSection({ content }: { content: AboutEditorContent }) {
             <dl className="mt-12 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-forest-800/10 pt-10 sm:grid-cols-4">
               {content.stats.map((stat) => (
                 <div key={stat.label} className="text-left">
-                  <dd className="stat-figure text-5xl text-forest-800 md:text-[3.25rem]">
+                  <dd className="stat-figure text-[2.85rem] text-forest-900 md:text-[3.5rem]">
                     {stat.value}
                   </dd>
-                  <dt className="stat-caption mt-2 text-charcoal-900/55">
+                  <dt className="stat-caption mt-2.5 text-charcoal-900/60">
                     {stat.label}
                   </dt>
                 </div>

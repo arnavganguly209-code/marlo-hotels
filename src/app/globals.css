@@ -40,9 +40,9 @@
   /* Legacy (Header / Hero / Footer lock) */
   --font-legacy-display: var(--font-cormorant), ui-serif, Georgia, serif;
   --font-legacy-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
-  /* Content system (everything else) */
-  --font-display: var(--font-playfair), var(--font-cormorant), ui-serif, Georgia, serif;
-  --font-sans: var(--font-source-sans), var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  /* Content system (everything else — Header / Home Hero / Footer excluded) */
+  --font-display: var(--font-libre-bodoni), var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-sans: var(--font-dm-sans), var(--font-jost), ui-sans-serif, system-ui, sans-serif;
 
   /* ── Shadows ────────────────────────────────────────────────── */
   --shadow-luxury: 0 24px 60px -18px rgb(12 26 24 / 0.35);
@@ -123,8 +123,8 @@ body {
 .site-typography {
   font-family: var(--font-sans);
   font-weight: 500;
-  line-height: 1.75;
-  letter-spacing: 0.012em;
+  line-height: 1.78;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -132,34 +132,33 @@ body {
 .site-typography :where(h1, h2, h3, h4, h5, h6) {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.018em;
   text-wrap: balance;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "kern" 1, "liga" 1;
+  font-feature-settings: "kern" 1, "liga" 1, "onum" 0;
   -webkit-font-smoothing: antialiased;
-  color: inherit;
+  /* Do NOT set color — preserve Tailwind color utilities (e.g. ivory on heroes). */
 }
 
 .site-typography h1 {
-  line-height: 1.08;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.022em;
 }
 
 .site-typography h2 {
-  line-height: 1.12;
-  font-weight: 650;
+  line-height: 1.14;
   font-weight: 600;
 }
 
 .site-typography h3 {
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  line-height: 1.22;
+  letter-spacing: -0.014em;
   font-weight: 600;
 }
 
 .site-typography h4 {
-  line-height: 1.25;
+  line-height: 1.28;
   font-weight: 600;
 }
 
@@ -168,13 +167,13 @@ body {
 }
 
 .site-typography :where(p, li, dd) {
-  line-height: 1.8;
-  letter-spacing: 0.014em;
+  line-height: 1.82;
+  letter-spacing: 0.012em;
   font-weight: 500;
 }
 
 .site-typography :where(p + p) {
-  margin-top: 1.15em;
+  margin-top: 1.1em;
 }
 
 .site-typography .font-display {
@@ -192,11 +191,10 @@ body {
 }
 
 .site-typography .font-medium {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .site-typography .font-semibold {
-  font-weight: 650;
   font-weight: 600;
 }
 
@@ -207,13 +205,13 @@ body {
 /* Cards & buttons inside content */
 .site-typography :where(article, .group) h3,
 .site-typography :where(article, .group) .font-display {
-  letter-spacing: -0.018em;
+  letter-spacing: -0.016em;
 }
 
 .site-typography button,
 .site-typography [class*="btn"],
 .site-typography a[class*="rounded"] {
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   font-weight: 600;
 }
 
@@ -267,17 +265,20 @@ body {
 @utility stat-figure {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 @utility stat-caption {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  line-height: 1.4;
+  line-height: 1.45;
+  font-family: var(--font-sans);
 }
 
 /* Frosted glass surfaces */
