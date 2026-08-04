@@ -71,7 +71,7 @@ export function Footer({
   ];
 
   return (
-    <footer className="bg-forest-950 text-cream-200">
+    <footer className="preserve-type bg-forest-950 text-cream-200">
       {/* Newsletter band */}
       {ctaContent?.enabled !== false ? <div className="border-b border-ivory/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-8 px-5 py-16 md:flex-row md:justify-between md:px-8">

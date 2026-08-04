@@ -56,7 +56,7 @@ export function Hero({
     ) : null;
 
   return (
-    <>
+    <div className="preserve-type">
       {/* —— Mobile: video, then booking on dark strip (same glass as desktop) —— */}
       <div className="pt-[4.5rem] lg:hidden">
         <section
@@ -105,6 +105,6 @@ export function Hero({
           ) : null}
         </section>
       </div>
-    </>
+    </div>
   );
 }

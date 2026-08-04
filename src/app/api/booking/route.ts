@@ -101,6 +101,8 @@ export async function POST(request: Request) {
         guestName: parsed.data.guestName,
         guestEmail: parsed.data.guestEmail,
         guestPhone: parsed.data.guestPhone,
+        country: parsed.data.country,
+        breakfast: Boolean(parsed.data.breakfast),
         notes: notesPayload,
         totalAmount: parsed.data.totalAmount ?? null,
         paymentStatus: "UNPAID",

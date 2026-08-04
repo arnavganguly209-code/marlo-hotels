@@ -20,9 +20,12 @@ enum RoomCategory {
 enum BookingStatus {
   PENDING
   CONFIRMED
+  ON_HOLD
   CHECKED_IN
   CHECKED_OUT
   CANCELLED
+  NO_SHOW
+  REFUNDED
   COMPLETED
 }
 

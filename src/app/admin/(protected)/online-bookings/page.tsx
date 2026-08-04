@@ -1,48 +1,30 @@
-import {
-  AdminModulePage,
-  AdminTable,
-  getDb,
-} from "@/components/admin/admin-module-page";
-import { formatCurrency } from "@/lib/utils";
+import { AdminOnlineBookingsManager } from "@/components/admin/admin-online-bookings-manager";
+import { AdminModulePage, getDb } from "@/components/admin/admin-module-page";
 
 export default async function AdminOnlineBookingsPage() {
   const db = getDb();
   const bookings = db
     ? await db.booking.findMany({
+        where: { source: { not: "OFFLINE" } },
         orderBy: { createdAt: "desc" },
-        take: 50,
-        include: { room: { select: { name: true } } },
+        include: { room: { select: { name: true, slug: true } } },
       })
     : [];
+  const initialBookings = bookings.map((booking) => ({
+    ...booking,
+    totalAmount: booking.totalAmount === null ? null : Number(booking.totalAmount),
+    checkIn: booking.checkIn.toISOString(),
+    checkOut: booking.checkOut.toISOString(),
+    createdAt: booking.createdAt.toISOString(),
+    updatedAt: booking.updatedAt.toISOString(),
+  }));
 
   return (
     <AdminModulePage
       title="Online Bookings"
-      description="Website reservations captured through the Marlo booking engine."
+      description="Manage website reservations, guest confirmation documents and payment status."
     >
-      <AdminTable
-        headers={[
-          "Reference",
-          "Guest",
-          "Room",
-          "Source",
-          "Check-in",
-          "Status",
-          "Total",
-        ]}
-        empty="No online bookings yet."
-        rows={bookings.map((booking) => [
-          booking.reference,
-          booking.guestName,
-          booking.room.name,
-          booking.source,
-          booking.checkIn.toISOString().slice(0, 10),
-          booking.status,
-          booking.totalAmount
-            ? formatCurrency(Number(booking.totalAmount))
-            : "—",
-        ])}
-      />
+      <AdminOnlineBookingsManager initialBookings={initialBookings} />
     </AdminModulePage>
   );
 }

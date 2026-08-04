@@ -1,12 +1,7 @@
 import "server-only";
 
+import { ensureStaticBlogPosts, RESERVED_BLOG_KEYS } from "@/lib/blog-seed";
 import { getDb } from "@/lib/db";
-
-export const RESERVED_BLOG_KEYS = new Set([
-  "blog-settings",
-  "page-studio",
-  "page-settings",
-]);
 
 type JsonRecord = Record<string, unknown>;
 
@@ -48,6 +43,8 @@ export type SerializedBlogArticle = {
   createdAt: string;
   updatedAt: string;
 };
+
+export { ensureStaticBlogPosts, RESERVED_BLOG_KEYS };
 
 export function serializeBlogEntry(entry: {
   id: string;
@@ -97,8 +94,12 @@ export function serializeBlogEntry(entry: {
 export async function listBlogArticles() {
   const db = getDb();
   if (!db) return [];
+  await ensureStaticBlogPosts();
   const entries = await db.contentEntry.findMany({
-    where: { module: "blog", key: { notIn: [...RESERVED_BLOG_KEYS] } },
+    where: {
+      module: "blog",
+      key: { notIn: [...RESERVED_BLOG_KEYS] },
+    },
     orderBy: [{ updatedAt: "desc" }],
   });
   return entries.map(serializeBlogEntry);

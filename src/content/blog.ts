@@ -1,7 +1,8 @@
 import type { Post } from "@/types/content";
 import { getDb } from "@/lib/db";
 
-const posts: Post[] = [
+/** Canonical seed catalogue — also synced into Admin Articles ContentEntry rows. */
+export const STATIC_BLOG_POSTS: Post[] = [
   {
     slug: "a-perfect-72-hours-in-kathmandu",
     title: "A Perfect 72 Hours in Kathmandu",
@@ -175,6 +176,8 @@ export async function getPosts(): Promise<Post[]> {
   const db = getDb();
   if (db) {
     try {
+      const { ensureStaticBlogPosts } = await import("@/lib/blog-seed");
+      await ensureStaticBlogPosts();
       const entries = await db.contentEntry.findMany({
         where: { module: "blog", status: "PUBLISHED" },
         orderBy: { publishedAt: "desc" },
@@ -274,7 +277,7 @@ export async function getPosts(): Promise<Post[]> {
       // Static editorial content bootstraps the site before CMS publication.
     }
   }
-  return [...posts].sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  return [...STATIC_BLOG_POSTS].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | undefined> {

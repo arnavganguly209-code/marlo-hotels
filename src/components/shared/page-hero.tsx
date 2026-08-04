@@ -25,7 +25,7 @@ export function PageHero({
   crumbs,
 }: PageHeroProps) {
   return (
-    <section className="relative flex min-h-[62vh] items-end overflow-hidden bg-forest-950">
+    <section className="preserve-type relative flex min-h-[62vh] items-end overflow-hidden bg-forest-950">
       <JsonLd
         data={breadcrumbJsonLd(
           crumbs.map((crumb) => ({ name: crumb.label, path: crumb.href }))

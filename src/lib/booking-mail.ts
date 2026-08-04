@@ -1,6 +1,9 @@
 import "server-only";
 
-import { siteConfig } from "@/lib/site";
+import {
+  buildBookingConfirmationEmailHtml,
+  type BookingConfirmationEmailPayload,
+} from "@/lib/booking-confirmation-email";
 
 type BookingMailPayload = {
   reference: string;
@@ -21,39 +24,18 @@ type BookingMailPayload = {
   totalAmount?: number;
 };
 
-function bookingHtml(payload: BookingMailPayload, forGuest: boolean) {
-  const meal = payload.breakfast ? "With Breakfast" : "Without Breakfast";
-  const total =
-    typeof payload.totalAmount === "number"
-      ? `$${payload.totalAmount}`
-      : "Confirmed on request";
-  return `
-  <div style="font-family:Georgia,serif;color:#1a2e26;line-height:1.6">
-    <p style="letter-spacing:.2em;text-transform:uppercase;font-size:11px;color:#b8893d">Marlo Hotels</p>
-    <h1 style="font-weight:500;font-size:28px;margin:12px 0 16px">
-      ${forGuest ? "Thank you for choosing Marlo Hotels" : "New reservation request"}
-    </h1>
-    <p>${forGuest
-      ? "Your reservation request has been received successfully. Our reservations team will contact you shortly."
-      : "A new booking request was submitted on the website."}</p>
-    <table style="width:100%;border-collapse:collapse;margin-top:20px;font-size:14px">
-      <tr><td style="padding:8px 0;border-bottom:1px solid #e8e4da">Booking ID</td><td style="padding:8px 0;border-bottom:1px solid #e8e4da;text-align:right"><strong>${payload.reference}</strong></td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #e8e4da">Guest</td><td style="padding:8px 0;border-bottom:1px solid #e8e4da;text-align:right">${payload.guestName}</td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #e8e4da">Room</td><td style="padding:8px 0;border-bottom:1px solid #e8e4da;text-align:right">${payload.roomName}</td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #e8e4da">Dates</td><td style="padding:8px 0;border-bottom:1px solid #e8e4da;text-align:right">${payload.checkIn} → ${payload.checkOut}</td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #e8e4da">Meal plan</td><td style="padding:8px 0;border-bottom:1px solid #e8e4da;text-align:right">${meal}</td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #e8e4da">Guests</td><td style="padding:8px 0;border-bottom:1px solid #e8e4da;text-align:right">${payload.adults} adults · ${payload.children} children · ${payload.rooms} rooms</td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #e8e4da">Arrival</td><td style="padding:8px 0;border-bottom:1px solid #e8e4da;text-align:right">${payload.arrivalTime}</td></tr>
-      <tr><td style="padding:8px 0;border-bottom:1px solid #e8e4da">Estimated total</td><td style="padding:8px 0;border-bottom:1px solid #e8e4da;text-align:right">${total}</td></tr>
-    </table>
-    <p style="margin-top:24px;font-size:13px;color:#5c6b63">
-      To modify or cancel, contact <a href="mailto:info@marlohotels.com">info@marlohotels.com</a>
-      or ${siteConfig.contact.reservations}.
-    </p>
-  </div>`;
-}
+export type PdfAttachment = {
+  filename: string;
+  content: Buffer | Uint8Array;
+  contentType: string;
+};
 
-async function sendViaResend(to: string, subject: string, html: string) {
+async function sendViaResend(
+  to: string,
+  subject: string,
+  html: string,
+  attachment?: PdfAttachment
+) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return false;
   const from =
@@ -65,7 +47,23 @@ async function sendViaResend(to: string, subject: string, html: string) {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from, to: [to], subject, html }),
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject,
+      html,
+      ...(attachment
+        ? {
+            attachments: [
+              {
+                filename: attachment.filename,
+                content: Buffer.from(attachment.content).toString("base64"),
+                content_type: attachment.contentType,
+              },
+            ],
+          }
+        : {}),
+    }),
   });
   return response.ok;
 }
@@ -83,12 +81,12 @@ export async function sendBookingEmails(payload: BookingMailPayload) {
     const guestOk = await sendViaResend(
       payload.guestEmail,
       `Marlo Hotels reservation ${payload.reference}`,
-      bookingHtml(payload, true)
+      buildBookingConfirmationEmailHtml(payload)
     );
     const hotelOk = await sendViaResend(
       hotelTo,
       `New booking ${payload.reference} — ${payload.guestName}`,
-      bookingHtml(payload, false)
+      buildBookingConfirmationEmailHtml(payload)
     );
     if (!guestOk && !hotelOk) {
       console.info("[booking-mail] No mail provider configured; booking saved.", {
@@ -97,5 +95,35 @@ export async function sendBookingEmails(payload: BookingMailPayload) {
     }
   } catch (error) {
     console.error("[booking-mail] Failed to send", error);
+  }
+}
+
+type ReadyBooking = BookingConfirmationEmailPayload & { status: string };
+
+/** Sends an already-confirmed reservation with its on-demand PDF attachment. */
+export async function sendBookingConfirmationReady({
+  booking,
+  pdf,
+}: {
+  booking: ReadyBooking;
+  pdf?: PdfAttachment;
+}): Promise<{ sent: boolean; reason?: string }> {
+  if (booking.status !== "CONFIRMED") {
+    return { sent: false, reason: "Booking is not confirmed" };
+  }
+  if (!process.env.RESEND_API_KEY) {
+    return { sent: false, reason: "Email provider is not configured" };
+  }
+  try {
+    const sent = await sendViaResend(
+      booking.guestEmail,
+      `Your Marlo Hotels confirmation — ${booking.reference}`,
+      buildBookingConfirmationEmailHtml(booking),
+      pdf
+    );
+    return sent ? { sent: true } : { sent: false, reason: "Email provider rejected the message" };
+  } catch (error) {
+    console.error("[booking-mail] Confirmation email failed", error);
+    return { sent: false, reason: "Unable to send confirmation email" };
   }
 }

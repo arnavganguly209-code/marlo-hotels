@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Jost } from "next/font/google";
+import {
+  Cormorant_Garamond,
+  Jost,
+  Playfair_Display,
+  Source_Sans_3,
+} from "next/font/google";
 import { headers } from "next/headers";
 import { SiteShell } from "@/components/layout/site-shell";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -9,6 +14,7 @@ import { siteConfig } from "@/lib/site";
 import { getBrandSettings, getPaymentLogoSettings } from "@/lib/site-settings";
 import "./globals.css";
 
+/** Locked for Header / Hero / Footer — do not replace. */
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
@@ -17,12 +23,30 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
+/** Locked for Header / Hero / Footer — do not replace. */
 const jost = Jost({
   variable: "--font-jost",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
   preload: true,
+});
+
+/** Premium content headings (site body only). */
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+/** Premium content body (site body only). */
+const sourceSans = Source_Sans_3({
+  variable: "--font-source-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 function safeSiteUrl() {
@@ -104,7 +128,10 @@ export default async function RootLayout({
   // server-side exception path on the administration console.
   if (isOrbit) {
     return (
-      <html lang="en" className={`${cormorant.variable} ${jost.variable}`}>
+      <html
+        lang="en"
+        className={`${cormorant.variable} ${jost.variable} ${playfair.variable} ${sourceSans.variable}`}
+      >
         <body className="antialiased">{children}</body>
       </html>
     );
@@ -133,7 +160,10 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" className={`${cormorant.variable} ${jost.variable}`}>
+    <html
+      lang="en"
+      className={`${cormorant.variable} ${jost.variable} ${playfair.variable} ${sourceSans.variable}`}
+    >
       <body className="antialiased">
         <JsonLd data={hotelJsonLd()} />
         <SiteShell
