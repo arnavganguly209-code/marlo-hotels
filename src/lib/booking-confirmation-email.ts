@@ -38,6 +38,7 @@ export function buildBookingConfirmationEmailHtml(payload: BookingConfirmationEm
   <div style="max-width:640px;margin:auto;background:#fffdf8;border:1px solid #e4d6bd">
     <div style="height:5px;background:#c9963f"></div>
     <div style="padding:34px 42px;background:#0c1a18;color:#fffdf8;text-align:center">
+      <img src="${siteConfig.url}/images/brand/logo.png" alt="Marlo Hotels" width="140" style="display:block;margin:0 auto 14px;max-width:140px;height:auto" />
       <div style="font-size:23px;letter-spacing:3px;color:#c9963f;text-transform:uppercase">Marlo Hotels</div>
       <div style="margin-top:10px;font-size:11px;letter-spacing:2px;text-transform:uppercase">${escapeHtml(siteConfig.tagline)}</div>
     </div>
