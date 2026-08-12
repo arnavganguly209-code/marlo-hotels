@@ -23,7 +23,7 @@ upsert() {
   fi
 }
 
-upsert "SMTP_HOST" "mail.globalorbitmail.cloud"
+upsert "SMTP_HOST" "mail.theglobalorbit.com"
 upsert "SMTP_PORT" "587"
 upsert "SMTP_ENCRYPTION" "tls"
 upsert "SMTP_USER" "booking@marlohotels.com"
