@@ -174,6 +174,11 @@ git fetch origin main || die "git fetch origin main failed"
 git reset --hard origin/main || die "git reset --hard origin/main failed"
 echo "    HEAD=$(git rev-parse --short HEAD) $(git log -1 --pretty=%s)"
 
+echo "==> Ensuring non-secret SMTP env keys (password never written by deploy)"
+chmod +x scripts/ensure-smtp-env.sh scripts/verify-smtp-config.mjs 2>/dev/null || true
+bash scripts/ensure-smtp-env.sh "$APP_DIR/.env" || echo "WARN: ensure-smtp-env.sh skipped"
+node --env-file=.env scripts/verify-smtp-config.mjs || echo "WARN: SMTP_PASSWORD still missing — confirmation emails will not send until it is set"
+
 echo "==> npm ci"
 npm ci || die "npm ci failed"
 

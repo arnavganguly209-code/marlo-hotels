@@ -57,11 +57,13 @@ function smtpConfigured() {
 }
 
 function mailFrom() {
-  return (
+  const raw =
     process.env.SMTP_FROM?.trim() ||
     process.env.BOOKING_FROM_EMAIL?.trim() ||
-    "Marlo Hotels <booking@marlohotels.com>"
-  );
+    "booking@marlohotels.com";
+  // Allow plain address or already-formatted "Name <email>"
+  if (raw.includes("<") && raw.includes(">")) return raw;
+  return `Marlo Hotels <${raw}>`;
 }
 
 function hotelNotifyTo() {
@@ -83,18 +85,37 @@ function createTransport() {
   if (!host || !user || !pass) return null;
 
   const port = Number(process.env.SMTP_PORT || "587");
+  const encryption = (process.env.SMTP_ENCRYPTION || "").trim().toLowerCase();
   const secureEnv = process.env.SMTP_SECURE?.trim().toLowerCase();
-  const secure =
-    secureEnv === "true" || secureEnv === "1"
-      ? true
-      : secureEnv === "false" || secureEnv === "0"
-        ? false
-        : port === 465;
+
+  // Port 587 + TLS/STARTTLS is the Marlo production default.
+  // Port 465 uses implicit SSL (secure: true).
+  let secure = port === 465;
+  let requireTLS = port === 587;
+
+  if (encryption === "ssl" || encryption === "smtps") {
+    secure = true;
+    requireTLS = false;
+  } else if (
+    encryption === "tls" ||
+    encryption === "starttls" ||
+    encryption === "start_tls"
+  ) {
+    secure = false;
+    requireTLS = true;
+  } else if (secureEnv === "true" || secureEnv === "1") {
+    secure = true;
+    requireTLS = false;
+  } else if (secureEnv === "false" || secureEnv === "0") {
+    secure = false;
+    requireTLS = true;
+  }
 
   return nodemailer.createTransport({
     host,
     port,
     secure,
+    requireTLS,
     auth: { user, pass },
     tls: { minVersion: "TLSv1.2" },
   });
@@ -134,7 +155,8 @@ async function sendSmtpMail(options: {
     console.error("[booking-mail] SMTP send failed", {
       to: options.to,
       subject: options.subject,
-      error: message,
+      // Never log credentials or raw auth payloads.
+      error: message.replace(/pass(word)?[=:].*/gi, "[redacted]"),
     });
     return { ok: false as const, error: message };
   }

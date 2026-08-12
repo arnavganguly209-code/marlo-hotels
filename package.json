@@ -17,6 +17,8 @@
     "test:homepage": "node --env-file=.env scripts/test-homepage-cms.mjs",
     "test:orbit-content": "node --env-file=.env scripts/verify-orbit-content.mjs",
     "test:orbit-ui": "node --env-file=.env scripts/verify-orbit-ui.mjs",
+    "test:smtp": "node --env-file=.env scripts/verify-smtp-config.mjs",
+    "test:smtp:connect": "node --env-file=.env scripts/verify-smtp-config.mjs --connect",
     "test:media-uploads": "node --env-file=.env scripts/verify-media-uploads.mjs"
   },
   "dependencies": {
