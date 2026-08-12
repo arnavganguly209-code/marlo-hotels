@@ -17,6 +17,9 @@ export default async function AdminOnlineBookingsPage() {
     checkOut: booking.checkOut.toISOString(),
     createdAt: booking.createdAt.toISOString(),
     updatedAt: booking.updatedAt.toISOString(),
+    confirmationEmailSentAt: booking.confirmationEmailSentAt
+      ? booking.confirmationEmailSentAt.toISOString()
+      : null,
   }));
 
   return (

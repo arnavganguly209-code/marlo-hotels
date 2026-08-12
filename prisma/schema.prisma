@@ -104,6 +104,8 @@ model Booking {
   notes              String?
   internalRemarks    String?
   createdBy          String?
+  /** Set only after a confirmation email + PDF was successfully delivered. */
+  confirmationEmailSentAt DateTime?
   room               Room          @relation(fields: [roomId], references: [id])
   roomId             String
   createdAt          DateTime      @default(now())

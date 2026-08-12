@@ -8,6 +8,7 @@ type Booking = {
   id: string; reference: string; status: string; paymentStatus: string; guestName: string; guestEmail: string; guestPhone: string;
   country: string | null; checkIn: string; checkOut: string; adults: number; children: number; rooms: number; breakfast: boolean;
   physicalRoomNumber: string | null; notes: string | null; internalRemarks: string | null; totalAmount: number | null; createdAt: string;
+  confirmationEmailSentAt?: string | null;
   room: { name: string; slug: string };
 };
 
@@ -35,7 +36,8 @@ export function AdminOnlineBookingsManager({ initialBookings }: { initialBooking
     setBookings(items => items.map(b => b.id === id ? result.booking : b));
     setSelected(old => old?.id === id ? result.booking : old);
     setEditing(old => old?.id === id ? result.booking : old);
-    if (result.email?.reason) setNotice(result.email.reason);
+    if (result.email?.sent) setNotice("Confirmation email sent to guest and booking@marlohotels.com.");
+    else if (result.email?.reason) setNotice(result.email.reason);
     return result.booking as Booking;
   };
   const remove = async (booking: Booking) => {
@@ -44,9 +46,18 @@ export function AdminOnlineBookingsManager({ initialBookings }: { initialBooking
     if (res.ok) { setBookings(items => items.filter(b => b.id !== booking.id)); setSelected(null); setNotice("Booking deleted."); }
   };
   const sendEmail = async (booking: Booking) => {
-    const res = await fetch(`/api/admin/online-bookings/${booking.id}/email`, { method: "POST" });
+    const res = await fetch(`/api/admin/online-bookings/${booking.id}/email`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
     const result = await res.json();
-    setNotice(result.sent ? "Confirmation email sent." : result.reason || result.error || "Email could not be sent.");
+    if (result.sent) {
+      setBookings((items) =>
+        items.map((item) =>
+          item.id === booking.id
+            ? { ...item, confirmationEmailSentAt: new Date().toISOString() }
+            : item
+        )
+      );
+    }
+    setNotice(result.sent ? "Confirmation email sent to guest and booking@marlohotels.com." : result.reason || result.error || "Email could not be sent.");
   };
   const saveEdit = async () => { if (editing) { await update(editing.id, editing); setEditing(null); } };
 
@@ -59,11 +70,13 @@ export function AdminOnlineBookingsManager({ initialBookings }: { initialBooking
     </div>
     <div className="overflow-x-auto rounded-2xl border border-white/10">
       <table className="min-w-[1850px] text-left text-xs">
-        <thead className="bg-white/[.04] text-[10px] tracking-widest text-[#D9B46B] uppercase"><tr>{["Booking ID","Guest","Email","Phone","Country","Room","Room #","Adults","Children","Breakfast","Check-in / out","Nights","Total","Payment","Status","Booking date","Special requests","Actions"].map(h => <th key={h} className="px-3 py-3">{h}</th>)}</tr></thead>
+        <thead className="bg-white/[.04] text-[10px] tracking-widest text-[#D9B46B] uppercase"><tr>{["Booking ID","Guest","Email","Phone","Country","Room","Room #","Adults","Children","Breakfast","Check-in / out","Nights","Total","Payment","Status","Email","Booking date","Special requests","Actions"].map(h => <th key={h} className="px-3 py-3">{h}</th>)}</tr></thead>
         <tbody className="divide-y divide-white/8">{visible.map(b => <tr key={b.id} className="align-top text-cream-200/80">
           <td className="px-3 py-3 font-semibold text-ivory">{b.reference}</td><td className="px-3 py-3">{b.guestName}</td><td className="px-3 py-3">{b.guestEmail}</td><td className="px-3 py-3">{b.guestPhone}</td><td className="px-3 py-3">{b.country || "—"}</td><td className="px-3 py-3">{b.room.name}</td><td className="px-3 py-3">{b.physicalRoomNumber || "—"}</td><td className="px-3 py-3">{b.adults}</td><td className="px-3 py-3">{b.children}</td><td className="px-3 py-3">{b.breakfast ? "Yes" : "No"}</td><td className="px-3 py-3 whitespace-nowrap">{date(b.checkIn)}<br />{date(b.checkOut)}</td><td className="px-3 py-3">{nights(b)}</td><td className="px-3 py-3 whitespace-nowrap">{money(b.totalAmount)}</td>
           <td className="px-3 py-3"><select className="rounded border border-white/15 bg-[#0B1713] p-1" value={b.paymentStatus === "UNPAID" ? "PENDING" : b.paymentStatus} onChange={e => void update(b.id, { paymentStatus: e.target.value })}>{PAYMENT_OPS_STATUSES.map(s => <option key={s} value={s}>{paymentOpsLabel(s)}</option>)}</select></td>
-          <td className="px-3 py-3"><select className="rounded border border-white/15 bg-[#0B1713] p-1" value={b.status} onChange={e => void update(b.id, { status: e.target.value })}>{BOOKING_OPS_STATUSES.map(s => <option key={s} value={s}>{BOOKING_OPS_STATUS_LABELS[s]}</option>)}</select></td><td className="px-3 py-3 whitespace-nowrap">{date(b.createdAt)}</td><td className="max-w-44 truncate px-3 py-3">{b.notes || "—"}</td>
+          <td className="px-3 py-3"><select className="rounded border border-white/15 bg-[#0B1713] p-1" value={b.status} onChange={e => void update(b.id, { status: e.target.value })}>{BOOKING_OPS_STATUSES.map(s => <option key={s} value={s}>{BOOKING_OPS_STATUS_LABELS[s]}</option>)}</select></td>
+          <td className="px-3 py-3 whitespace-nowrap">{b.confirmationEmailSentAt ? "Sent" : "—"}</td>
+          <td className="px-3 py-3 whitespace-nowrap">{date(b.createdAt)}</td><td className="max-w-44 truncate px-3 py-3">{b.notes || "—"}</td>
           <td className="px-3 py-3"><div className="flex gap-1"><button title="View" onClick={() => setSelected(b)} className="p-1.5 hover:text-[#D9B46B]"><Eye className="size-4" /></button><button title="Edit" onClick={() => setEditing(b)} className="p-1.5 hover:text-[#D9B46B]"><Pencil className="size-4" /></button><a title="Print" href={`/admin/online-bookings/${b.id}/print`} target="_blank" className="p-1.5 hover:text-[#D9B46B]"><Printer className="size-4" /></a><a title="Download PDF" href={`/api/admin/online-bookings/${b.id}/pdf`} className="p-1.5 hover:text-[#D9B46B]"><FileDown className="size-4" /></a><button title="Send Email (Ready)" onClick={() => void sendEmail(b)} className="p-1.5 hover:text-[#D9B46B]"><Mail className="size-4" /></button><button title="Delete" onClick={() => void remove(b)} className="p-1.5 text-red-300 hover:text-red-200"><Trash2 className="size-4" /></button></div></td>
         </tr>)}</tbody>
       </table>

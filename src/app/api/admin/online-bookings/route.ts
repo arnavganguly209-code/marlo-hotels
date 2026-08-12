@@ -6,7 +6,16 @@ import { assertSameOrigin } from "@/lib/orbit/auth";
 const authorized = async (request: Request, mutate = false) =>
   Boolean(await getAdminSession()) && (!mutate || (await assertSameOrigin(request)));
 
-function serialize<T extends { checkIn: Date; checkOut: Date; createdAt: Date; updatedAt: Date; totalAmount: unknown }>(booking: T) {
+function serialize<
+  T extends {
+    checkIn: Date;
+    checkOut: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    totalAmount: unknown;
+    confirmationEmailSentAt?: Date | null;
+  },
+>(booking: T) {
   return {
     ...booking,
     totalAmount: booking.totalAmount === null ? null : Number(booking.totalAmount),
@@ -14,6 +23,9 @@ function serialize<T extends { checkIn: Date; checkOut: Date; createdAt: Date; u
     checkOut: booking.checkOut.toISOString(),
     createdAt: booking.createdAt.toISOString(),
     updatedAt: booking.updatedAt.toISOString(),
+    confirmationEmailSentAt: booking.confirmationEmailSentAt
+      ? booking.confirmationEmailSentAt.toISOString()
+      : null,
   };
 }
 
