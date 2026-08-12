@@ -567,10 +567,10 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       eyebrow: "Location",
       heading: "In the heart of Kathmandu",
       description:
-        "Marlo Hotels sits within easy reach of Durbar Marg, Thamel and the city’s ceremonial squares.",
+        "Marlo Hotels sits on Paryatan Marg, within easy reach of Thamel and the city’s ceremonial squares.",
       buttonText: "Get Directions",
-      buttonLink: "https://maps.google.com/?q=Durbar+Marg+Kathmandu",
-      address: "Durbar Marg, Kathmandu 44600, Nepal",
+      buttonLink: "https://maps.google.com/?q=Paryatan+Marg+Kathmandu",
+      address: "Paryatan Marg, 44600 Kathmandu, Nepal",
       phone: siteConfig.contact.phone,
       mapEmbedUrl:
         "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.2!2d85.318!3d27.705!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjfCsDQyJzE4LjAiTiA4NcKwMTknMDQuOCJF!5e0!3m2!1sen!2snp!4v1",

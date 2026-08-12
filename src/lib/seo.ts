@@ -58,7 +58,7 @@ export function hotelJsonLd() {
     checkoutTime: "12:00",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Durbar Marg",
+      streetAddress: "Paryatan Marg",
       addressLocality: "Kathmandu",
       postalCode: "44600",
       addressCountry: "NP",

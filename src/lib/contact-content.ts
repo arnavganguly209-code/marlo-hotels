@@ -105,7 +105,7 @@ export function getContactDefaults(): ContactPageContent {
     seo: {
       title: "Contact",
       description:
-        "Reach Marlo Hotels — Durbar Marg, Kathmandu. Reservations, events, dining and concierge enquiries by phone, WhatsApp, email or our contact form.",
+        "Reach Marlo Hotels — Paryatan Marg, 44600 Kathmandu, Nepal. Reservations, events, dining and concierge enquiries by phone, WhatsApp, email or our contact form.",
     },
   };
 }

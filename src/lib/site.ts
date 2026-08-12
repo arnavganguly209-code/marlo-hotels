@@ -8,13 +8,13 @@ export const siteConfig = {
     process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://marlo.theglobalorbit.com",
   currency: "USD",
   contact: {
-    address: "Durbar Marg, Kathmandu 44600, Nepal",
+    address: "Paryatan Marg, 44600 Kathmandu, Nepal",
     phone: "+977 1 5970 800",
     reservations: "+977 1 5970 801",
     whatsapp: "+9779801234567",
     email: "hello@marlohotels.com",
     reservationsEmail: "reservations@marlohotels.com",
-    mapUrl: "https://maps.google.com/?q=Durbar+Marg,+Kathmandu",
+    mapUrl: "https://maps.google.com/?q=Paryatan+Marg,+Kathmandu",
     geo: { lat: 27.7108, lng: 85.3172 },
   },
   hours: {
