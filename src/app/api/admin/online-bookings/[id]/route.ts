@@ -85,9 +85,9 @@ export async function PATCH(request: Request, { params }: Context) {
   revalidatePath("/admin/online-bookings");
 
   let email: { sent: boolean; reason?: string } | undefined;
-  const shouldSend =
-    booking.status === "CONFIRMED" &&
-    (becameConfirmed || body?.sendEmail === true);
+  // Create-time mail already covers most bookings. On first admin confirm (or
+  // explicit sendEmail), attempt again — dedupe skips if already delivered.
+  const shouldSend = becameConfirmed || body?.sendEmail === true;
 
   if (shouldSend) {
     const pdf = await generateBookingConfirmationPdf({

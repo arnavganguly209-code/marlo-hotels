@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       },
     });
 
-    await db.booking.create({
+    const created = await db.booking.create({
       data: {
         reference,
         checkIn,
@@ -111,28 +111,37 @@ export async function POST(request: Request) {
         roomId: roomRecord.id,
       },
     });
-  }
 
-  await sendBookingEmails({
-    reference,
-    guestName: parsed.data.guestName,
-    guestEmail: parsed.data.guestEmail,
-    guestPhone: parsed.data.guestPhone,
-    whatsapp: parsed.data.whatsapp,
-    country: parsed.data.country,
-    arrivalTime: parsed.data.arrivalTime,
-    notes: notesText,
-    roomName: room.name,
-    checkIn: parsed.data.checkIn,
-    checkOut: parsed.data.checkOut,
-    adults: parsed.data.adults,
-    children: parsed.data.children,
-    rooms: roomsRequested,
-    breakfast: Boolean(parsed.data.breakfast),
-    totalAmount: parsed.data.totalAmount,
-    status: "PENDING",
-    createdAt: new Date(),
-  });
+    // Fire-and-forget must not block booking response failure: await but never throw.
+    await sendBookingEmails({
+      id: created.id,
+      reference: created.reference,
+      status: created.status,
+      paymentStatus: created.paymentStatus,
+      guestName: created.guestName,
+      guestEmail: created.guestEmail,
+      guestPhone: created.guestPhone,
+      country: created.country,
+      checkIn: created.checkIn,
+      checkOut: created.checkOut,
+      adults: created.adults,
+      children: created.children,
+      rooms: created.rooms,
+      breakfast: created.breakfast,
+      totalAmount:
+        created.totalAmount === null ? null : Number(created.totalAmount),
+      physicalRoomNumber: created.physicalRoomNumber,
+      notes: created.notes,
+      createdAt: created.createdAt,
+      confirmationEmailSentAt: created.confirmationEmailSentAt,
+      roomName: room.name,
+    });
+  } else {
+    console.error(
+      "[booking] Database unavailable — booking reference issued without email.",
+      { reference }
+    );
+  }
 
   return NextResponse.json({ ok: true, reference });
 }

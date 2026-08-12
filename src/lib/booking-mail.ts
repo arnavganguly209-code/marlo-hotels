@@ -211,19 +211,27 @@ function toPdfPayload(booking: BookingMailRecord): BookingConfirmationPdfPayload
   };
 }
 
+const MAILABLE_STATUSES = new Set([
+  "PENDING",
+  "CONFIRMED",
+  "ON_HOLD",
+  "CHECKED_IN",
+]);
+
 /**
- * Sends luxury confirmation email + PDF to guest and hotel when booking is CONFIRMED.
- * Marks confirmationEmailSentAt only after at least one successful delivery.
+ * Sends booking confirmation email + PDF to guest and hotel.
+ * Triggered on customer booking create and again only if admin confirms
+ * before the first successful send (deduped via confirmationEmailSentAt).
  * Never throws — booking flows must remain intact if mail fails.
  */
 export async function sendConfirmedBookingEmails(
   booking: BookingMailRecord,
   options?: { force?: boolean; pdf?: PdfAttachment }
 ): Promise<ConfirmationMailResult> {
-  if (booking.status !== "CONFIRMED") {
+  if (!MAILABLE_STATUSES.has(booking.status)) {
     return {
       sent: false,
-      reason: "Confirmation email is only sent for CONFIRMED bookings",
+      reason: `Confirmation email is not sent for status ${booking.status}`,
     };
   }
 
@@ -266,18 +274,18 @@ export async function sendConfirmedBookingEmails(
   }
 
   const html = buildBookingConfirmationEmailHtml(toEmailPayload(booking));
-  const subject = `Reservation Confirmed — ${booking.reference} | Marlo Hotels`;
+  const subject = `Booking Confirmation — ${booking.reference} | Marlo Hotels`;
   const hotelTo = hotelNotifyTo();
 
   const guestResult = await sendSmtpMail({
-    to: booking.guestEmail,
+    to: booking.guestEmail.trim(),
     subject,
     html,
     attachment,
   });
   const hotelResult = await sendSmtpMail({
     to: hotelTo,
-    subject: `Booking copy — ${booking.reference} — ${booking.guestName}`,
+    subject: `New booking — ${booking.reference} — ${booking.guestName}`,
     html,
     attachment,
   });
@@ -341,11 +349,56 @@ export async function sendConfirmedBookingEmails(
   };
 }
 
-/** @deprecated Pending bookings no longer send confirmation mail. Kept for call-site compatibility. */
-export async function sendBookingEmails(_payload: unknown) {
-  console.info(
-    "[booking-mail] Skipping email on pending booking create — confirmation sends only when status is CONFIRMED."
-  );
+/**
+ * Sends confirmation email + PDF right after a customer places an online booking.
+ * Accepts either a full BookingMailRecord or a create-time payload with roomName.
+ */
+export async function sendBookingEmails(
+  payload: BookingMailRecord | (Omit<BookingMailRecord, "room" | "id" | "paymentStatus"> & {
+    id?: string;
+    paymentStatus?: string;
+    roomName: string;
+    room?: { name: string };
+  })
+): Promise<ConfirmationMailResult> {
+  const roomName =
+    "room" in payload && payload.room?.name
+      ? payload.room.name
+      : "roomName" in payload
+        ? payload.roomName
+        : "";
+  if (!payload.id) {
+    console.error(
+      "[booking-mail] Booking id missing on create; confirmation email not sent.",
+      { reference: payload.reference }
+    );
+    return { sent: false, reason: "Booking id required for confirmation email" };
+  }
+  if (!roomName) {
+    return { sent: false, reason: "Room name required for confirmation email" };
+  }
+  return sendConfirmedBookingEmails({
+    id: payload.id,
+    reference: payload.reference,
+    status: payload.status,
+    paymentStatus: payload.paymentStatus || "UNPAID",
+    guestName: payload.guestName,
+    guestEmail: payload.guestEmail,
+    guestPhone: payload.guestPhone,
+    country: payload.country,
+    checkIn: payload.checkIn,
+    checkOut: payload.checkOut,
+    adults: payload.adults,
+    children: payload.children,
+    rooms: payload.rooms,
+    breakfast: payload.breakfast,
+    totalAmount: payload.totalAmount,
+    physicalRoomNumber: payload.physicalRoomNumber,
+    notes: payload.notes,
+    createdAt: payload.createdAt,
+    confirmationEmailSentAt: payload.confirmationEmailSentAt,
+    room: { name: roomName },
+  });
 }
 
 /** Admin / API helper for an already-loaded confirmed booking. */
