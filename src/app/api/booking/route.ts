@@ -108,6 +108,9 @@ export async function POST(request: Request) {
         paymentStatus: "UNPAID",
         status: "PENDING",
         source: "ONLINE",
+        paymentMethod:
+          parsed.data.paymentIntent === "CARD_PENDING" ? "CARD" : null,
+        paymentCurrency: "USD",
         roomId: roomRecord.id,
       },
     });
@@ -118,6 +121,7 @@ export async function POST(request: Request) {
       reference: created.reference,
       status: created.status,
       paymentStatus: created.paymentStatus,
+      paymentMethod: created.paymentMethod,
       guestName: created.guestName,
       guestEmail: created.guestEmail,
       guestPhone: created.guestPhone,

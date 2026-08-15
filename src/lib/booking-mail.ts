@@ -30,6 +30,9 @@ type BookingMailRecord = {
   reference: string;
   status: string;
   paymentStatus: string;
+  paymentMethod?: string | null;
+  paypalOrderId?: string | null;
+  paypalCaptureId?: string | null;
   guestName: string;
   guestEmail: string;
   guestPhone: string;
@@ -184,10 +187,20 @@ function toEmailPayload(booking: BookingMailRecord): BookingConfirmationEmailPay
     nights: nightsBetween(booking.checkIn, booking.checkOut),
     physicalRoomNumber: booking.physicalRoomNumber,
     paymentStatus: booking.paymentStatus,
+    paymentMethod: booking.paymentMethod || undefined,
+    paypalOrderId: booking.paypalOrderId || undefined,
+    paypalCaptureId: booking.paypalCaptureId || undefined,
   };
 }
 
 function toPdfPayload(booking: BookingMailRecord): BookingConfirmationPdfPayload {
+  const methodLabel =
+    booking.paymentMethod === "PAYPAL"
+      ? "PayPal"
+      : booking.paymentMethod === "CARD"
+        ? "Card"
+        : booking.paymentMethod || null;
+
   return {
     reference: booking.reference,
     status: booking.status,
@@ -203,6 +216,7 @@ function toPdfPayload(booking: BookingMailRecord): BookingConfirmationPdfPayload
     rooms: booking.rooms,
     breakfast: booking.breakfast,
     paymentStatus: booking.paymentStatus,
+    paymentMethod: methodLabel,
     totalAmount:
       booking.totalAmount == null ? null : Number(booking.totalAmount),
     physicalRoomNumber: booking.physicalRoomNumber,

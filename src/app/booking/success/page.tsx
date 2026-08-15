@@ -4,7 +4,7 @@ import { buildMetadata } from "@/lib/seo";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Booking Received",
+  title: "Booking Confirmation",
   description: "Thank you for choosing Marlo Hotels.",
   path: "/booking/success",
 });
@@ -24,6 +24,9 @@ type PageProps = {
     guestName?: string;
     arrivalTime?: string;
     mealPlan?: string;
+    paymentMethod?: string;
+    paymentStatus?: string;
+    status?: string;
   }>;
 };
 
@@ -37,23 +40,33 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
   const children = Number(params.children || 0);
   const rooms = Number(params.rooms || 0);
   const total = Number(params.total || 0);
+  const paymentMethod = (params.paymentMethod || "").toUpperCase();
+  const isPayPalPaid =
+    paymentMethod === "PAYPAL" &&
+    (params.paymentStatus || "").toUpperCase() === "PAID";
 
   return (
     <section className="bg-ivory py-20 md:py-28">
       <div className="mx-auto max-w-3xl px-5 md:px-8">
         <div className="rounded-2xl border border-forest-800/10 bg-white p-8 text-center shadow-luxury-sm md:p-12">
           <p className="text-[10px] font-semibold tracking-[0.3em] text-gold-700 uppercase">
-            Reservation received
+            {isPayPalPaid ? "Booking confirmed" : "Reservation received"}
           </p>
           <h1 className="font-display mt-4 text-4xl font-medium text-forest-950 md:text-5xl">
-            Thank you for choosing Marlo Hotels.
+            {isPayPalPaid
+              ? "Your booking is confirmed."
+              : "Thank you for choosing Marlo Hotels."}
           </h1>
           <p className="mt-6 text-base leading-relaxed font-light text-charcoal-900/70">
-            Your reservation request has been received successfully.
+            {isPayPalPaid
+              ? "PayPal payment was successful. Your reservation at Marlo Hotels is confirmed."
+              : "Your reservation request has been received successfully."}
           </p>
-          <p className="mt-3 text-base leading-relaxed font-light text-charcoal-900/70">
-            Our reservations team will contact you shortly.
-          </p>
+          {!isPayPalPaid ? (
+            <p className="mt-3 text-base leading-relaxed font-light text-charcoal-900/70">
+              Our reservations team will contact you shortly.
+            </p>
+          ) : null}
 
           {reference ? (
             <>
@@ -64,13 +77,26 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
                 </strong>
               </p>
               <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-                <a href={`/api/booking/${encodeURIComponent(reference)}/pdf?mode=inline`} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center rounded-xl bg-forest-900 px-5 text-[10px] font-semibold tracking-[0.16em] text-ivory uppercase transition hover:bg-forest-800">
+                <a
+                  href={`/api/booking/${encodeURIComponent(reference)}/pdf?mode=inline`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-forest-900 px-5 text-[10px] font-semibold tracking-[0.16em] text-ivory uppercase transition hover:bg-forest-800"
+                >
                   View Booking PDF
                 </a>
-                <a href={`/api/booking/${encodeURIComponent(reference)}/pdf?mode=download`} className="inline-flex h-11 items-center justify-center rounded-xl border border-gold-600 bg-gold-500 px-5 text-[10px] font-semibold tracking-[0.16em] text-forest-950 uppercase transition hover:bg-gold-400">
+                <a
+                  href={`/api/booking/${encodeURIComponent(reference)}/pdf?mode=download`}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-gold-600 bg-gold-500 px-5 text-[10px] font-semibold tracking-[0.16em] text-forest-950 uppercase transition hover:bg-gold-400"
+                >
                   Download Booking PDF
                 </a>
-                <a href={`/booking/confirmation/${encodeURIComponent(reference)}/print`} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center rounded-xl border border-forest-900/25 px-5 text-[10px] font-semibold tracking-[0.16em] text-forest-950 uppercase transition hover:border-gold-600 hover:text-gold-700">
+                <a
+                  href={`/booking/confirmation/${encodeURIComponent(reference)}/print`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-forest-900/25 px-5 text-[10px] font-semibold tracking-[0.16em] text-forest-950 uppercase transition hover:border-gold-600 hover:text-gold-700"
+                >
                   Print Booking
                 </a>
               </div>
@@ -128,9 +154,21 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
                   {params.arrivalTime || "—"}
                 </dd>
               </div>
+              {paymentMethod ? (
+                <div className="flex justify-between gap-4">
+                  <dt>Payment method</dt>
+                  <dd className="font-medium text-forest-950">
+                    {paymentMethod === "PAYPAL"
+                      ? "PayPal"
+                      : paymentMethod === "CARD"
+                        ? "Card"
+                        : paymentMethod}
+                  </dd>
+                </div>
+              ) : null}
               {total > 0 ? (
                 <div className="flex justify-between gap-4 border-t border-forest-800/10 pt-3">
-                  <dt>Estimated total</dt>
+                  <dt>{isPayPalPaid ? "Total paid" : "Estimated total"}</dt>
                   <dd className="font-medium text-forest-950">
                     {formatCurrency(total)}
                   </dd>

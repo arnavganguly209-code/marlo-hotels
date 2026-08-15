@@ -18,6 +18,9 @@ export type BookingConfirmationEmailPayload = {
   country?: string | null;
   status?: string;
   paymentStatus?: string;
+  paymentMethod?: string | null;
+  paypalOrderId?: string | null;
+  paypalCaptureId?: string | null;
   notes?: string | null;
   nights?: number;
   physicalRoomNumber?: string | null;
@@ -119,6 +122,27 @@ export function buildBookingConfirmationEmailHtml(
           ${row("Room rate", money(payload.roomRate ?? payload.totalAmount))}
           ${row("Extra charges", money(payload.additionalCharges ?? 0))}
           ${row("Total amount", total)}
+          ${row("Payment status", escapeHtml(statusLabel(payload.paymentStatus)))}
+          ${row(
+            "Payment method",
+            escapeHtml(
+              payload.paymentMethod === "PAYPAL"
+                ? "PayPal"
+                : payload.paymentMethod === "CARD"
+                  ? "Card"
+                  : payload.paymentMethod || "—"
+            )
+          )}
+          ${
+            payload.paypalOrderId
+              ? row("PayPal order", escapeHtml(payload.paypalOrderId))
+              : ""
+          }
+          ${
+            payload.paypalCaptureId
+              ? row("PayPal capture", escapeHtml(payload.paypalCaptureId))
+              : ""
+          }
           ${row("Special requests", escapeHtml(notes))}
         </table>
         <div style="padding-top:26px;text-align:center">

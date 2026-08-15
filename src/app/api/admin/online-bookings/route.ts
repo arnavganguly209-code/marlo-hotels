@@ -14,6 +14,7 @@ function serialize<
     updatedAt: Date;
     totalAmount: unknown;
     confirmationEmailSentAt?: Date | null;
+    paidAt?: Date | null;
   },
 >(booking: T) {
   return {
@@ -23,6 +24,7 @@ function serialize<
     checkOut: booking.checkOut.toISOString(),
     createdAt: booking.createdAt.toISOString(),
     updatedAt: booking.updatedAt.toISOString(),
+    paidAt: booking.paidAt ? booking.paidAt.toISOString() : null,
     confirmationEmailSentAt: booking.confirmationEmailSentAt
       ? booking.confirmationEmailSentAt.toISOString()
       : null,

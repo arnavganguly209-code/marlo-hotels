@@ -104,6 +104,12 @@ model Booking {
   notes              String?
   internalRemarks    String?
   createdBy          String?
+  /** CARD | PAYPAL | etc. */
+  paymentMethod      String?
+  paymentCurrency    String?       @default("USD")
+  paypalOrderId      String?       @unique
+  paypalCaptureId    String?
+  paidAt             DateTime?
   /** Set only after a confirmation email + PDF was successfully delivered. */
   confirmationEmailSentAt DateTime?
   room               Room          @relation(fields: [roomId], references: [id])
@@ -114,6 +120,7 @@ model Booking {
   @@index([status, checkIn])
   @@index([source, createdAt])
   @@index([physicalRoomNumber, checkIn])
+  @@index([paymentMethod, paymentStatus])
 }
 
 model Restaurant {
