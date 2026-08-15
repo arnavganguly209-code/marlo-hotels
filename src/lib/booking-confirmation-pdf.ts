@@ -28,6 +28,15 @@ export type BookingConfirmationPdfPayload = {
   paymentMethod?: string | null;
   physicalRoomNumber?: string | null;
   notes?: string | null;
+  specialRequest?: string | null;
+  airportPickup?: boolean;
+  pickupVehicles?: number | null;
+  pickupVehiclesLabel?: string | null;
+  pickupAmount?: number | null;
+  flightNumber?: string | null;
+  pickupDate?: string | null;
+  pickupTime?: string | null;
+  pickupNotes?: string | null;
   room: { name: string };
 };
 
@@ -128,15 +137,15 @@ export async function generateBookingConfirmationPdf(
   const section = (title: string) => {
     page.drawRectangle({
       x: left,
-      y: y - 17,
+      y: y - 15,
       width: contentWidth,
-      height: 17,
+      height: 15,
       color: cream,
       borderColor: border,
       borderWidth: 0.5,
     });
-    text(title.toUpperCase(), left + 10, y - 11.5, 7, bold, gold);
-    y -= 25;
+    text(title.toUpperCase(), left + 10, y - 10.5, 6.5, bold, gold);
+    y -= 22;
   };
   const field = (
     label: string,
@@ -145,17 +154,17 @@ export async function generateBookingConfirmationPdf(
     at: number,
     fieldWidth: number
   ) => {
-    text(label.toUpperCase(), x, at, 6, bold, gold);
+    text(label.toUpperCase(), x, at, 5.8, bold, gold);
     text(
       compact(value, fieldWidth > 230 ? 88 : 42),
       x,
-      at - 11,
-      8.2,
+      at - 10,
+      7.8,
       regular
     );
     page.drawLine({
-      start: { x, y: at - 16 },
-      end: { x: x + fieldWidth, y: at - 16 },
+      start: { x, y: at - 14.5 },
+      end: { x: x + fieldWidth, y: at - 14.5 },
       thickness: 0.45,
       color: border,
     });
@@ -207,13 +216,15 @@ export async function generateBookingConfirmationPdf(
     regular,
     muted
   );
-  y -= 64;
+  y -= 56;
   rule(y, gold);
-  centered("BOOKING CONFIRMATION", y - 22, 19, serif);
-  centered(`BOOKING NUMBER  ·  ${booking.reference}`, y - 36, 7, bold, gold);
-  y -= 49;
+  centered("BOOKING CONFIRMATION", y - 18, 17, serif);
+  centered(`BOOKING NUMBER  ·  ${booking.reference}`, y - 31, 6.5, bold, gold);
+  y -= 42;
 
   const col = (contentWidth - 16) / 2;
+  const rowGap = 22;
+  const sectionGap = 24;
   section("Booking Information");
   field("Booking Number", booking.reference, left + 8, y, col);
   field(
@@ -223,7 +234,7 @@ export async function generateBookingConfirmationPdf(
     y,
     col
   );
-  y -= 25;
+  y -= rowGap;
   field("Booking Status", displayStatus(booking.status), left + 8, y, col);
   field(
     "Confirmation Status",
@@ -235,16 +246,14 @@ export async function generateBookingConfirmationPdf(
     y,
     col
   );
-  y -= 29;
+  y -= sectionGap;
   section("Guest Information");
   field("Name", booking.guestName, left + 8, y, col);
   field("Email", booking.guestEmail, left + 8 + col + 16, y, col);
-  y -= 25;
+  y -= rowGap;
   field("Phone", booking.guestPhone, left + 8, y, col);
   field("Country", booking.country || "—", left + 8 + col + 16, y, col);
-  y -= 25;
-  field("Special Requests", booking.notes || "—", left + 8, y, contentWidth - 16);
-  y -= 29;
+  y -= sectionGap;
   section("Stay Information");
   field("Room Category", booking.room.name, left + 8, y, col);
   field(
@@ -254,7 +263,7 @@ export async function generateBookingConfirmationPdf(
     y,
     col
   );
-  y -= 25;
+  y -= rowGap;
   field(
     "Guests",
     `${booking.adults} adult${booking.adults === 1 ? "" : "s"}`,
@@ -263,10 +272,10 @@ export async function generateBookingConfirmationPdf(
     col
   );
   field("Children", String(booking.children), left + 8 + col + 16, y, col);
-  y -= 25;
+  y -= rowGap;
   field("Check-in", date(booking.checkIn), left + 8, y, col);
   field("Check-out", date(booking.checkOut), left + 8 + col + 16, y, col);
-  y -= 25;
+  y -= rowGap;
   const nights = nightsBetween(booking.checkIn, booking.checkOut);
   field(
     "Nights",
@@ -282,47 +291,111 @@ export async function generateBookingConfirmationPdf(
     y,
     col
   );
-  y -= 29;
-  section("Payment Information");
-  field("Room Rate", money(booking.roomRate), left + 8, y, col);
-  field("Taxes", money(booking.taxes), left + 8 + col + 16, y, col);
-  y -= 25;
+  y -= sectionGap;
+  section("Airport Pickup");
   field(
-    "Additional Charges",
-    money(booking.additionalCharges),
+    "Airport Pickup",
+    booking.airportPickup ? "Yes" : "No",
     left + 8,
     y,
     col
   );
+  field(
+    "Vehicles",
+    booking.airportPickup
+      ? booking.pickupVehiclesLabel ||
+          `${booking.pickupVehicles || 0} Vehicle${(booking.pickupVehicles || 0) === 1 ? "" : "s"}`
+      : "—",
+    left + 8 + col + 16,
+    y,
+    col
+  );
+  y -= rowGap;
+  field(
+    "Pickup Charge",
+    booking.airportPickup ? money(booking.pickupAmount) : "—",
+    left + 8,
+    y,
+    col
+  );
+  field(
+    "Flight Number",
+    booking.airportPickup ? booking.flightNumber || "—" : "—",
+    left + 8 + col + 16,
+    y,
+    col
+  );
+  y -= rowGap;
+  field(
+    "Pickup Date",
+    booking.airportPickup ? booking.pickupDate || "—" : "—",
+    left + 8,
+    y,
+    col
+  );
+  field(
+    "Pickup Time",
+    booking.airportPickup ? booking.pickupTime || "—" : "—",
+    left + 8 + col + 16,
+    y,
+    col
+  );
+  y -= rowGap;
+  y -= rowGap;
+  field(
+    "Pickup Notes",
+    booking.airportPickup ? booking.pickupNotes || "—" : "—",
+    left + 8,
+    y,
+    col
+  );
+  field(
+    "Special Request",
+    booking.specialRequest || booking.notes || "—",
+    left + 8 + col + 16,
+    y,
+    col
+  );
+  y -= sectionGap;
+  section("Payment Information");
+  field("Room Stay", money(booking.roomRate), left + 8, y, col);
+  field(
+    "Airport Pickup",
+    money(booking.pickupAmount ?? booking.additionalCharges ?? 0),
+    left + 8 + col + 16,
+    y,
+    col
+  );
+  y -= rowGap;
   field(
     "Grand Total",
     booking.totalAmount == null
       ? "Confirmed on request"
       : money(booking.totalAmount),
-    left + 8 + col + 16,
-    y,
-    col
-  );
-  y -= 25;
-  field(
-    "Payment Status",
-    displayStatus(booking.paymentStatus),
     left + 8,
     y,
     col
   );
   field(
-    "Payment Method",
-    booking.paymentMethod || "Website / Pay on arrival",
+    "Payment Status",
+    displayStatus(booking.paymentStatus),
     left + 8 + col + 16,
     y,
     col
   );
-  y -= 29;
+  y -= rowGap;
+  field(
+    "Payment Method",
+    booking.paymentMethod || "Website / Pay on arrival",
+    left + 8,
+    y,
+    col
+  );
+  y -= sectionGap;
   section("Hotel Information");
   field("Check-in Time", siteConfig.hours.checkIn, left + 8, y, col);
   field("Check-out Time", siteConfig.hours.checkOut, left + 8 + col + 16, y, col);
-  y -= 25;
+  y -= rowGap;
   field(
     "Cancellation Policy",
     "Cancellations and amendments are subject to your booking terms.",
@@ -330,7 +403,7 @@ export async function generateBookingConfirmationPdf(
     y,
     contentWidth - 16
   );
-  y -= 25;
+  y -= rowGap;
   field(
     "Important Hotel Notes",
     "Please present valid identification on arrival. Our team is pleased to welcome you.",
@@ -338,19 +411,19 @@ export async function generateBookingConfirmationPdf(
     y,
     contentWidth - 16
   );
-  rule(74, gold);
-  centered("Thank you for choosing Marlo Hotels.", 58, 10, serif, green);
+  rule(68, gold);
+  centered("Thank you for choosing Marlo Hotels.", 52, 9.5, serif, green);
   centered(
     `${siteConfig.name}  ·  ${siteConfig.url.replace(/^https?:\/\//, "")}  ·  ${siteConfig.contact.reservationsEmail}`,
-    44,
-    6.2,
+    39,
+    6,
     bold,
     gold
   );
   centered(
     `${siteConfig.contact.phone}  ·  ${siteConfig.contact.address}`,
-    33,
-    6.2,
+    28,
+    6,
     regular,
     muted
   );

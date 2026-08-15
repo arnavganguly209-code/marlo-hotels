@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { BOOKING_OPS_STATUSES, PAYMENT_OPS_STATUSES } from "@/lib/admin/booking-ops";
 import { getAdminSession } from "@/lib/admin/auth";
 import { generateBookingConfirmationPdf } from "@/lib/booking-confirmation-pdf";
+import { toBookingConfirmationPdfPayload } from "@/lib/booking-pdf-payload";
 import { sendConfirmedBookingEmails } from "@/lib/booking-mail";
 import { getDb } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/orbit/auth";
@@ -18,6 +19,7 @@ function serialize<
     createdAt: Date;
     updatedAt: Date;
     totalAmount: unknown;
+    pickupAmount?: unknown;
     confirmationEmailSentAt?: Date | null;
     paidAt?: Date | null;
   },
@@ -25,6 +27,10 @@ function serialize<
   return {
     ...b,
     totalAmount: b.totalAmount === null ? null : Number(b.totalAmount),
+    pickupAmount:
+      b.pickupAmount === null || b.pickupAmount === undefined
+        ? null
+        : Number(b.pickupAmount),
     checkIn: b.checkIn.toISOString(),
     checkOut: b.checkOut.toISOString(),
     createdAt: b.createdAt.toISOString(),
@@ -92,15 +98,16 @@ export async function PATCH(request: Request, { params }: Context) {
   const shouldSend = becameConfirmed || body?.sendEmail === true;
 
   if (shouldSend) {
-    const pdf = await generateBookingConfirmationPdf({
-      ...booking,
-      totalAmount: booking.totalAmount === null ? null : Number(booking.totalAmount),
-    });
+    const pdf = await generateBookingConfirmationPdf(
+      toBookingConfirmationPdfPayload(booking)
+    );
     email = await sendConfirmedBookingEmails(
       {
         ...booking,
         totalAmount:
           booking.totalAmount === null ? null : Number(booking.totalAmount),
+        pickupAmount:
+          booking.pickupAmount === null ? null : Number(booking.pickupAmount),
       },
       {
         force: body?.forceEmail === true,

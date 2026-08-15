@@ -100,6 +100,13 @@ model Booking {
   guestPhone         String
   country            String?
   breakfast          Boolean       @default(false)
+  airportPickup      Boolean       @default(false)
+  pickupVehicles     Int?
+  pickupAmount       Decimal?      @db.Decimal(12, 2)
+  flightNumber       String?
+  pickupDate         String?
+  pickupTime         String?
+  pickupNotes        String?
   physicalRoomNumber String?
   notes              String?
   internalRemarks    String?

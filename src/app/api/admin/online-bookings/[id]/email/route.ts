@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin/auth";
 import { generateBookingConfirmationPdf } from "@/lib/booking-confirmation-pdf";
+import { toBookingConfirmationPdfPayload } from "@/lib/booking-pdf-payload";
 import { sendConfirmedBookingEmails } from "@/lib/booking-mail";
 import { getDb } from "@/lib/db";
 import { assertSameOrigin } from "@/lib/orbit/auth";
@@ -25,16 +26,17 @@ export async function POST(request: Request, { params }: Context) {
     force?: boolean;
   } | null;
 
-  const pdf = await generateBookingConfirmationPdf({
-    ...booking,
-    totalAmount: booking.totalAmount === null ? null : Number(booking.totalAmount),
-  });
+  const pdf = await generateBookingConfirmationPdf(
+    toBookingConfirmationPdfPayload(booking)
+  );
 
   const result = await sendConfirmedBookingEmails(
     {
       ...booking,
       totalAmount:
         booking.totalAmount === null ? null : Number(booking.totalAmount),
+      pickupAmount:
+        booking.pickupAmount === null ? null : Number(booking.pickupAmount),
     },
     {
       force: body?.force === true,

@@ -4,6 +4,7 @@ import { getRoomBySlug } from "@/content/rooms";
 import { getAvailableCapacity } from "@/lib/admin/availability";
 import {
   airportPickupCharge,
+  airportPickupMaxGuests,
   airportPickupVehiclesForGuests,
   quoteFromDates,
 } from "@/lib/booking-pricing";
@@ -86,12 +87,24 @@ export async function computeServerBookingQuote(
 
   const guestCount = adults + children;
   const pickupVehicles = input.airportPickup
-    ? Math.max(
-        1,
-        Number(input.pickupVehicles) ||
-          airportPickupVehiclesForGuests(guestCount)
+    ? Math.min(
+        3,
+        Math.max(
+          1,
+          Number(input.pickupVehicles) ||
+            airportPickupVehiclesForGuests(guestCount)
+        )
       )
     : 0;
+
+  if (input.airportPickup && guestCount > airportPickupMaxGuests(pickupVehicles)) {
+    return {
+      ok: false,
+      error: `Selected airport pickup covers up to ${airportPickupMaxGuests(pickupVehicles)} guests. Please choose more vehicles.`,
+      status: 400,
+    };
+  }
+
   const pickupFee = input.airportPickup
     ? airportPickupCharge(pickupVehicles)
     : 0;
@@ -126,6 +139,25 @@ export async function computeServerBookingQuote(
   };
 }
 
+export function extractGuestSpecialRequest(notes?: string | null) {
+  if (!notes) return null;
+  const lines = notes.split(/\r?\n/);
+  const special: string[] = [];
+  for (const line of lines) {
+    if (
+      /^(WhatsApp|Country|Arrival|Breakfast|Airport pickup|Payment|PayPal)\b/i.test(
+        line.trim()
+      )
+    ) {
+      break;
+    }
+    special.push(line);
+  }
+  const text = special.join("\n").trim();
+  if (!text || text === "None") return null;
+  return text;
+}
+
 export function buildBookingNotes(input: {
   notes?: string;
   whatsapp: string;
@@ -134,20 +166,35 @@ export function buildBookingNotes(input: {
   breakfast: boolean;
   airportPickup?: boolean;
   pickupVehicles?: number;
+  pickupAmount?: number;
   flightNumber?: string;
-  flightArrivalTime?: string;
+  pickupDate?: string;
+  pickupTime?: string;
+  pickupNotes?: string;
   paymentLabel?: string;
 }) {
   const notesText = (input.notes || "").trim() || "None";
+  const pickupLine = input.airportPickup
+    ? [
+        `Airport pickup: Yes`,
+        `${input.pickupVehicles || 1} vehicle(s)`,
+        `Charge $${Number(input.pickupAmount || 0).toFixed(2)}`,
+        `Flight ${input.flightNumber || "—"}`,
+        `Date ${input.pickupDate || "—"}`,
+        `Time ${input.pickupTime || "—"}`,
+        input.pickupNotes ? `Notes ${input.pickupNotes}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "Airport pickup: No";
+
   return [
     notesText,
     `WhatsApp: ${input.whatsapp}`,
     `Country: ${input.country}`,
     `Arrival: ${input.arrivalTime}`,
     `Breakfast: ${input.breakfast ? "Yes" : "No"}`,
-    input.airportPickup
-      ? `Airport pickup: Yes · ${input.pickupVehicles || 1} vehicle(s) · Flight ${input.flightNumber || "—"} · Kathmandu arrival ${input.flightArrivalTime || "—"}`
-      : "Airport pickup: No",
+    pickupLine,
     input.paymentLabel ? `Payment: ${input.paymentLabel}` : null,
   ]
     .filter(Boolean)

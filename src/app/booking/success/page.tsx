@@ -27,6 +27,14 @@ type PageProps = {
     paymentMethod?: string;
     paymentStatus?: string;
     status?: string;
+    airportPickup?: string;
+    pickupVehicles?: string;
+    pickupFee?: string;
+    flightNumber?: string;
+    pickupDate?: string;
+    pickupTime?: string;
+    pickupNotes?: string;
+    notes?: string;
   }>;
 };
 
@@ -44,6 +52,9 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
   const isPayPalPaid =
     paymentMethod === "PAYPAL" &&
     (params.paymentStatus || "").toUpperCase() === "PAID";
+  const airportPickup = params.airportPickup === "1";
+  const pickupVehicles = Number(params.pickupVehicles || 0);
+  const pickupFee = Number(params.pickupFee || 0);
 
   return (
     <section className="bg-ivory py-20 md:py-28">
@@ -154,6 +165,58 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
                   {params.arrivalTime || "—"}
                 </dd>
               </div>
+              {airportPickup ? (
+                <>
+                  <div className="flex justify-between gap-4 border-t border-forest-800/10 pt-3">
+                    <dt>Airport pickup</dt>
+                    <dd className="font-medium text-forest-950">
+                      {pickupVehicles} Vehicle{pickupVehicles === 1 ? "" : "s"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt>Pickup charge</dt>
+                    <dd className="font-medium text-forest-950">
+                      {formatCurrency(pickupFee)}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt>Flight number</dt>
+                    <dd className="font-medium text-forest-950">
+                      {params.flightNumber || "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt>Pickup date</dt>
+                    <dd className="font-medium text-forest-950">
+                      {params.pickupDate
+                        ? formatDate(params.pickupDate)
+                        : "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt>Pickup time</dt>
+                    <dd className="font-medium text-forest-950">
+                      {params.pickupTime || "—"}
+                    </dd>
+                  </div>
+                  {params.pickupNotes ? (
+                    <div className="flex justify-between gap-4">
+                      <dt>Pickup notes</dt>
+                      <dd className="text-right font-medium text-forest-950">
+                        {params.pickupNotes}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {params.notes && params.notes !== "None" ? (
+                    <div className="flex justify-between gap-4">
+                      <dt>Special request</dt>
+                      <dd className="text-right font-medium text-forest-950">
+                        {params.notes}
+                      </dd>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
               {paymentMethod ? (
                 <div className="flex justify-between gap-4">
                   <dt>Payment method</dt>

@@ -13,6 +13,8 @@ export default async function AdminOnlineBookingsPage() {
   const initialBookings = bookings.map((booking) => ({
     ...booking,
     totalAmount: booking.totalAmount === null ? null : Number(booking.totalAmount),
+    pickupAmount:
+      booking.pickupAmount === null ? null : Number(booking.pickupAmount),
     checkIn: booking.checkIn.toISOString(),
     checkOut: booking.checkOut.toISOString(),
     createdAt: booking.createdAt.toISOString(),

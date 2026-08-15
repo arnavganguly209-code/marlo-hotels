@@ -29,6 +29,13 @@ type Booking = {
   children: number;
   rooms: number;
   breakfast: boolean;
+  airportPickup?: boolean;
+  pickupVehicles?: number | null;
+  pickupAmount?: number | null;
+  flightNumber?: string | null;
+  pickupDate?: string | null;
+  pickupTime?: string | null;
+  pickupNotes?: string | null;
   physicalRoomNumber: string | null;
   notes: string | null;
   internalRemarks: string | null;
@@ -515,7 +522,26 @@ export function AdminOnlineBookingsManager({
                       <br />
                       Status: {selected.paymentStatus}
                       <br />
-                      Total: {money(selected.totalAmount)}
+                      Room:{" "}
+                      {money(
+                        selected.totalAmount == null
+                          ? null
+                          : Number(
+                              (
+                                selected.totalAmount -
+                                (selected.airportPickup
+                                  ? selected.pickupAmount || 0
+                                  : 0)
+                              ).toFixed(2)
+                            )
+                      )}
+                      <br />
+                      Pickup:{" "}
+                      {selected.airportPickup
+                        ? money(selected.pickupAmount ?? 0)
+                        : "—"}
+                      <br />
+                      Grand total: {money(selected.totalAmount)}
                     </p>
                     <p>
                       <span className="text-[#D9B46B]">PayPal</span>
@@ -527,11 +553,86 @@ export function AdminOnlineBookingsManager({
                       Paid: {selected.paidAt ? date(selected.paidAt) : "—"}
                     </p>
                   </div>
-                  <p>
-                    <span className="text-[#D9B46B]">Special requests</span>
-                    <br />
-                    {selected.notes || "None"}
-                  </p>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="mb-3 text-[#D9B46B]">Airport Pickup</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <p>
+                        Airport Pickup
+                        <br />
+                        <span className="text-ivory">
+                          {selected.airportPickup ? "Yes" : "No"}
+                        </span>
+                      </p>
+                      <p>
+                        Vehicles
+                        <br />
+                        <span className="text-ivory">
+                          {selected.airportPickup
+                            ? selected.pickupVehicles || "—"
+                            : "—"}
+                        </span>
+                      </p>
+                      <p>
+                        Pickup Charge
+                        <br />
+                        <span className="text-ivory">
+                          {selected.airportPickup
+                            ? money(selected.pickupAmount ?? 0)
+                            : "—"}
+                        </span>
+                      </p>
+                      <p>
+                        Flight Number
+                        <br />
+                        <span className="text-ivory">
+                          {selected.airportPickup
+                            ? selected.flightNumber || "—"
+                            : "—"}
+                        </span>
+                      </p>
+                      <p>
+                        Pickup Date
+                        <br />
+                        <span className="text-ivory">
+                          {selected.airportPickup
+                            ? selected.pickupDate || "—"
+                            : "—"}
+                        </span>
+                      </p>
+                      <p>
+                        Pickup Time
+                        <br />
+                        <span className="text-ivory">
+                          {selected.airportPickup
+                            ? selected.pickupTime || "—"
+                            : "—"}
+                        </span>
+                      </p>
+                      <p className="col-span-2">
+                        Pickup Notes
+                        <br />
+                        <span className="text-ivory">
+                          {selected.airportPickup
+                            ? selected.pickupNotes || "—"
+                            : "—"}
+                        </span>
+                      </p>
+                      <p className="col-span-2">
+                        Special Request
+                        <br />
+                        <span className="text-ivory">
+                          {selected.notes || "None"}
+                        </span>
+                      </p>
+                      <p>
+                        Payment Status
+                        <br />
+                        <span className="text-ivory">
+                          {selected.paymentStatus}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
                   <label className="grid gap-1">
                     <span className="text-[#D9B46B]">Add internal note</span>
                     <textarea

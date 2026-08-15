@@ -7,8 +7,18 @@ import {
 
 export const EXTRA_GUEST_PER_NIGHT = 5;
 export const BREAKFAST_PER_PERSON_PER_NIGHT = 5;
-export const AIRPORT_PICKUP_PER_VEHICLE = 10;
-export const AIRPORT_PICKUP_MAX_PER_VEHICLE = 4;
+
+/** Tiered airport pickup: vehicles → fixed price + guest capacity. */
+export const AIRPORT_PICKUP_OPTIONS = [
+  { vehicles: 1, amount: 12, maxGuests: 3 },
+  { vehicles: 2, amount: 20, maxGuests: 8 },
+  { vehicles: 3, amount: 30, maxGuests: 12 },
+] as const;
+
+/** @deprecated Use AIRPORT_PICKUP_OPTIONS — kept for any legacy imports. */
+export const AIRPORT_PICKUP_PER_VEHICLE = 12;
+/** @deprecated Max guests depends on selected vehicle tier. */
+export const AIRPORT_PICKUP_MAX_PER_VEHICLE = 3;
 
 export type StayQuoteInput = {
   basePricePerNight: number;
@@ -45,14 +55,34 @@ export type StayQuote = {
   total: number;
 };
 
+export function airportPickupOption(vehicles: number) {
+  const count = Math.min(3, Math.max(1, Math.round(vehicles) || 1));
+  return (
+    AIRPORT_PICKUP_OPTIONS.find((option) => option.vehicles === count) ||
+    AIRPORT_PICKUP_OPTIONS[0]
+  );
+}
+
+export function airportPickupMaxGuests(vehicles: number) {
+  return airportPickupOption(vehicles).maxGuests;
+}
+
 export function airportPickupVehiclesForGuests(guestCount: number) {
   const guests = Math.max(0, guestCount);
-  if (guests <= 0) return 1;
-  return Math.max(1, Math.ceil(guests / AIRPORT_PICKUP_MAX_PER_VEHICLE));
+  if (guests <= 3) return 1;
+  if (guests <= 8) return 2;
+  return 3;
 }
 
 export function airportPickupCharge(vehicles: number) {
-  return Math.max(0, vehicles) * AIRPORT_PICKUP_PER_VEHICLE;
+  if (vehicles <= 0) return 0;
+  return airportPickupOption(vehicles).amount;
+}
+
+export function airportPickupVehiclesLabel(vehicles: number) {
+  const count = Math.max(0, vehicles);
+  if (count <= 0) return "—";
+  return `${count} Vehicle${count === 1 ? "" : "s"}`;
 }
 
 /**

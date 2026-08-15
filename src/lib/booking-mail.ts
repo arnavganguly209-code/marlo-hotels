@@ -10,6 +10,7 @@ import {
   nightsBetween,
   type BookingConfirmationPdfPayload,
 } from "@/lib/booking-confirmation-pdf";
+import { toBookingConfirmationPdfPayload } from "@/lib/booking-pdf-payload";
 import { getDb } from "@/lib/db";
 
 export type PdfAttachment = {
@@ -46,6 +47,13 @@ type BookingMailRecord = {
   totalAmount?: number | null;
   physicalRoomNumber?: string | null;
   notes?: string | null;
+  airportPickup?: boolean | null;
+  pickupVehicles?: number | null;
+  pickupAmount?: number | null;
+  flightNumber?: string | null;
+  pickupDate?: string | null;
+  pickupTime?: string | null;
+  pickupNotes?: string | null;
   createdAt?: Date | string | null;
   confirmationEmailSentAt?: Date | string | null;
   room: { name: string };
@@ -194,33 +202,13 @@ function toEmailPayload(booking: BookingMailRecord): BookingConfirmationEmailPay
 }
 
 function toPdfPayload(booking: BookingMailRecord): BookingConfirmationPdfPayload {
-  const methodLabel =
-    booking.paymentMethod === "PAYPAL"
-      ? "PayPal"
-      : booking.paymentMethod || null;
-
-  return {
-    reference: booking.reference,
-    status: booking.status,
-    createdAt: booking.createdAt || new Date(),
-    guestName: booking.guestName,
-    guestEmail: booking.guestEmail,
-    guestPhone: booking.guestPhone,
-    country: booking.country,
-    checkIn: booking.checkIn,
-    checkOut: booking.checkOut,
-    adults: booking.adults,
-    children: booking.children,
-    rooms: booking.rooms,
-    breakfast: booking.breakfast,
-    paymentStatus: booking.paymentStatus,
-    paymentMethod: methodLabel,
+  return toBookingConfirmationPdfPayload({
+    ...booking,
     totalAmount:
       booking.totalAmount == null ? null : Number(booking.totalAmount),
-    physicalRoomNumber: booking.physicalRoomNumber,
-    notes: booking.notes,
-    room: { name: booking.room.name },
-  };
+    pickupAmount:
+      booking.pickupAmount == null ? null : Number(booking.pickupAmount),
+  });
 }
 
 const MAILABLE_STATUSES = new Set([

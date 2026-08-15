@@ -13,6 +13,7 @@ function serialize<
     createdAt: Date;
     updatedAt: Date;
     totalAmount: unknown;
+    pickupAmount?: unknown;
     confirmationEmailSentAt?: Date | null;
     paidAt?: Date | null;
   },
@@ -20,6 +21,10 @@ function serialize<
   return {
     ...booking,
     totalAmount: booking.totalAmount === null ? null : Number(booking.totalAmount),
+    pickupAmount:
+      booking.pickupAmount === null || booking.pickupAmount === undefined
+        ? null
+        : Number(booking.pickupAmount),
     checkIn: booking.checkIn.toISOString(),
     checkOut: booking.checkOut.toISOString(),
     createdAt: booking.createdAt.toISOString(),

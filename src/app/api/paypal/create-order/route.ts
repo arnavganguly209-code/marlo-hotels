@@ -32,6 +32,9 @@ const createOrderSchema = z.object({
   pickupVehicles: z.number().int().min(1).max(3).optional(),
   flightNumber: z.string().optional(),
   flightArrivalTime: z.string().optional(),
+  pickupDate: z.string().optional(),
+  pickupTime: z.string().optional(),
+  pickupNotes: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -86,16 +89,26 @@ export async function POST(request: Request) {
 
   const quote = quoteResult.quote;
   const reference = await generateMarloBookingId();
+  const wantsPickup = Boolean(data.airportPickup);
+  const pickupTime =
+    (data.pickupTime || data.flightArrivalTime || "").trim() || null;
+  const pickupDate =
+    (data.pickupDate || "").trim() ||
+    (wantsPickup ? data.checkIn : "") ||
+    null;
   const notesPayload = buildBookingNotes({
     notes: data.notes,
     whatsapp: data.whatsapp,
     country: data.country,
     arrivalTime: data.arrivalTime,
     breakfast: Boolean(data.breakfast),
-    airportPickup: Boolean(data.airportPickup),
+    airportPickup: wantsPickup,
     pickupVehicles: quote.pickupVehicles,
+    pickupAmount: quote.pickupFee,
     flightNumber: data.flightNumber,
-    flightArrivalTime: data.flightArrivalTime,
+    pickupDate: pickupDate || undefined,
+    pickupTime: pickupTime || undefined,
+    pickupNotes: data.pickupNotes,
     paymentLabel: "PAYPAL_PENDING",
   });
 
@@ -139,6 +152,17 @@ export async function POST(request: Request) {
       guestPhone: data.guestPhone,
       country: data.country,
       breakfast: Boolean(data.breakfast),
+      airportPickup: wantsPickup,
+      pickupVehicles: wantsPickup ? quote.pickupVehicles : null,
+      pickupAmount: wantsPickup ? quote.pickupFee : null,
+      flightNumber: wantsPickup
+        ? (data.flightNumber || "").trim() || null
+        : null,
+      pickupDate: wantsPickup ? pickupDate : null,
+      pickupTime: wantsPickup ? pickupTime : null,
+      pickupNotes: wantsPickup
+        ? (data.pickupNotes || "").trim() || null
+        : null,
       notes: notesPayload,
       totalAmount: quote.grandTotal,
       paymentStatus: "PENDING",

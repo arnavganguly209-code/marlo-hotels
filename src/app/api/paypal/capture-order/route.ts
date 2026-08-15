@@ -202,6 +202,8 @@ export async function POST(request: Request) {
     ...booking,
     totalAmount:
       booking.totalAmount === null ? null : Number(booking.totalAmount),
+    pickupAmount:
+      booking.pickupAmount === null ? null : Number(booking.pickupAmount),
   });
 
   return NextResponse.json({

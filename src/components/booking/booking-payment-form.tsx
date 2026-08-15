@@ -71,14 +71,19 @@ export function BookingPaymentForm() {
       pickupFee,
       flightNumber: params.get("flightNumber") || "",
       flightArrivalTime: params.get("flightArrivalTime") || "",
+      pickupDate: params.get("pickupDate") || "",
+      pickupTime: params.get("pickupTime") || params.get("flightArrivalTime") || "",
+      pickupNotes: params.get("pickupNotes") || "",
       total,
       taxes: Math.round(total * 0.1),
       mealPlanLabel: breakfast ? "With Breakfast" : "Without Breakfast",
     };
   }, [params]);
 
-  const taxes = summary.taxes;
-  const staySubtotal = Math.max(0, summary.total - taxes);
+  const pickupFee = summary.airportPickup ? summary.pickupFee : 0;
+  const roomPortion = Math.max(0, summary.total - pickupFee);
+  const taxes = Math.round(roomPortion * 0.1);
+  const staySubtotal = Math.max(0, roomPortion - taxes);
   const grandTotal = summary.total;
 
   useEffect(() => {
@@ -129,7 +134,16 @@ export function BookingPaymentForm() {
         ? summary.flightNumber || undefined
         : undefined,
       flightArrivalTime: summary.airportPickup
-        ? summary.flightArrivalTime || undefined
+        ? summary.pickupTime || summary.flightArrivalTime || undefined
+        : undefined,
+      pickupDate: summary.airportPickup
+        ? summary.pickupDate || undefined
+        : undefined,
+      pickupTime: summary.airportPickup
+        ? summary.pickupTime || undefined
+        : undefined,
+      pickupNotes: summary.airportPickup
+        ? summary.pickupNotes || undefined
         : undefined,
     };
   }
@@ -156,6 +170,14 @@ export function BookingPaymentForm() {
       paymentMethod: "PAYPAL",
       paymentStatus: input.paymentStatus || "",
       status: input.status || "",
+      airportPickup: summary.airportPickup ? "1" : "0",
+      pickupVehicles: String(summary.pickupVehicles || 0),
+      pickupFee: String(summary.pickupFee || 0),
+      flightNumber: summary.flightNumber || "",
+      pickupDate: summary.pickupDate || "",
+      pickupTime: summary.pickupTime || "",
+      pickupNotes: summary.pickupNotes || "",
+      notes: summary.notes || "",
     });
     router.push(`/booking/success?${success.toString()}`);
   }
@@ -375,23 +397,21 @@ export function BookingPaymentForm() {
             <dt>Meal plan</dt>
             <dd className="text-right text-ivory">{summary.mealPlanLabel}</dd>
           </div>
-          {summary.airportPickup ? (
-            <div className="flex justify-between gap-4">
-              <dt>Airport pickup</dt>
-              <dd className="text-right text-ivory">
-                {summary.pickupVehicles} vehicle
-                {summary.pickupVehicles > 1 ? "s" : ""}
-                {summary.flightNumber ? ` · ${summary.flightNumber}` : ""}
-                {summary.flightArrivalTime
-                  ? ` · ${summary.flightArrivalTime}`
-                  : ""}
-              </dd>
-            </div>
-          ) : null}
           <div className="flex justify-between gap-4 border-t border-ivory/15 pt-3">
             <dt>Stay subtotal</dt>
             <dd className="text-ivory">{formatCurrency(staySubtotal)}</dd>
           </div>
+          {summary.airportPickup ? (
+            <div className="flex justify-between gap-4">
+              <dt>
+                Airport pickup ({summary.pickupVehicles} vehicle
+                {summary.pickupVehicles > 1 ? "s" : ""})
+              </dt>
+              <dd className="text-right text-ivory">
+                {formatCurrency(pickupFee)}
+              </dd>
+            </div>
+          ) : null}
           <div className="flex justify-between gap-4">
             <dt>Taxes & service</dt>
             <dd className="text-ivory">{formatCurrency(taxes)}</dd>

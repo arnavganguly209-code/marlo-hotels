@@ -4,9 +4,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { getRoomBySlugSync } from "@/lib/booking-client-rooms";
 import {
-  AIRPORT_PICKUP_MAX_PER_VEHICLE,
-  AIRPORT_PICKUP_PER_VEHICLE,
+  AIRPORT_PICKUP_OPTIONS,
   airportPickupCharge,
+  airportPickupMaxGuests,
   airportPickupVehiclesForGuests,
 } from "@/lib/booking-pricing";
 import { formatCurrency } from "@/lib/utils";
@@ -41,7 +41,9 @@ export function BookingCheckoutForm({
   const [airportPickup, setAirportPickup] = useState(false);
   const [pickupVehicles, setPickupVehicles] = useState(1);
   const [flightNumber, setFlightNumber] = useState("");
-  const [flightArrivalTime, setFlightArrivalTime] = useState("");
+  const [pickupDate, setPickupDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [pickupNotes, setPickupNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const stayTotal = Number(params.get("total") || 0);
@@ -52,8 +54,9 @@ export function BookingCheckoutForm({
     const roomsCount = Number(params.get("rooms") || 1);
     const guests = adults + children;
     const suggestedVehicles = airportPickupVehiclesForGuests(guests);
+    const checkIn = params.get("checkIn") || "";
     return {
-      checkIn: params.get("checkIn") || "",
+      checkIn,
       checkOut: params.get("checkOut") || "",
       adults,
       children,
@@ -89,13 +92,19 @@ export function BookingCheckoutForm({
       return;
     }
     if (airportPickup) {
-      if (!flightNumber.trim() || !flightArrivalTime.trim()) {
-        setError("Please enter flight number and Kathmandu arrival time for airport pickup.");
+      if (!flightNumber.trim() || !pickupTime.trim()) {
+        setError(
+          "Please enter flight number and airport pickup time."
+        );
         return;
       }
-      if (vehicles * AIRPORT_PICKUP_MAX_PER_VEHICLE < summary.guests) {
+      if (!pickupDate.trim()) {
+        setError("Please enter the airport pickup date.");
+        return;
+      }
+      if (summary.guests > airportPickupMaxGuests(vehicles)) {
         setError(
-          `Each vehicle holds max ${AIRPORT_PICKUP_MAX_PER_VEHICLE} guests. Select ${summary.suggestedVehicles} vehicle(s) for your party.`
+          `Selected pickup covers up to ${airportPickupMaxGuests(vehicles)} guests. Select ${summary.suggestedVehicles} vehicle(s) for your party.`
         );
         return;
       }
@@ -116,13 +125,20 @@ export function BookingCheckoutForm({
       next.set("pickupVehicles", String(vehicles));
       next.set("pickupFee", String(pickupFee));
       next.set("flightNumber", flightNumber.trim());
-      next.set("flightArrivalTime", flightArrivalTime.trim());
+      next.set("pickupDate", pickupDate.trim());
+      next.set("pickupTime", pickupTime.trim());
+      next.set("flightArrivalTime", pickupTime.trim());
+      if (pickupNotes.trim()) next.set("pickupNotes", pickupNotes.trim());
+      else next.delete("pickupNotes");
     } else {
       next.delete("airportPickup");
       next.delete("pickupVehicles");
       next.delete("pickupFee");
       next.delete("flightNumber");
+      next.delete("pickupDate");
+      next.delete("pickupTime");
       next.delete("flightArrivalTime");
+      next.delete("pickupNotes");
     }
     router.push(`/booking/payment?${next.toString()}`);
   }
@@ -179,19 +195,21 @@ export function BookingCheckoutForm({
                 setAirportPickup(on);
                 if (on) {
                   setPickupVehicles(summary.suggestedVehicles);
+                  if (!pickupDate && summary.checkIn) {
+                    setPickupDate(summary.checkIn);
+                  }
                 }
               }}
               className="mt-1 size-4 accent-gold-600"
             />
             <span>
               <span className="block text-sm font-semibold text-forest-950">
-                Airport pickup — ${AIRPORT_PICKUP_PER_VEHICLE} / vehicle
+                Airport pickup
               </span>
               <span className="mt-1 block text-xs leading-relaxed text-charcoal-900/65">
-                Optional. Max {AIRPORT_PICKUP_MAX_PER_VEHICLE} guests per vehicle
-                (one car). More than {AIRPORT_PICKUP_MAX_PER_VEHICLE} guests need
-                another vehicle — e.g. 5–8 guests = ${AIRPORT_PICKUP_PER_VEHICLE * 2}.
-                You can skip this.
+                Optional transfer from Tribhuvan International Airport.
+                1 vehicle — $12 — up to 3 guests · 2 vehicles — $20 — up to 8
+                guests · 3 vehicles — $30 — up to 12 guests.
               </span>
             </span>
           </label>
@@ -207,11 +225,10 @@ export function BookingCheckoutForm({
                   }
                   className="mt-1.5 h-12 w-full rounded-xl border border-forest-800/15 bg-white px-4 text-sm normal-case tracking-normal"
                 >
-                  {[1, 2, 3].map((count) => (
-                    <option key={count} value={count}>
-                      {count} vehicle{count > 1 ? "s" : ""} — $
-                      {airportPickupCharge(count)} (up to{" "}
-                      {count * AIRPORT_PICKUP_MAX_PER_VEHICLE} guests)
+                  {AIRPORT_PICKUP_OPTIONS.map((option) => (
+                    <option key={option.vehicles} value={option.vehicles}>
+                      {option.vehicles} vehicle{option.vehicles > 1 ? "s" : ""} — $
+                      {option.amount} (up to {option.maxGuests} guests)
                     </option>
                   ))}
                 </select>
@@ -228,14 +245,34 @@ export function BookingCheckoutForm({
                 />
               </label>
               <label className="block text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
-                Flight arrival in Kathmandu
+                Airport pickup date
+                <input
+                  required={airportPickup}
+                  type="date"
+                  value={pickupDate}
+                  onChange={(event) => setPickupDate(event.target.value)}
+                  className="mt-1.5 h-12 w-full rounded-xl border border-forest-800/15 bg-white px-4 text-sm normal-case tracking-normal"
+                />
+              </label>
+              <label className="block text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
+                Airport pickup time
                 <input
                   required={airportPickup}
                   type="text"
-                  value={flightArrivalTime}
-                  placeholder="e.g. 14:40"
-                  onChange={(event) => setFlightArrivalTime(event.target.value)}
+                  value={pickupTime}
+                  placeholder="e.g. 10:30 AM"
+                  onChange={(event) => setPickupTime(event.target.value)}
                   className="mt-1.5 h-12 w-full rounded-xl border border-forest-800/15 bg-white px-4 text-sm normal-case tracking-normal"
+                />
+              </label>
+              <label className="block text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase sm:col-span-2">
+                Pickup notes / instructions
+                <textarea
+                  rows={3}
+                  value={pickupNotes}
+                  placeholder="Optional — terminal, luggage, signage, etc."
+                  onChange={(event) => setPickupNotes(event.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-forest-800/15 bg-white px-4 py-3 text-sm normal-case tracking-normal"
                 />
               </label>
             </div>
@@ -290,6 +327,10 @@ export function BookingCheckoutForm({
             <dd>
               {summary.breakfast ? "With Breakfast" : "Without Breakfast"}
             </dd>
+          </div>
+          <div className="flex justify-between">
+            <dt>Room stay</dt>
+            <dd>{formatCurrency(stayTotal, room?.currency || "USD")}</dd>
           </div>
           {airportPickup ? (
             <div className="flex justify-between">
