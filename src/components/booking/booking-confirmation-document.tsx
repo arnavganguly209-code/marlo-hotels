@@ -1,4 +1,4 @@
-import { nightsBetween, type BookingConfirmationPdfPayload } from "@/lib/booking-confirmation-pdf";
+import { nightsBetween, type BookingConfirmationPdfPayload } from "@/lib/booking-confirmation-shared";
 import { siteConfig } from "@/lib/site";
 
 export type BookingConfirmationDocumentProps = BookingConfirmationPdfPayload;
