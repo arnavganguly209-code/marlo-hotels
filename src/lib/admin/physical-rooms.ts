@@ -119,6 +119,7 @@ export async function buildInventoryRows(): Promise<InventoryCategoryRow[]> {
       name: category.title,
       roomType: category.roomType,
       sortOrder: category.sortOrder,
+      inventory: Math.max(0, category.inventory),
       total: units.length,
       occupied,
       available,
@@ -179,4 +180,35 @@ export async function syncAllCategoryInventories() {
   for (const category of categories) {
     await syncCategoryInventory(category.slug);
   }
+}
+
+/**
+ * Set bookable inventory for a room category (drives online booking capacity).
+ */
+export async function setCategoryInventory(slug: string, inventory: number) {
+  const db = getDb();
+  if (!db) throw new Error("Database unavailable");
+
+  const entry = await db.contentEntry.findFirst({
+    where: { module: "rooms", slug },
+  });
+  if (!entry) throw new Error("Room category not found");
+
+  const data = normalizeRoomCatalogData(
+    entry.data as Partial<RoomCatalogData>
+  );
+  const nextInventory = Math.max(0, Math.floor(inventory));
+  const next = {
+    ...data,
+    inventory: nextInventory,
+  };
+
+  await db.contentEntry.update({
+    where: { id: entry.id },
+    data: {
+      data: next as unknown as Prisma.InputJsonValue,
+    },
+  });
+
+  return nextInventory;
 }

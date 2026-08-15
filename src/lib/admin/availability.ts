@@ -117,11 +117,19 @@ export async function getAvailableCapacity(
   }
 
   const physical = await listPhysicalRooms(slug);
-  const sellable = physical.length
+  // Admin Inventory sets ContentEntry.inventory — that is the bookable capacity
+  // for online booking. Physical room numbers remain for ops/assignment; when
+  // present they can only reduce capacity (never inflate above admin inventory).
+  const catalogueCap = Math.max(0, room.inventory);
+  const physicalSellable = physical.length
     ? physical.filter((unit) =>
         isSellableStatus(unit.status as PhysicalRoomStatusValue)
       ).length
-    : Math.max(0, room.inventory);
+    : null;
+  const sellable =
+    physicalSellable == null
+      ? catalogueCap
+      : Math.min(catalogueCap, physicalSellable);
 
   const [booked, blocked] = await Promise.all([
     countBookedUnits(slug, checkIn, checkOut, excludeBookingId),

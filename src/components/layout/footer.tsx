@@ -57,7 +57,12 @@ export function Footer({
   const findUsHeading = content?.findUsHeading ?? "Find Us";
   const address = content?.address ?? siteConfig.contact.address;
   const phone = content?.phone ?? siteConfig.contact.phone;
-  const email = content?.email ?? siteConfig.contact.email;
+  const emailRaw = content?.email ?? siteConfig.contact.email;
+  const email =
+    emailRaw === "hello@marlohotels.com" ||
+    emailRaw === "reservations@marlohotels.com"
+      ? "info@marlohotels.com"
+      : emailRaw;
   const checkIn = content?.checkIn ?? siteConfig.hours.checkIn;
   const checkOut = content?.checkOut ?? siteConfig.hours.checkOut;
   const resolvedLogoUrl = content?.logo.src || logoUrl;

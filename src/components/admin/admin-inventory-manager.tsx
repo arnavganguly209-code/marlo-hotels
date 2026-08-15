@@ -11,11 +11,21 @@ export function AdminInventoryManager({
   initialRows: InventoryCategoryRow[];
 }) {
   const [rows, setRows] = useState(initialRows);
+  const [drafts, setDrafts] = useState<Record<string, number>>(() =>
+    Object.fromEntries(initialRows.map((row) => [row.slug, row.inventory]))
+  );
   const [savingSlug, setSavingSlug] = useState<string | null>(null);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  function applyRows(next: InventoryCategoryRow[]) {
+    setRows(next);
+    setDrafts(
+      Object.fromEntries(next.map((row) => [row.slug, row.inventory]))
+    );
+  }
 
   async function syncAll() {
     setSyncingAll(true);
@@ -25,8 +35,11 @@ export function AdminInventoryManager({
       const response = await fetch("/api/admin/inventory", { method: "POST" });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Sync failed");
-      setRows(result.rows as InventoryCategoryRow[]);
-      setMessage(result.message || "Inventory synced.");
+      applyRows(result.rows as InventoryCategoryRow[]);
+      setMessage(
+        result.message ||
+          "Inventory synced from room numbers into bookable capacity."
+      );
       setSavedSlug("all");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Sync failed");
@@ -35,18 +48,25 @@ export function AdminInventoryManager({
     }
   }
 
-  async function saveRow(slug: string) {
+  async function saveInventory(slug: string) {
     setSavingSlug(slug);
     setError("");
     setMessage("");
     try {
-      // Full sync keeps every category aligned with room numbers.
-      const response = await fetch("/api/admin/inventory", { method: "POST" });
+      const inventory = Math.max(0, Math.floor(Number(drafts[slug]) || 0));
+      const response = await fetch("/api/admin/inventory", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, inventory }),
+      });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Could not save");
-      setRows(result.rows as InventoryCategoryRow[]);
+      applyRows(result.rows as InventoryCategoryRow[]);
       setSavedSlug(slug);
-      setMessage("Inventory updated from room numbers.");
+      setMessage(
+        result.message ||
+          `Inventory saved. Online booking now uses ${inventory} room(s) for this category.`
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not save");
     } finally {
@@ -58,7 +78,7 @@ export function AdminInventoryManager({
     return (
       <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-6 py-16 text-center text-sm text-cream-200/55">
         No Marlo Hotels room categories found. Publish rooms in Admin → Rooms
-        first, then add room numbers.
+        first, then set inventory here.
       </div>
     );
   }
@@ -67,8 +87,9 @@ export function AdminInventoryManager({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm text-cream-200/60">
-          Totals sync automatically from Room Numbers. Save refreshes sellable
-          inventory for the public booking catalogue.
+          Set how many rooms are bookable online for each category. Save updates
+          live availability. Optional: Sync all copies sellable counts from Room
+          Numbers into these values.
         </p>
         <button
           type="button"
@@ -81,7 +102,7 @@ export function AdminInventoryManager({
           ) : (
             <Save className="size-4" />
           )}
-          Sync all
+          Sync from room numbers
         </button>
       </div>
 
@@ -100,6 +121,8 @@ export function AdminInventoryManager({
         {rows.map((row) => {
           const saving = savingSlug === row.slug;
           const saved = savedSlug === row.slug || savedSlug === "all";
+          const draft = drafts[row.slug] ?? row.inventory;
+          const dirty = draft !== row.inventory;
           return (
             <article
               key={row.slug}
@@ -114,25 +137,51 @@ export function AdminInventoryManager({
                     {row.name}
                   </h2>
                 </div>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => void saveRow(row.slug)}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#D9B46B] px-4 text-[10px] font-semibold tracking-[0.14em] text-[#0B1713] uppercase disabled:opacity-60"
-                >
-                  {saving ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : saved ? (
-                    <Check className="size-3.5" />
-                  ) : (
-                    <Save className="size-3.5" />
-                  )}
-                  {saving ? "Saving…" : saved ? "Saved" : "Save"}
-                </button>
+                <div className="flex flex-wrap items-end gap-3">
+                  <label className="grid gap-1 text-[10px] font-semibold tracking-[0.14em] text-[#D9B46B] uppercase">
+                    Bookable inventory
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={draft}
+                      onChange={(event) =>
+                        setDrafts((current) => ({
+                          ...current,
+                          [row.slug]: Math.max(
+                            0,
+                            Math.floor(Number(event.target.value) || 0)
+                          ),
+                        }))
+                      }
+                      className="h-11 w-28 rounded-xl border border-white/15 bg-black/25 px-3 text-base font-semibold normal-case tracking-normal text-ivory outline-none focus:border-[#D9B46B]/60"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={saving || !dirty}
+                    onClick={() => void saveInventory(row.slug)}
+                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#D9B46B] px-4 text-[10px] font-semibold tracking-[0.14em] text-[#0B1713] uppercase disabled:opacity-60"
+                  >
+                    {saving ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : saved && !dirty ? (
+                      <Check className="size-3.5" />
+                    ) : (
+                      <Save className="size-3.5" />
+                    )}
+                    {saving ? "Saving…" : saved && !dirty ? "Saved" : "Save"}
+                  </button>
+                </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                <Stat label="Total Physical Rooms" value={row.total} accent />
+              <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                <Stat
+                  label="Bookable inventory"
+                  value={row.inventory}
+                  accent
+                />
+                <Stat label="Total Physical Rooms" value={row.total} />
                 <Stat label="Occupied Today" value={row.occupied} />
                 <Stat label="Available Today" value={row.available} />
                 <Stat label="Blocked Rooms" value={row.blocked} />
@@ -142,7 +191,7 @@ export function AdminInventoryManager({
               <div className="mt-4 flex flex-wrap gap-3 text-xs text-cream-200/45">
                 <span>Cleaning: {row.cleaning}</span>
                 <span>Out of Service: {row.outOfService}</span>
-                <span>Sellable capacity: {row.sellableInventory}</span>
+                <span>Sellable physical: {row.sellableInventory}</span>
               </div>
             </article>
           );

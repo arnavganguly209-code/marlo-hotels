@@ -10,7 +10,7 @@ export default async function AdminInventoryPage() {
   return (
     <AdminModulePage
       title="Inventory"
-      description="Live inventory for Marlo Hotels room categories — totals stay synchronized with Room Numbers."
+      description="Set bookable room inventory per category for online booking. Physical room numbers stay under Room Numbers."
     >
       <AdminInventoryManager initialRows={rows} />
     </AdminModulePage>

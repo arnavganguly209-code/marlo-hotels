@@ -35,6 +35,8 @@ export type InventoryCategoryRow = {
   name: string;
   roomType: "Room" | "Suite";
   sortOrder: number;
+  /** Bookable rooms for online booking (ContentEntry inventory). */
+  inventory: number;
   total: number;
   occupied: number;
   available: number;
