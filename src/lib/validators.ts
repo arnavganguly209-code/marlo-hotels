@@ -35,12 +35,6 @@ export const bookingRequestSchema = z
     pickupVehicles: z.number().int().min(1).max(3).optional(),
     flightNumber: z.string().optional(),
     flightArrivalTime: z.string().optional(),
-    billingName: z.string().optional(),
-    billingCountry: z.string().optional(),
-    billingAddress: z.string().optional(),
-    billingCity: z.string().optional(),
-    billingPostalCode: z.string().optional(),
-    paymentIntent: z.string().optional(),
   })
   .refine(
     (data) => new Date(data.checkOut) > new Date(data.checkIn),

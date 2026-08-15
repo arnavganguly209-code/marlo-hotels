@@ -158,11 +158,7 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
                 <div className="flex justify-between gap-4">
                   <dt>Payment method</dt>
                   <dd className="font-medium text-forest-950">
-                    {paymentMethod === "PAYPAL"
-                      ? "PayPal"
-                      : paymentMethod === "CARD"
-                        ? "Card"
-                        : paymentMethod}
+                    {paymentMethod === "PAYPAL" ? "PayPal" : paymentMethod}
                   </dd>
                 </div>
               ) : null}

@@ -128,9 +128,7 @@ export function buildBookingConfirmationEmailHtml(
             escapeHtml(
               payload.paymentMethod === "PAYPAL"
                 ? "PayPal"
-                : payload.paymentMethod === "CARD"
-                  ? "Card"
-                  : payload.paymentMethod || "—"
+                : payload.paymentMethod || "—"
             )
           )}
           ${

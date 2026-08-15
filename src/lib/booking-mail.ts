@@ -197,9 +197,7 @@ function toPdfPayload(booking: BookingMailRecord): BookingConfirmationPdfPayload
   const methodLabel =
     booking.paymentMethod === "PAYPAL"
       ? "PayPal"
-      : booking.paymentMethod === "CARD"
-        ? "Card"
-        : booking.paymentMethod || null;
+      : booking.paymentMethod || null;
 
   return {
     reference: booking.reference,
