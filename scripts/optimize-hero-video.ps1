@@ -12,7 +12,7 @@ Set-Location $root
 $sourceUrl = if ($env:HERO_SOURCE_URL) {
   $env:HERO_SOURCE_URL
 } else {
-  "https://marlo.theglobalorbit.com/media/video/1784832179111-81063490-a.mp4"
+  "https://marlohotels.com/media/video/1784832179111-81063490-a.mp4"
 }
 
 $ff = $null
