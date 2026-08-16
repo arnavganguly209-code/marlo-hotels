@@ -243,7 +243,10 @@ export function BookingPaymentForm() {
               PayPal is temporarily unavailable. Please try again shortly.
             </p>
           ) : (
-            <div className="relative z-0 w-full max-w-full overflow-hidden">
+            <div className="paypal-checkout-frame relative z-0 w-full max-w-full rounded-xl border border-forest-800/20 bg-white p-4 shadow-[inset_0_0_0_1px_rgba(18,52,41,0.04)] sm:p-5">
+              <p className="mb-3 text-[10px] font-semibold tracking-[0.2em] text-forest-900/70 uppercase">
+                PayPal Checkout
+              </p>
               <PayPalScriptProvider
                 options={{
                   clientId: paypalConfig.clientId!,
@@ -262,7 +265,8 @@ export function BookingPaymentForm() {
                     color: "gold",
                     shape: "rect",
                     label: "paypal",
-                    height: 45,
+                    height: 48,
+                    tagline: false,
                   }}
                   disabled={paypalBusy}
                   createOrder={async () => {
