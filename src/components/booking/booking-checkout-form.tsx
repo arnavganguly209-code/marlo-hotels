@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { CountryAutocomplete } from "@/components/booking/country-autocomplete";
 import { getRoomBySlugSync } from "@/lib/booking-client-rooms";
 import {
   AIRPORT_PICKUP_OPTIONS,
@@ -10,6 +11,10 @@ import {
   airportPickupVehiclesForGuests,
 } from "@/lib/booking-pricing";
 import { formatCurrency } from "@/lib/utils";
+import {
+  HOTEL_ARRIVAL_TIMES,
+  isKnownCountry,
+} from "@/lib/world-countries";
 
 export function BookingCheckoutForm({
   rooms,
@@ -87,6 +92,16 @@ export function BookingCheckoutForm({
       setError("Please complete every required field.");
       return;
     }
+    if (!isKnownCountry(form.country)) {
+      setError("Please select a country from the list.");
+      return;
+    }
+    if (
+      !(HOTEL_ARRIVAL_TIMES as readonly string[]).includes(form.arrivalTime)
+    ) {
+      setError("Please select a hotel arrival time from 2:00 PM onward.");
+      return;
+    }
     if (!summary.checkIn || !summary.checkOut || !roomSlug) {
       setError("Missing stay details. Please return to booking and select a room.");
       return;
@@ -161,8 +176,6 @@ export function BookingCheckoutForm({
             ["guestEmail", "Email", "email"],
             ["guestPhone", "Phone", "tel"],
             ["whatsapp", "WhatsApp", "tel"],
-            ["country", "Country", "text"],
-            ["arrivalTime", "Hotel Arrival Time", "text"],
           ] as const
         ).map(([key, label, type]) => (
           <label
@@ -184,6 +197,40 @@ export function BookingCheckoutForm({
             />
           </label>
         ))}
+
+        <label className="block text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
+          Country
+          <CountryAutocomplete
+            required
+            value={form.country}
+            onChange={(country) =>
+              setForm((current) => ({ ...current, country }))
+            }
+            className="mt-1.5 h-12 w-full rounded-xl border border-forest-800/15 px-4 text-sm normal-case tracking-normal"
+          />
+        </label>
+
+        <label className="block text-[10px] tracking-[0.16em] text-charcoal-900/50 uppercase">
+          Hotel Arrival Time
+          <select
+            required
+            value={form.arrivalTime}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                arrivalTime: event.target.value,
+              }))
+            }
+            className="mt-1.5 h-12 w-full rounded-xl border border-forest-800/15 bg-white px-4 text-sm normal-case tracking-normal"
+          >
+            <option value="">Select arrival time (from 2:00 PM)</option>
+            {HOTEL_ARRIVAL_TIMES.map((time) => (
+              <option key={time} value={time}>
+                {time}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <div className="rounded-2xl border border-forest-800/10 bg-cream-50/80 p-4">
           <label className="flex cursor-pointer items-start gap-3">
