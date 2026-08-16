@@ -20,6 +20,7 @@ import {
   storeOriginalUpload,
   VIDEO_MIME_TYPES,
 } from "@/lib/orbit/media-storage";
+import { persistNewMediaAsset } from "@/lib/orbit/media-asset-persist";
 
 export const runtime = "nodejs";
 
@@ -207,54 +208,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const asset = await db.$transaction(async (tx) => {
-      const created = await tx.mediaAsset.create({
-        data: {
-          filename: stored.filename,
-          originalName: stored.originalName,
-          url: stored.url,
-          mimeType: stored.mimeType,
-          kind: stored.kind,
-          size: stored.size,
-          width: stored.width,
-          height: stored.height,
-          durationMs: stored.durationMs,
-          alt: manifest.alt,
-          folder: stored.url.split("/")[2] || "video",
-          checksum: stored.checksum,
-          currentVersion: 1,
-        },
-      });
-      await tx.mediaVersion.create({
-        data: {
-          assetId: created.id,
-          version: 1,
-          filename: stored.filename,
-          originalName: stored.originalName,
-          url: stored.url,
-          mimeType: stored.mimeType,
-          size: stored.size,
-          width: stored.width,
-          height: stored.height,
-          durationMs: stored.durationMs,
-          checksum: stored.checksum,
-          isOriginal: true,
-        },
-      });
-      return tx.mediaAsset.findUniqueOrThrow({
-        where: { id: created.id },
-        include: {
-          _count: { select: { placements: true } },
-          placements: { select: { key: true, label: true } },
-        },
-      });
+    const assetResult = await persistNewMediaAsset(db, stored, {
+      alt: manifest.alt,
     });
+    const asset = assetResult.asset;
 
     await writeAuditLog({
       action: "UPLOAD_MEDIA_CHUNKED",
       module: "media-library",
       entityId: asset.id,
-      summary: `Chunk-uploaded ${asset.originalName}`,
+      summary: assetResult.created
+        ? `Chunk-uploaded ${asset.originalName}`
+        : `Reused existing media for chunk upload ${asset.originalName}`,
     });
     await rm(path.join(chunkRoot(), uploadId), { recursive: true, force: true });
     revalidateTag("media");
@@ -269,7 +234,9 @@ export async function POST(request: Request) {
         usageCount: asset._count.placements,
         usedOn: asset.placements.map((item) => item.label || item.key),
       },
-      message: "Upload Successful",
+      message: assetResult.created
+        ? "Upload Successful"
+        : "Already in library",
     });
   }
 

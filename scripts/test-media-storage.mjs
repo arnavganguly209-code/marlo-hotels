@@ -2,7 +2,7 @@
  * Offline storage helper checks (no database required).
  */
 import assert from "node:assert/strict";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -61,6 +61,15 @@ assert.equal(checksumBuffer(original), stored.checksum);
 const onDisk = await readFile(stored.absolutePath);
 assert.equal(Buffer.compare(onDisk, original), 0);
 console.log("OK: original bytes preserved");
+
+const storedAgain = await storeOriginalUpload({
+  buffer: original,
+  mimeType: "image/png",
+  originalName: "sample.png",
+  folder: "tests",
+});
+assert.equal(storedAgain.url, stored.url);
+console.log("OK: re-upload same bytes reuses URL (idempotent)");
 
 const cropped = await storeCroppedDerivative({
   sourceUrl: stored.url,

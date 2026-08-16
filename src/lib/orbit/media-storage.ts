@@ -194,6 +194,29 @@ export async function storeOriginalUpload(options: {
   const destinationDir = path.join(mediaRoot(), folder);
   await mkdir(destinationDir, { recursive: true });
   const absolutePath = path.join(destinationDir, filename);
+
+  // Same bytes already on disk → reuse path (idempotent retry / soft-delete re-upload).
+  try {
+    const existingBytes = await readFile(absolutePath);
+    if (checksumBuffer(existingBytes) === checksum) {
+      return {
+        filename,
+        originalName: options.originalName.slice(0, 240),
+        url: publicMediaUrl(folder, filename),
+        mimeType,
+        kind,
+        size: options.buffer.byteLength,
+        width,
+        height,
+        durationMs: null,
+        checksum,
+        absolutePath,
+      };
+    }
+  } catch {
+    // File missing — continue to write.
+  }
+
   const tempPath = `${absolutePath}.tmp`;
   try {
     await writeFile(tempPath, options.buffer, { flag: "wx" });
@@ -207,13 +230,35 @@ export async function storeOriginalUpload(options: {
     if (code === "EACCES" || code === "EPERM") {
       throw new Error("Storage permission denied — could not store media.");
     }
-    // Collision on hashed name is extremely unlikely; fall back to uuid name.
+    // After a concurrent write of the same checksum, reuse; otherwise UUID name.
+    try {
+      const raced = await readFile(absolutePath);
+      if (checksumBuffer(raced) === checksum) {
+        await unlink(tempPath).catch(() => undefined);
+        return {
+          filename,
+          originalName: options.originalName.slice(0, 240),
+          url: publicMediaUrl(folder, filename),
+          mimeType,
+          kind,
+          size: options.buffer.byteLength,
+          width,
+          height,
+          durationMs: null,
+          checksum,
+          absolutePath,
+        };
+      }
+    } catch {
+      // fall through
+    }
     const fallback = `${Date.now()}-${randomUUID().slice(0, 10)}${extensionForMime(
       mimeType,
       options.originalName
     )}`;
     const fallbackPath = path.join(destinationDir, fallback);
     await writeFile(fallbackPath, options.buffer);
+    await unlink(tempPath).catch(() => undefined);
     return {
       filename: fallback,
       originalName: options.originalName.slice(0, 240),

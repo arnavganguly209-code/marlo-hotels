@@ -7,7 +7,6 @@ import {
   checksumBuffer,
   ensureMediaRoot,
   IMAGE_MIME_TYPES,
-  kindForMime,
   maxImageBytes,
   mediaRoot,
   normalizeUploadMime,
@@ -104,10 +103,18 @@ async function ensureAssetFromBuffer(options: {
 
   if (options.urlHint) {
     const byUrl = await db.mediaAsset.findFirst({
-      where: { url: stripQuery(options.urlHint), deletedAt: null },
-      select: { id: true },
+      where: { url: stripQuery(options.urlHint) },
+      select: { id: true, deletedAt: true },
     });
-    if (byUrl) return { id: byUrl.id, created: false };
+    if (byUrl) {
+      if (byUrl.deletedAt) {
+        await db.mediaAsset.update({
+          where: { id: byUrl.id },
+          data: { deletedAt: null },
+        });
+      }
+      return { id: byUrl.id, created: false };
+    }
   }
 
   const stored = await storeOriginalUpload({
@@ -117,39 +124,18 @@ async function ensureAssetFromBuffer(options: {
     folder: options.folder,
   });
 
-  const created = await db.mediaAsset.create({
-    data: {
-      filename: stored.filename,
-      originalName: stored.originalName,
-      url: stored.url,
-      mimeType: stored.mimeType,
-      kind: kindForMime(stored.mimeType) || "IMAGE",
-      size: stored.size,
-      width: stored.width,
-      height: stored.height,
+  try {
+    const { persistNewMediaAsset } = await import(
+      "@/lib/orbit/media-asset-persist"
+    );
+    const result = await persistNewMediaAsset(db, stored, {
       alt: options.alt || options.originalName,
       title: options.originalName,
-      folder: options.folder,
-      checksum: stored.checksum,
-      versions: {
-        create: {
-          version: 1,
-          filename: stored.filename,
-          originalName: stored.originalName,
-          url: stored.url,
-          mimeType: stored.mimeType,
-          size: stored.size,
-          width: stored.width,
-          height: stored.height,
-          checksum: stored.checksum,
-          isOriginal: true,
-        },
-      },
-    },
-    select: { id: true },
-  });
-
-  return { id: created.id, created: true };
+    });
+    return { id: result.asset.id, created: result.created };
+  } catch {
+    return null;
+  }
 }
 
 async function importUrl(

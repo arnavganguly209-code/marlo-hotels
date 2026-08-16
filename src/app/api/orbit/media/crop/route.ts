@@ -8,6 +8,10 @@ import {
   writeAuditLog,
 } from "@/lib/orbit/auth";
 import { storeCroppedDerivative } from "@/lib/orbit/media-storage";
+import {
+  persistNewMediaAsset,
+  persistReplacedMediaAsset,
+} from "@/lib/orbit/media-asset-persist";
 
 const cropSchema = z.object({
   assetId: z.string().min(1),
@@ -79,88 +83,38 @@ export async function POST(request: Request) {
 
     let asset;
     if (parsed.data.replace) {
-      const nextVersion = source.currentVersion + 1;
-      asset = await db.$transaction(async (tx) => {
-        await tx.mediaVersion.create({
-          data: {
-            assetId: source.id,
-            version: nextVersion,
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            checksum: stored.checksum,
-            isOriginal: false,
-            cropJson,
-          },
-        });
-        return tx.mediaAsset.update({
-          where: { id: source.id },
-          data: {
-            filename: stored.filename,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            checksum: stored.checksum,
-            cropJson,
-            currentVersion: nextVersion,
-            alt: parsed.data.alt || source.alt,
-          },
-          include: {
-            _count: { select: { placements: true } },
-            placements: { select: { key: true, label: true } },
-          },
-        });
+      asset = await persistReplacedMediaAsset(db, source.id, stored, {
+        alt: parsed.data.alt || source.alt,
+      });
+      asset = await db.mediaAsset.update({
+        where: { id: asset.id },
+        data: { cropJson },
+        include: {
+          _count: { select: { placements: true } },
+          placements: { select: { key: true, label: true } },
+        },
+      });
+      await db.mediaVersion.updateMany({
+        where: { assetId: asset.id, url: stored.url },
+        data: { cropJson, isOriginal: false },
       });
     } else {
-      asset = await db.$transaction(async (tx) => {
-        const created = await tx.mediaAsset.create({
-          data: {
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            kind: "IMAGE",
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            alt: parsed.data.alt || source.alt,
-            title: source.title,
-            caption: source.caption,
-            folder: source.folder,
-            checksum: stored.checksum,
-            cropJson,
-            currentVersion: 1,
-          },
-        });
-        await tx.mediaVersion.create({
-          data: {
-            assetId: created.id,
-            version: 1,
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            checksum: stored.checksum,
-            isOriginal: false,
-            cropJson,
-          },
-        });
-        return tx.mediaAsset.findUniqueOrThrow({
-          where: { id: created.id },
-          include: {
-            _count: { select: { placements: true } },
-            placements: { select: { key: true, label: true } },
-          },
-        });
+      const result = await persistNewMediaAsset(db, stored, {
+        alt: parsed.data.alt || source.alt,
+        title: source.title,
+        caption: source.caption,
+      });
+      asset = await db.mediaAsset.update({
+        where: { id: result.asset.id },
+        data: { cropJson },
+        include: {
+          _count: { select: { placements: true } },
+          placements: { select: { key: true, label: true } },
+        },
+      });
+      await db.mediaVersion.updateMany({
+        where: { assetId: asset.id, url: stored.url },
+        data: { cropJson, isOriginal: false },
       });
     }
 

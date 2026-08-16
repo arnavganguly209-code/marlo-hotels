@@ -194,22 +194,28 @@ else
   echo "WARN: DATABASE_URL not set — skipping migrate (Orbit login may still work)."
 fi
 
-echo "==> Building production artifacts (PM2 not touched yet)"
-rm -rf .next
-npm run build || {
-  if [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]]; then
-    mv "$BACKUP_DIR" .next
-    echo "==> Build failed — previous .next restored; PM2 was not restarted."
-  fi
-  die "npm run build failed — PM2 left untouched"
+echo "==> Building production artifacts into .next.new (live .next kept until atomic swap)"
+rm -rf .next.new .next.atomic-backup
+node scripts/next-build-atomic.mjs || {
+  die "Atomic Next.js build failed — PM2 left untouched (live .next preserved)"
 }
+if [[ -f .next.atomic-backup ]]; then
+  ATOMIC_BACKUP="$(cat .next.atomic-backup)"
+  rm -f .next.atomic-backup
+  if [[ -n "$ATOMIC_BACKUP" && -d "$ATOMIC_BACKUP" ]]; then
+    if [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" && "$BACKUP_DIR" != "$ATOMIC_BACKUP" ]]; then
+      rm -rf "$BACKUP_DIR"
+    fi
+    BACKUP_DIR="$ATOMIC_BACKUP"
+  fi
+fi
 
 [[ -f .next/BUILD_ID ]] || {
   if [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]]; then
     rm -rf .next
     mv "$BACKUP_DIR" .next
   fi
-  die ".next/BUILD_ID missing after build — PM2 left untouched"
+  die ".next/BUILD_ID missing after atomic swap — PM2 left untouched"
 }
 echo "    BUILD_ID=$(cat .next/BUILD_ID)"
 

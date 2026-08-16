@@ -8,6 +8,10 @@ import {
   writeAuditLog,
 } from "@/lib/orbit/auth";
 import {
+  persistNewMediaAsset,
+  persistReplacedMediaAsset,
+} from "@/lib/orbit/media-asset-persist";
+import {
   ensureMediaRoot,
   IMAGE_MIME_TYPES,
   kindForMime,
@@ -199,66 +203,46 @@ export async function POST(request: Request) {
         originalName: `copy-${source.originalName}`,
         folder: source.folder,
       });
-      const asset = await db.$transaction(async (tx) => {
-        const created = await tx.mediaAsset.create({
+      const { asset, created } = await persistNewMediaAsset(db, stored, {
+        alt: source.alt,
+        title: source.title,
+        caption: source.caption,
+        focalX: source.focalX,
+        focalY: source.focalY,
+        durationMs: source.durationMs,
+      });
+      if (created) {
+        await db.mediaAsset.update({
+          where: { id: asset.id },
           data: {
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            kind: stored.kind,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            durationMs: source.durationMs,
-            alt: source.alt,
-            title: source.title,
-            caption: source.caption,
             seoTitle: source.seoTitle,
             seoDescription: source.seoDescription,
-            folder: source.folder,
-            checksum: stored.checksum,
-            focalX: source.focalX,
-            focalY: source.focalY,
             posterUrl: source.posterUrl,
-            currentVersion: 1,
           },
         });
-        await tx.mediaVersion.create({
-          data: {
-            assetId: created.id,
-            version: 1,
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            durationMs: source.durationMs,
-            checksum: stored.checksum,
-            isOriginal: true,
-          },
-        });
-        return tx.mediaAsset.findUniqueOrThrow({
-          where: { id: created.id },
-          include: {
-            _count: { select: { placements: true } },
-            placements: { select: { key: true, label: true } },
-          },
-        });
-      });
+      }
+      const fresh = created
+        ? await db.mediaAsset.findUniqueOrThrow({
+            where: { id: asset.id },
+            include: {
+              _count: { select: { placements: true } },
+              placements: { select: { key: true, label: true } },
+            },
+          })
+        : asset;
       await writeAuditLog({
         action: "DUPLICATE_MEDIA",
         module: "media-library",
-        entityId: asset.id,
-        summary: `Duplicated ${source.originalName}`,
+        entityId: fresh.id,
+        summary: created
+          ? `Duplicated ${source.originalName}`
+          : `Reused existing media for duplicate of ${source.originalName}`,
       });
       revalidateTag("media");
       revalidatePath("/orbit/media-library");
       return NextResponse.json({
-        asset: serializeAsset(asset),
-        message: "Duplicated Successfully",
+        asset: serializeAsset(fresh),
+        message: created ? "Duplicated Successfully" : "Already in library",
       });
     } catch (error) {
       return NextResponse.json(
@@ -339,10 +323,11 @@ export async function POST(request: Request) {
 
   try {
     let asset;
+    let created = false;
     if (replaceId) {
       const existing = await db.mediaAsset.findUnique({
         where: { id: replaceId },
-        include: { versions: { orderBy: { version: "desc" }, take: 1 } },
+        select: { id: true },
       });
       if (!existing) {
         await removeMediaFile(stored.url);
@@ -351,112 +336,41 @@ export async function POST(request: Request) {
           { status: 404 }
         );
       }
-      const nextVersion = (existing.currentVersion || 1) + 1;
-      asset = await db.$transaction(async (tx) => {
-        await tx.mediaVersion.create({
-          data: {
-            assetId: existing.id,
-            version: nextVersion,
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            durationMs: stored.durationMs,
-            checksum: stored.checksum,
-            isOriginal: true,
-          },
-        });
-        return tx.mediaAsset.update({
-          where: { id: replaceId },
-          data: {
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            kind: stored.kind,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            durationMs: stored.durationMs,
-            alt: alt || existing.alt,
-            title: title ?? existing.title,
-            caption: caption ?? existing.caption,
-            folder: stored.url.split("/")[2] || existing.folder,
-            checksum: stored.checksum,
-            focalX: Number.isFinite(focalX) ? focalX : existing.focalX,
-            focalY: Number.isFinite(focalY) ? focalY : existing.focalY,
-            currentVersion: nextVersion,
-            deletedAt: null,
-          },
-          include: {
-            _count: { select: { placements: true } },
-            placements: { select: { key: true, label: true } },
-          },
-        });
+      asset = await persistReplacedMediaAsset(db, replaceId, stored, {
+        alt,
+        title,
+        caption,
+        focalX: Number.isFinite(focalX) ? focalX : undefined,
+        focalY: Number.isFinite(focalY) ? focalY : undefined,
       });
     } else {
-      asset = await db.$transaction(async (tx) => {
-        const created = await tx.mediaAsset.create({
-          data: {
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            kind: stored.kind,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            durationMs: stored.durationMs,
-            alt,
-            title,
-            caption,
-            folder: stored.url.split("/")[2] || "general",
-            checksum: stored.checksum,
-            focalX: Number.isFinite(focalX) ? focalX : 50,
-            focalY: Number.isFinite(focalY) ? focalY : 50,
-            currentVersion: 1,
-          },
-        });
-        await tx.mediaVersion.create({
-          data: {
-            assetId: created.id,
-            version: 1,
-            filename: stored.filename,
-            originalName: stored.originalName,
-            url: stored.url,
-            mimeType: stored.mimeType,
-            size: stored.size,
-            width: stored.width,
-            height: stored.height,
-            durationMs: stored.durationMs,
-            checksum: stored.checksum,
-            isOriginal: true,
-          },
-        });
-        return tx.mediaAsset.findUniqueOrThrow({
-          where: { id: created.id },
-          include: {
-            _count: { select: { placements: true } },
-            placements: { select: { key: true, label: true } },
-          },
-        });
+      const result = await persistNewMediaAsset(db, stored, {
+        alt,
+        title,
+        caption,
+        focalX: Number.isFinite(focalX) ? focalX : 50,
+        focalY: Number.isFinite(focalY) ? focalY : 50,
       });
+      asset = result.asset;
+      created = result.created;
     }
 
     await writeAuditLog({
       action: replaceId ? "REPLACE_MEDIA" : "UPLOAD_MEDIA",
       module: "media-library",
       entityId: asset.id,
-      summary: `${replaceId ? "Replaced" : "Uploaded"} ${file.name}`,
+      summary: replaceId
+        ? `Replaced ${file.name}`
+        : created
+          ? `Uploaded ${file.name}`
+          : `Reused existing media for ${file.name}`,
       metadata: {
         size: stored.size,
         width: stored.width,
         height: stored.height,
         mimeType: stored.mimeType,
         preservedOriginal: true,
+        created,
       },
     });
 
@@ -468,12 +382,27 @@ export async function POST(request: Request) {
       {
         asset: serializeAsset(asset),
         duplicate: duplicate && duplicate.id !== asset.id ? duplicate : null,
-        message: replaceId ? "Image Saved" : "Upload Successful",
+        message: replaceId
+          ? "Image Saved"
+          : created
+            ? "Upload Successful"
+            : "Already in library",
       },
-      { status: replaceId ? 200 : 201 }
+      { status: replaceId || !created ? 200 : 201 }
     );
   } catch (error) {
-    await removeMediaFile(stored.url);
+    // Only remove the file when no DB row still references this URL.
+    const stillReferenced = await db.mediaAsset
+      .findUnique({ where: { url: stored.url }, select: { id: true } })
+      .catch(() => null);
+    const versionRef = stillReferenced
+      ? null
+      : await db.mediaVersion
+          .findUnique({ where: { url: stored.url }, select: { id: true } })
+          .catch(() => null);
+    if (!stillReferenced && !versionRef) {
+      await removeMediaFile(stored.url);
+    }
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Server Error",

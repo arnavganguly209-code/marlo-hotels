@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // Keep client Router Cache from retaining stale RSC/action IDs across deploys.
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+      static: 30,
+    },
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     // Quality 100 is allowed so Orbit can request original-faithful delivery
@@ -25,6 +32,20 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      // HTML / RSC documents must not be cached across deploys (avoids stale
+      // Server Action / flight IDs from Cloudflare or browser caches).
+      {
+        source:
+          "/((?!_next/static|_next/image|media/|videos/|images/|favicon\\.ico|.*\\.(?:js|css|map|woff2?|png|jpe?g|webp|avif|svg|mp4|webm|ico)$).*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "private, no-cache, no-store, max-age=0, must-revalidate",
+          },
+          { key: "CDN-Cache-Control", value: "no-store" },
+          { key: "Cloudflare-CDN-Cache-Control", value: "no-store" },
         ],
       },
       {
