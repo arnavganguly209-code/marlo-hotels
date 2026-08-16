@@ -1,5 +1,5 @@
 # Example Nginx snippet for Orbit media on the VPS.
-# Include inside the server { } block for marlo.theglobalorbit.com
+# Include inside the server { } block for marlohotels.com / www.marlohotels.com
 
 client_max_body_size 220m;
 

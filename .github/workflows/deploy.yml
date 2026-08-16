@@ -45,7 +45,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://marlo.theglobalorbit.com' }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://marlohotels.com' }}
 
       - name: Confirm production build artifact
         run: |
@@ -118,7 +118,7 @@ jobs:
           set -euo pipefail
           echo "==> Verifying live site from GitHub runner (HTTP 200)"
           for i in 1 2 3 4 5 6 7 8; do
-            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 https://marlo.theglobalorbit.com/ || true)"
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 https://marlohotels.com/ || true)"
             echo "attempt=$i public_status=$code"
             if [ "$code" = "200" ]; then
               echo "Live site OK (HTTP 200)."

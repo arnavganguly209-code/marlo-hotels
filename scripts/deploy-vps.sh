@@ -11,7 +11,7 @@
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/var/www/marlo-hotels}"
-PUBLIC_URL="${PUBLIC_URL:-https://marlo.theglobalorbit.com}"
+PUBLIC_URL="${PUBLIC_URL:-https://marlohotels.com}"
 LOCAL_URL="${LOCAL_URL:-http://127.0.0.1:3001/}"
 PM2_NAME="marlo-hotels"
 BACKUP_DIR=""

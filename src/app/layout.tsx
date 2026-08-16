@@ -53,7 +53,7 @@ function safeSiteUrl() {
   try {
     return new URL(siteConfig.url).toString().replace(/\/$/, "");
   } catch {
-    return "https://marlo.theglobalorbit.com";
+    return "https://marlohotels.com";
   }
 }
 

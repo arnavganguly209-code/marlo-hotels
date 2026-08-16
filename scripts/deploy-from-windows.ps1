@@ -92,6 +92,6 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "==> Verifying live homepage..."
-$code = (Invoke-WebRequest -Uri "https://marlo.theglobalorbit.com/" -UseBasicParsing -TimeoutSec 30).StatusCode
+$code = (Invoke-WebRequest -Uri "https://marlohotels.com/" -UseBasicParsing -TimeoutSec 30).StatusCode
 Write-Host "Live HTTP $code"
 Write-Host "Deploy finished."
