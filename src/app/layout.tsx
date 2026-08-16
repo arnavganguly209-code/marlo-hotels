@@ -1,10 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Cormorant_Garamond,
-  DM_Sans,
-  Jost,
-  Libre_Bodoni,
-} from "next/font/google";
+import localFont from "next/font/local";
 import { headers } from "next/headers";
 import { SiteShell } from "@/components/layout/site-shell";
 import { JsonLd } from "@/components/shared/json-ld";
@@ -15,37 +10,145 @@ import { getBrandSettings, getPaymentLogoSettings } from "@/lib/site-settings";
 import "./globals.css";
 
 /** Locked for Header / Homepage Hero / Footer — do not replace. */
-const cormorant = Cormorant_Garamond({
+const cormorant = localFont({
+  src: [
+    {
+      path: "../fonts/cormorant-garamond/cormorant-garamond-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/cormorant-garamond/cormorant-garamond-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../fonts/cormorant-garamond/cormorant-garamond-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../fonts/cormorant-garamond/cormorant-garamond-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../fonts/cormorant-garamond/cormorant-garamond-latin-400-italic.woff2",
+      weight: "400",
+      style: "italic",
+    },
+    {
+      path: "../fonts/cormorant-garamond/cormorant-garamond-latin-500-italic.woff2",
+      weight: "500",
+      style: "italic",
+    },
+    {
+      path: "../fonts/cormorant-garamond/cormorant-garamond-latin-600-italic.woff2",
+      weight: "600",
+      style: "italic",
+    },
+    {
+      path: "../fonts/cormorant-garamond/cormorant-garamond-latin-700-italic.woff2",
+      weight: "700",
+      style: "italic",
+    },
+  ],
   variable: "--font-cormorant",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
 /** Locked for Header / Homepage Hero / Footer — do not replace. */
-const jost = Jost({
+const jost = localFont({
+  src: [
+    {
+      path: "../fonts/jost/jost-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/jost/jost-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../fonts/jost/jost-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../fonts/jost/jost-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-jost",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
   preload: true,
 });
 
 /** Luxury content headings — JW / Four Seasons serif character. */
-const libreBodoni = Libre_Bodoni({
+const libreBodoni = localFont({
+  src: [
+    {
+      path: "../fonts/libre-bodoni/libre-bodoni-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../fonts/libre-bodoni/libre-bodoni-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../fonts/libre-bodoni/libre-bodoni-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../fonts/libre-bodoni/libre-bodoni-latin-500-italic.woff2",
+      weight: "500",
+      style: "italic",
+    },
+    {
+      path: "../fonts/libre-bodoni/libre-bodoni-latin-600-italic.woff2",
+      weight: "600",
+      style: "italic",
+    },
+    {
+      path: "../fonts/libre-bodoni/libre-bodoni-latin-700-italic.woff2",
+      weight: "700",
+      style: "italic",
+    },
+  ],
   variable: "--font-libre-bodoni",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  style: ["normal", "italic"],
   display: "swap",
 });
 
 /** Premium content body — clean hotel brochure sans. */
-const dmSans = DM_Sans({
+const dmSans = localFont({
+  src: [
+    {
+      path: "../fonts/dm-sans/dm-sans-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../fonts/dm-sans/dm-sans-latin-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../fonts/dm-sans/dm-sans-latin-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../fonts/dm-sans/dm-sans-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 

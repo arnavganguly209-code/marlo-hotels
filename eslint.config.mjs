@@ -19,6 +19,10 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "src/generated/**",
+      "_*.cjs",
+      "_*.js",
+      "_ci_logs.zip",
+      "scripts/**/*.bak*",
     ],
   },
 ];
