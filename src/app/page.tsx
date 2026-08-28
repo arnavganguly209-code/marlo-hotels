@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AboutSection } from "@/components/home/about-section";
 import { AttractionsSection } from "@/components/home/attractions-section";
 import { BreakfastSection } from "@/components/home/breakfast-section";
@@ -11,6 +12,8 @@ import { RoomsShowcase } from "@/components/home/rooms-showcase";
 import { TestimonialsSection } from "@/components/home/testimonials-section";
 import { WellnessSection } from "@/components/home/wellness-section";
 import { getHomepageContent } from "@/lib/homepage-content";
+import { getHomepageShareImageUrl } from "@/lib/homepage-share-image";
+import { siteConfig } from "@/lib/site";
 import { getGalleryContent } from "@/lib/gallery-content";
 import { occupancyIndexFromRooms } from "@/lib/booking-occupancy";
 import { getPlacement } from "@/lib/orbit/media";
@@ -31,6 +34,20 @@ function toPreviewCategory(category: string): GalleryImage["category"] {
     return category as GalleryImage["category"];
   }
   return "Rooms";
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const shareImage = await getHomepageShareImageUrl();
+  const title = `${siteConfig.name} — ${siteConfig.tagline}`;
+
+  return {
+    openGraph: {
+      images: [{ url: shareImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      images: [shareImage],
+    },
+  };
 }
 
 export default async function HomePage() {

@@ -188,7 +188,7 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     images: [
       {
-        url: `${siteUrl}/images/brand/hero-reference.png`,
+        url: `${siteUrl}/images/brand/hero-reception.png`,
         width: 1200,
         height: 630,
         alt: `${siteConfig.name} — ${siteConfig.tagline}`,
@@ -199,7 +199,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
-    images: [`${siteUrl}/images/brand/hero-reference.png`],
+    images: [`${siteUrl}/images/brand/hero-reception.png`],
   },
   robots: {
     index: true,

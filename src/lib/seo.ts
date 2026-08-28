@@ -17,7 +17,7 @@ export function buildMetadata({
   type = "website",
 }: PageSeo): Metadata {
   const url = `${siteConfig.url}${path}`;
-  const ogImage = image ?? `${siteConfig.url}/images/brand/hero-reference.png`;
+  const ogImage = image ?? `${siteConfig.url}/images/brand/hero-reception.png`;
 
   return {
     title,
@@ -49,7 +49,7 @@ export function hotelJsonLd() {
     description: siteConfig.description,
     url: siteConfig.url,
     logo: `${siteConfig.url}/images/brand/logo.png`,
-    image: `${siteConfig.url}/images/brand/hero-reference.png`,
+    image: `${siteConfig.url}/images/brand/hero-reception.png`,
     telephone: siteConfig.contact.phone,
     email: siteConfig.contact.email,
     priceRange: "$$$$",
