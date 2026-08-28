@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
+import { socialShareImageUrl } from "@/lib/social-share-image";
 
 type PageSeo = {
   title: string;
@@ -17,7 +18,7 @@ export function buildMetadata({
   type = "website",
 }: PageSeo): Metadata {
   const url = `${siteConfig.url}${path}`;
-  const ogImage = image ?? `${siteConfig.url}/images/brand/hero-reception.png`;
+  const ogImage = image ?? socialShareImageUrl(siteConfig.url);
 
   return {
     title,
@@ -49,7 +50,7 @@ export function hotelJsonLd() {
     description: siteConfig.description,
     url: siteConfig.url,
     logo: `${siteConfig.url}/images/brand/logo.png`,
-    image: `${siteConfig.url}/images/brand/hero-reception.png`,
+    image: socialShareImageUrl(siteConfig.url),
     telephone: siteConfig.contact.phone,
     email: siteConfig.contact.email,
     priceRange: "$$$$",

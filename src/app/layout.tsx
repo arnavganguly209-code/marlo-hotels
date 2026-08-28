@@ -5,6 +5,7 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { JsonLd } from "@/components/shared/json-ld";
 import { getHomepageContent } from "@/lib/homepage-content";
 import { hotelJsonLd } from "@/lib/seo";
+import { socialShareImageUrl } from "@/lib/social-share-image";
 import { siteConfig } from "@/lib/site";
 import { getBrandSettings, getPaymentLogoSettings } from "@/lib/site-settings";
 import "./globals.css";
@@ -188,7 +189,7 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     images: [
       {
-        url: `${siteUrl}/images/brand/hero-reception.png`,
+        url: socialShareImageUrl(siteUrl),
         width: 1200,
         height: 630,
         alt: `${siteConfig.name} — ${siteConfig.tagline}`,
@@ -199,7 +200,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
-    images: [`${siteUrl}/images/brand/hero-reception.png`],
+    images: [socialShareImageUrl(siteUrl)],
   },
   robots: {
     index: true,
