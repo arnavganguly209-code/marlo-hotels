@@ -25,6 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
       hero?.seoDescription ||
       "Private luxury experiences in Kathmandu — arranged by the Marlo Hotels concierge.",
     path: "/experiences",
+    keywords: seo?.seoKeywords || undefined,
   });
 }
 

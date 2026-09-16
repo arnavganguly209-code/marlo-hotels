@@ -68,6 +68,7 @@ export async function PATCH(request: Request, { params }: Context) {
   });
   revalidateTag("media");
   revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath(`/orbit/${entry.module}`);
   if (entry.module === "rooms") {
     revalidatePath("/rooms");

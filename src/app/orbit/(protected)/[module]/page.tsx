@@ -34,6 +34,7 @@ import {
 import { PAGE_STUDIO_SECTIONS, type StudioSectionData } from "@/lib/orbit/page-studio";
 import { getStudioDefaults } from "@/lib/orbit/page-studio-defaults";
 import { getPaymentLogoSettings } from "@/lib/site-settings";
+import { ensureSitewideSeoEntry } from "@/lib/site-seo";
 import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -541,6 +542,11 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
         features: String(patch?.features ?? base.features ?? ""),
         faq: String(patch?.faq ?? base.faq ?? ""),
         items: String(patch?.items ?? base.items ?? ""),
+        seoTitle: String(patch?.seoTitle ?? base.seoTitle ?? ""),
+        seoDescription: String(
+          patch?.seoDescription ?? base.seoDescription ?? ""
+        ),
+        seoKeywords: String(patch?.seoKeywords ?? base.seoKeywords ?? ""),
       };
     }
 
@@ -553,6 +559,10 @@ async function renderOrbitModulePage({ params, searchParams }: PageProps) {
         initialDocument={initialDocument}
       />
     );
+  }
+
+  if (slug === "seo") {
+    await ensureSitewideSeoEntry().catch(() => null);
   }
 
   const entries = db

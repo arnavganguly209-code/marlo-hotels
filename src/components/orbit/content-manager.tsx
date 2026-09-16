@@ -18,6 +18,10 @@ import { RichTextEditor } from "@/components/orbit/rich-text-editor";
 import { useToast } from "@/components/orbit/toast";
 import { fieldsForModule, type OrbitField } from "@/lib/orbit/fields";
 import type { OrbitModule } from "@/lib/orbit/modules";
+import {
+  DEFAULT_SITE_KEYWORDS,
+  keywordsToTextarea,
+} from "@/lib/seo-keywords";
 import { cn } from "@/lib/utils";
 
 type Entry = {
@@ -79,13 +83,15 @@ export function ContentManager({
   );
 
   function edit(entry: Entry) {
+    const seoData =
+      entry.seo && typeof entry.seo === "object" ? entry.seo : {};
     setForm({
       id: entry.id,
       title: entry.title,
       slug: entry.slug ?? "",
       status: entry.status,
       scheduledAt: entry.scheduledAt?.slice(0, 16) ?? "",
-      data: { ...entry.data },
+      data: { ...seoData, ...entry.data },
     });
     setDirty(false);
     setError(null);
@@ -99,6 +105,7 @@ export function ContentManager({
     }
     setSaving(true);
     setError(null);
+    const seoPayload = extractSeoPayload(form.data);
     const payload = {
       module: module.slug,
       title: form.title.trim(),
@@ -108,7 +115,7 @@ export function ContentManager({
         ? new Date(form.scheduledAt).toISOString()
         : null,
       data: form.data,
-      seo: null,
+      seo: seoPayload,
     };
 
     // Keep homepage hero placement in sync when saving a Hero section.
@@ -202,7 +209,19 @@ export function ContentManager({
         </div>
         <button
           type="button"
-          onClick={() => setForm({ ...emptyForm, data: {} })}
+          onClick={() =>
+            setForm({
+              ...emptyForm,
+              data:
+                module.slug === "seo"
+                  ? {
+                      page: "site",
+                      keywords: keywordsToTextarea(DEFAULT_SITE_KEYWORDS),
+                      robots: "index, follow",
+                    }
+                  : {},
+            })
+          }
           className="orbit-gold-button flex h-12 items-center justify-center gap-2 rounded-xl px-6 text-[10px] font-semibold tracking-[0.2em] uppercase"
         >
           <Plus className="size-4" /> Add {module.singular}
@@ -682,11 +701,36 @@ const SEO_FIELD_KEYS = new Set([
   "seoDescription",
   "metaTitle",
   "metaDescription",
+  "keywords",
   "canonicalUrl",
   "ogImageUrl",
   "ogTitle",
   "ogDescription",
+  "schema",
+  "robots",
 ]);
+
+const SEO_PAYLOAD_KEYS = [
+  "metaTitle",
+  "metaDescription",
+  "keywords",
+  "canonicalUrl",
+  "ogImageUrl",
+  "ogTitle",
+  "ogDescription",
+  "schema",
+  "robots",
+] as const;
+
+function extractSeoPayload(data: Record<string, unknown>) {
+  const seo: Record<string, unknown> = {};
+  for (const key of SEO_PAYLOAD_KEYS) {
+    const value = data[key];
+    if (value === undefined || value === null || value === "") continue;
+    seo[key] = value;
+  }
+  return Object.keys(seo).length ? seo : null;
+}
 
 const LAYOUT_FIELD_KEYS = new Set([
   "order",

@@ -42,6 +42,7 @@ export type StudioSectionData = {
   items: string;
   seoTitle: string;
   seoDescription: string;
+  seoKeywords: string;
 };
 
 export function emptyStudioSection(label = ""): StudioSectionData {
@@ -62,6 +63,7 @@ export function emptyStudioSection(label = ""): StudioSectionData {
     items: "",
     seoTitle: "",
     seoDescription: "",
+    seoKeywords: "",
   };
 }
 

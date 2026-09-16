@@ -710,22 +710,11 @@ function SectionForm({
     return (
       <div className="space-y-5">
         <p className="text-sm text-[var(--orbit-muted)]">
-          Section-level SEO hints. Site-wide metadata lives in the SEO module.
+          Sitewide SEO keywords and meta tags that help Marlo Hotels rank for
+          searches like “luxury hotel in Kathmandu” are managed in the SEO
+          module. Open the record with page = <strong>site</strong> and edit the
+          Keywords field.
         </p>
-        {"heading" in value ? (
-          <PrimitiveField
-            fieldKey="heading"
-            value={value.heading}
-            onChange={(next) => set("heading", next)}
-          />
-        ) : null}
-        {"description" in value ? (
-          <PrimitiveField
-            fieldKey="description"
-            value={value.description}
-            onChange={(next) => set("description", next)}
-          />
-        ) : null}
         <Link
           href="/orbit/seo"
           className="inline-flex text-[10px] font-semibold tracking-[0.14em] text-[var(--orbit-gold-deep)] uppercase"

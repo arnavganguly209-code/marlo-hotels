@@ -26,6 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
       hero?.seoDescription ||
       "Seasonal offers and packages at Marlo Hotels Kathmandu. Book direct for considered privileges.",
     path: "/offers",
+    keywords: seo?.seoKeywords || undefined,
   });
 }
 

@@ -664,6 +664,24 @@ export function PageStudioEditor({
                       className="w-full rounded-xl border border-[#17362b]/12 bg-white px-4 py-3 text-sm"
                     />
                   </label>
+                  <label className="block">
+                    <span className="mb-2 block text-[9px] font-semibold tracking-[0.16em] text-[#4e6258] uppercase">
+                      SEO Keywords
+                    </span>
+                    <textarea
+                      rows={5}
+                      value={value.seoKeywords || ""}
+                      onChange={(event) =>
+                        update({ seoKeywords: event.target.value })
+                      }
+                      placeholder="One keyword per line, or comma-separated"
+                      className="w-full rounded-xl border border-[#17362b]/12 bg-white px-4 py-3 text-sm"
+                    />
+                    <span className="mt-2 block text-[11px] text-[#62716b]">
+                      Page-level keywords. Sitewide search keywords are managed
+                      in Orbit → SEO (page = site).
+                    </span>
+                  </label>
                 </div>
               ) : null}
             </div>

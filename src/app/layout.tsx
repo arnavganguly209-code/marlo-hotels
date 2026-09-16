@@ -5,6 +5,8 @@ import { SiteShell } from "@/components/layout/site-shell";
 import { JsonLd } from "@/components/shared/json-ld";
 import { getHomepageContent } from "@/lib/homepage-content";
 import { hotelJsonLd } from "@/lib/seo";
+import { DEFAULT_SITE_KEYWORDS } from "@/lib/seo-keywords";
+import { getSiteSeo } from "@/lib/site-seo";
 import { socialShareImageUrl } from "@/lib/social-share-image";
 import { siteConfig } from "@/lib/site";
 import { getBrandSettings, getPaymentLogoSettings } from "@/lib/site-settings";
@@ -163,56 +165,60 @@ function safeSiteUrl() {
 
 const siteUrl = safeSiteUrl();
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: `${siteConfig.name} — ${siteConfig.tagline}`,
-    template: `%s | ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  keywords: [
-    "luxury hotel Kathmandu",
-    "5 star hotel Nepal",
-    "Marlo Hotels",
-    "luxury suites",
-    "boutique hotel Kathmandu",
-    "hotel spa Nepal",
-  ],
-  authors: [{ name: siteConfig.name }],
-  alternates: { canonical: siteUrl },
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: siteUrl,
-    siteName: siteConfig.name,
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: siteConfig.description,
-    images: [
-      {
-        url: socialShareImageUrl(siteUrl),
-        width: 1200,
-        height: 630,
-        alt: `${siteConfig.name} — ${siteConfig.tagline}`,
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: siteConfig.description,
-    images: [socialShareImageUrl(siteUrl)],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+export async function generateMetadata(): Promise<Metadata> {
+  const siteSeo = await getSiteSeo();
+  const title =
+    siteSeo.metaTitle || `${siteConfig.name} — ${siteConfig.tagline}`;
+  const description = siteSeo.metaDescription || siteConfig.description;
+  const keywords =
+    siteSeo.keywords.length > 0 ? siteSeo.keywords : DEFAULT_SITE_KEYWORDS;
+  const ogImage = siteSeo.ogImageUrl || socialShareImageUrl(siteUrl);
+  const canonical = siteSeo.canonicalUrl || siteUrl;
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: title,
+      template: `%s | ${siteConfig.name}`,
+    },
+    description,
+    keywords,
+    authors: [{ name: siteConfig.name }],
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      locale: "en_US",
+      url: siteUrl,
+      siteName: siteConfig.name,
+      title,
+      description,
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+    robots: {
       index: true,
       follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
-  },
-};
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#0c1a18",
@@ -252,15 +258,19 @@ export default async function RootLayout({
     ReturnType<typeof getPaymentLogoSettings>
   >["marks"] = [];
   let homepage: Awaited<ReturnType<typeof getHomepageContent>> | null = null;
+  let siteKeywords = DEFAULT_SITE_KEYWORDS;
   try {
-    const [brandResult, homepageResult, paymentResult] = await Promise.all([
-      getBrandSettings(),
-      getHomepageContent(),
-      getPaymentLogoSettings(),
-    ]);
+    const [brandResult, homepageResult, paymentResult, siteSeo] =
+      await Promise.all([
+        getBrandSettings(),
+        getHomepageContent(),
+        getPaymentLogoSettings(),
+        getSiteSeo(),
+      ]);
     brand = brandResult;
     homepage = homepageResult;
     paymentMarks = paymentResult.marks;
+    siteKeywords = siteSeo.keywords;
   } catch {
     // Keep the public shell rendering even if brand settings fail.
   }
@@ -271,7 +281,7 @@ export default async function RootLayout({
       className={`${cormorant.variable} ${jost.variable} ${libreBodoni.variable} ${dmSans.variable}`}
     >
       <body className="antialiased">
-        <JsonLd data={hotelJsonLd()} />
+        <JsonLd data={hotelJsonLd(siteKeywords)} />
         <SiteShell
           logoUrl={homepage?.hero.logo.src || brand.logoUrl}
           footerLogoUrl={brand.footerLogoUrl}

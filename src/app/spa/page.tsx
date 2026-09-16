@@ -15,6 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
       hero?.seoDescription ||
       "Marlo Spa — Himalayan wellness, private treatment suites and luxury rituals in Kathmandu.",
     path: "/spa",
+    keywords: seo?.seoKeywords || undefined,
   });
 }
 

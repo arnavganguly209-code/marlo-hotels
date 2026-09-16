@@ -22,6 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
       hero?.seoDescription ||
       "Elegant dining at Marlo Hotels — fresh cuisine, peaceful atmosphere and international hospitality in Kathmandu.",
     path: "/dining",
+    keywords: seo?.seoKeywords || undefined,
   });
 }
 

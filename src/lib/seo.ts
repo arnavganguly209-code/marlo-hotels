@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
 import { socialShareImageUrl } from "@/lib/social-share-image";
+import { parseKeywords } from "@/lib/seo-keywords";
 
 type PageSeo = {
   title: string;
@@ -8,6 +9,7 @@ type PageSeo = {
   path: string;
   image?: string;
   type?: "website" | "article";
+  keywords?: string | string[];
 };
 
 export function buildMetadata({
@@ -16,13 +18,16 @@ export function buildMetadata({
   path,
   image,
   type = "website",
+  keywords,
 }: PageSeo): Metadata {
   const url = `${siteConfig.url}${path}`;
   const ogImage = image ?? socialShareImageUrl(siteConfig.url);
+  const keywordList = parseKeywords(keywords);
 
   return {
     title,
     description,
+    ...(keywordList.length ? { keywords: keywordList } : {}),
     alternates: { canonical: url },
     openGraph: {
       title,
@@ -42,7 +47,7 @@ export function buildMetadata({
   };
 }
 
-export function hotelJsonLd() {
+export function hotelJsonLd(keywords: string[] = []) {
   return {
     "@context": "https://schema.org",
     "@type": "Hotel",
@@ -51,6 +56,9 @@ export function hotelJsonLd() {
     url: siteConfig.url,
     logo: `${siteConfig.url}/images/brand/logo.png`,
     image: socialShareImageUrl(siteConfig.url),
+    ...(keywords.length
+      ? { keywords: keywords.join(", ") }
+      : {}),
     telephone: siteConfig.contact.phone,
     email: siteConfig.contact.email,
     priceRange: "$$$$",

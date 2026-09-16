@@ -33,6 +33,12 @@ const mediaFields: OrbitField[] = [
 const seoFields: OrbitField[] = [
   { key: "metaTitle", label: "Meta title", type: "text" },
   { key: "metaDescription", label: "Meta description", type: "textarea" },
+  {
+    key: "keywords",
+    label: "SEO keywords",
+    type: "textarea",
+    help: "One keyword or phrase per line (or comma-separated). Used for Google search ranking signals on the public site.",
+  },
   { key: "canonicalUrl", label: "Canonical URL", type: "url" },
   { key: "ogImageUrl", label: "OpenGraph image", type: "url" },
 ];
@@ -159,10 +165,21 @@ export const orbitFields: Record<string, OrbitField[]> = {
     { key: "socialLinks", label: "Social links (one per line)", type: "textarea" },
   ],
   seo: [
-    { key: "page", label: "Page or entity", type: "text", required: true },
+    {
+      key: "page",
+      label: "Page or entity",
+      type: "text",
+      required: true,
+      help: 'Use "site" for sitewide keywords that power the homepage and global search metadata. Other values target a specific page.',
+    },
     ...seoFields,
     { key: "schema", label: "Schema.org JSON-LD", type: "textarea" },
-    { key: "robots", label: "Robots directive", type: "select", options: ["index, follow", "noindex, follow", "noindex, nofollow"] },
+    {
+      key: "robots",
+      label: "Robots directive",
+      type: "select",
+      options: ["index, follow", "noindex, follow", "noindex, nofollow"],
+    },
   ],
 };
 
