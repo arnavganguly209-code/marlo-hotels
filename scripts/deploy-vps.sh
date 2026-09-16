@@ -190,6 +190,8 @@ if [[ -n "${DATABASE_URL:-}" ]] || grep -qE '^DATABASE_URL=.+' .env 2>/dev/null;
   npx prisma migrate deploy || die "prisma migrate deploy failed"
   echo "==> purge demo / placeholder media (preserve large Hero video)"
   node --env-file=.env scripts/purge-demo-media.mjs || echo "WARN: demo media purge skipped"
+  echo "==> ensure sitewide SEO keywords entry for Orbit"
+  node --env-file=.env scripts/seed-site-seo.mjs || echo "WARN: site SEO seed skipped"
 else
   echo "WARN: DATABASE_URL not set — skipping migrate (Orbit login may still work)."
 fi
