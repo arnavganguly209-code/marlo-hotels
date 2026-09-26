@@ -5,6 +5,9 @@ import { getRooms } from "@/content/rooms";
 import { listIndexableSeoLandingPages } from "@/lib/seo-landing/queries";
 import { siteConfig } from "@/lib/site";
 
+/** Always render at request time so published SEO landings appear after CMS/seed. */
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [rooms, restaurants, posts, seoLandings] = await Promise.all([
     getRooms(),

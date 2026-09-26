@@ -35,7 +35,7 @@ export async function generateMetadata({
     page.featuredImageUrl || `${siteConfig.url}/images/brand/social-share.jpg`;
 
   return {
-    title: page.metaTitle,
+    title: { absolute: page.metaTitle },
     description: page.metaDescription,
     alternates: { canonical },
     robots: page.robotsIndex
