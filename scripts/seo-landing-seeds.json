@@ -1,0 +1,210 @@
+[
+  {
+    "path": "hotels/kathmandu",
+    "title": "Hotels in Kathmandu",
+    "metaTitle": "Hotels in Kathmandu | Marlo Hotels",
+    "metaDescription": "Stay at Marlo Hotels in Kathmandu — a five-star address on Paryatan Marg with refined rooms, dining and spa. Explore rooms and book direct.",
+    "h1": "Hotels in Kathmandu",
+    "intro": "Looking for a considered place to stay in Kathmandu? Marlo Hotels is a five-star sanctuary on Paryatan Marg in the heart of the city — close to Thamel’s energy, yet designed for calm, comfort and Himalayan hospitality.",
+    "body": "Guests choose Marlo for thoughtful rooms and suites, celebrated dining, restorative spa rituals and a front desk that understands both leisure and business travel. Browse the room collection below and reserve directly for the clearest rates and stay details.",
+    "faqs": [
+      {
+        "question": "Where is Marlo Hotels located in Kathmandu?",
+        "answer": "Marlo Hotels is on Paryatan Marg, 44600 Kathmandu, Nepal — a central address convenient for exploring the city and the Thamel area."
+      },
+      {
+        "question": "Can I book a room directly?",
+        "answer": "Yes. Use Check Availability on this site to select dates, room type and extras, then complete payment securely online."
+      }
+    ],
+    "locationKey": "kathmandu",
+    "categoryKey": null,
+    "facilityKey": null,
+    "roomFilter": "all",
+    "relatedPaths": [
+      "hotels/kathmandu/best",
+      "hotels/kathmandu/luxury",
+      "hotels/kathmandu/budget",
+      "hotels/thamel"
+    ],
+    "status": "PUBLISHED",
+    "robotsIndex": true,
+    "enabled": true
+  },
+  {
+    "path": "hotels/kathmandu/best",
+    "title": "Best Hotels in Kathmandu",
+    "metaTitle": "Best Hotels in Kathmandu | Marlo Hotels",
+    "metaDescription": "Discover why travellers shortlist Marlo Hotels among the best stays in Kathmandu — featured rooms, dining, spa and attentive service.",
+    "h1": "Best Hotels in Kathmandu",
+    "intro": "“Best” in Kathmandu often means more than a room key — it means location, service consistency and spaces you actually want to return to. Marlo Hotels is built for that standard: polished rooms, genuine hospitality and a calm base for exploring the capital.",
+    "body": "Below are Marlo’s featured rooms and suites — the stays guests most often recommend for a first visit or a refined city break. Compare layouts, then book with confidence through our direct booking flow.",
+    "faqs": [
+      {
+        "question": "What makes Marlo a strong choice in Kathmandu?",
+        "answer": "A central Kathmandu address, five-star positioning, on-site dining and spa, and a room collection designed for both comfort and clarity of booking."
+      }
+    ],
+    "locationKey": "kathmandu",
+    "categoryKey": "best",
+    "facilityKey": null,
+    "roomFilter": "featured",
+    "relatedPaths": [
+      "hotels/kathmandu",
+      "hotels/kathmandu/luxury",
+      "hotels/thamel/best"
+    ],
+    "status": "PUBLISHED",
+    "robotsIndex": true,
+    "enabled": true
+  },
+  {
+    "path": "hotels/kathmandu/luxury",
+    "title": "Luxury Hotels in Kathmandu",
+    "metaTitle": "Luxury Hotels in Kathmandu | Marlo Hotels",
+    "metaDescription": "Luxury stay in Kathmandu at Marlo Hotels — suites and refined rooms, fine dining and spa wellness in the heart of the city.",
+    "h1": "Luxury Hotels in Kathmandu",
+    "intro": "Luxury in Kathmandu at Marlo is quiet and intentional: generous suites, considered interiors, fine dining and a spa for recovery after a day in the valley. It is five-star hospitality without unnecessary noise.",
+    "body": "Explore Marlo’s suites and elevated room categories below. Each listing reflects live catalogue details from our rooms module — names, descriptions and starting rates as published on the site.",
+    "faqs": [
+      {
+        "question": "Does Marlo offer suites?",
+        "answer": "Yes. Suite categories are listed on this page when published in our rooms catalogue. Open a room for full details and availability."
+      }
+    ],
+    "locationKey": "kathmandu",
+    "categoryKey": "luxury",
+    "facilityKey": null,
+    "roomFilter": "luxury",
+    "relatedPaths": [
+      "hotels/kathmandu",
+      "hotels/kathmandu/best",
+      "hotels/thamel/luxury",
+      "hotels/kathmandu/budget"
+    ],
+    "status": "PUBLISHED",
+    "robotsIndex": true,
+    "enabled": true
+  },
+  {
+    "path": "hotels/kathmandu/budget",
+    "title": "Budget Hotels in Kathmandu",
+    "metaTitle": "Budget-Friendly Stays in Kathmandu | Marlo Hotels",
+    "metaDescription": "Compare Marlo Hotels’ more accessible room categories in Kathmandu — clear starting rates from our live rooms catalogue.",
+    "h1": "Budget-Friendly Rooms in Kathmandu",
+    "intro": "Marlo is a luxury address, but not every stay needs the largest suite. This page highlights the more accessible room categories in our Kathmandu catalogue — still with Marlo service standards, shown with real starting rates from the site.",
+    "body": "Rates shown are starting prices from our published room list and can change with dates and occupancy. Use Check Availability for an exact quote for your stay.",
+    "faqs": [
+      {
+        "question": "Are these the lowest possible rates?",
+        "answer": "These are the lower starting categories in Marlo’s published catalogue. Final pricing depends on dates, guests and any extras selected at booking."
+      }
+    ],
+    "locationKey": "kathmandu",
+    "categoryKey": "budget",
+    "facilityKey": null,
+    "roomFilter": "budget",
+    "relatedPaths": [
+      "hotels/kathmandu",
+      "hotels/kathmandu/luxury",
+      "hotels/thamel/budget"
+    ],
+    "status": "PUBLISHED",
+    "robotsIndex": true,
+    "enabled": true
+  },
+  {
+    "path": "hotels/thamel",
+    "title": "Hotels in Thamel",
+    "metaTitle": "Hotels in Thamel, Kathmandu | Marlo Hotels",
+    "metaDescription": "Stay near Thamel at Marlo Hotels, Kathmandu — a refined base on Paryatan Marg with easy access to Thamel’s cafés, shops and travel services.",
+    "h1": "Hotels in Thamel",
+    "intro": "Thamel is Kathmandu’s well-known traveller hub — cafés, outfitters and evening energy. Marlo Hotels sits on Paryatan Marg as a quieter, five-star base with convenient access to the Thamel area, so you can explore by day and return to calm.",
+    "body": "We do not invent walking times or pin distances. What we can say accurately: Marlo is a central Kathmandu hotel positioned for guests who want Thamel’s convenience without giving up spa, dining and polished rooms. Browse available categories below.",
+    "faqs": [
+      {
+        "question": "Is Marlo inside Thamel’s market streets?",
+        "answer": "Marlo is on Paryatan Marg in central Kathmandu, chosen for access to the Thamel neighbourhood while remaining a composed hotel environment."
+      }
+    ],
+    "locationKey": "thamel",
+    "categoryKey": null,
+    "facilityKey": null,
+    "roomFilter": "all",
+    "relatedPaths": [
+      "hotels/thamel/best",
+      "hotels/thamel/luxury",
+      "hotels/thamel/budget",
+      "hotels/kathmandu"
+    ],
+    "status": "PUBLISHED",
+    "robotsIndex": true,
+    "enabled": true
+  },
+  {
+    "path": "hotels/thamel/best",
+    "title": "Best Hotels in Thamel",
+    "metaTitle": "Best Hotels in Thamel | Marlo Hotels Kathmandu",
+    "metaDescription": "A refined Thamel-area stay at Marlo Hotels — featured rooms for travellers who want the best of Kathmandu’s hub with five-star comfort.",
+    "h1": "Best Hotels in Thamel",
+    "intro": "For many visitors, the “best” Thamel-area stay balances access to the neighbourhood with a hotel that still feels restorative. Marlo’s featured rooms are curated for that balance — central Kathmandu, elevated service, and a calm return after Thamel.",
+    "body": "Featured categories from our live rooms catalogue appear below. Each card links to full room detail and the same booking path used across the Marlo site.",
+    "faqs": [],
+    "locationKey": "thamel",
+    "categoryKey": "best",
+    "facilityKey": null,
+    "roomFilter": "featured",
+    "relatedPaths": [
+      "hotels/thamel",
+      "hotels/kathmandu/best",
+      "hotels/thamel/luxury"
+    ],
+    "status": "PUBLISHED",
+    "robotsIndex": true,
+    "enabled": true
+  },
+  {
+    "path": "hotels/thamel/luxury",
+    "title": "Luxury Hotels in Thamel",
+    "metaTitle": "Luxury Hotels in Thamel | Marlo Hotels",
+    "metaDescription": "Luxury hotel near Thamel at Marlo Hotels — suites and elevated rooms with dining and spa in central Kathmandu.",
+    "h1": "Luxury Hotels in Thamel",
+    "intro": "Luxury near Thamel at Marlo means suite-led comfort, spa recovery and dining that matches a five-star brief — while keeping you connected to Kathmandu’s most walkable traveller district.",
+    "body": "Suite and elevated categories from our catalogue are listed here when published. Details and starting rates come directly from Marlo’s rooms data — not invented listings.",
+    "faqs": [],
+    "locationKey": "thamel",
+    "categoryKey": "luxury",
+    "facilityKey": null,
+    "roomFilter": "luxury",
+    "relatedPaths": [
+      "hotels/thamel",
+      "hotels/kathmandu/luxury",
+      "hotels/thamel/best"
+    ],
+    "status": "PUBLISHED",
+    "robotsIndex": true,
+    "enabled": true
+  },
+  {
+    "path": "hotels/thamel/budget",
+    "title": "Budget Hotels in Thamel",
+    "metaTitle": "Budget-Friendly Thamel Stays | Marlo Hotels",
+    "metaDescription": "More accessible Marlo room categories for a Thamel-area stay in Kathmandu — real starting rates from our published catalogue.",
+    "h1": "Budget-Friendly Rooms near Thamel",
+    "intro": "If you want Thamel’s convenience with Marlo’s standards, start with our more accessible room categories. This page surfaces the lower starting rates in our published list — still Marlo service, still central Kathmandu.",
+    "body": "Exact totals depend on your dates and party size. Use the booking flow for a precise quote; the rooms below are drawn only from our live catalogue.",
+    "faqs": [],
+    "locationKey": "thamel",
+    "categoryKey": "budget",
+    "facilityKey": null,
+    "roomFilter": "budget",
+    "relatedPaths": [
+      "hotels/thamel",
+      "hotels/kathmandu/budget",
+      "hotels/thamel/luxury"
+    ],
+    "status": "PUBLISHED",
+    "robotsIndex": true,
+    "enabled": true
+  }
+]

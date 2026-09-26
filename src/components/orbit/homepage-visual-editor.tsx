@@ -721,6 +721,12 @@ function SectionForm({
         >
           Open SEO module →
         </Link>
+        <Link
+          href="/orbit/seo/pages"
+          className="inline-flex text-[10px] font-semibold tracking-[0.14em] text-[var(--orbit-gold-deep)] uppercase"
+        >
+          SEO landing pages →
+        </Link>
       </div>
     );
   }

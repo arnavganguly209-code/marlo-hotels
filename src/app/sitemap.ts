@@ -2,13 +2,15 @@ import type { MetadataRoute } from "next";
 import { getPosts } from "@/content/blog";
 import { getRestaurants } from "@/content/dining";
 import { getRooms } from "@/content/rooms";
+import { listIndexableSeoLandingPages } from "@/lib/seo-landing/queries";
 import { siteConfig } from "@/lib/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [rooms, restaurants, posts] = await Promise.all([
+  const [rooms, restaurants, posts, seoLandings] = await Promise.all([
     getRooms(),
     getRestaurants(),
     getPosts(),
+    listIndexableSeoLandingPages(),
   ]);
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -34,23 +36,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const roomRoutes: MetadataRoute.Sitemap = rooms.map((room) => ({
     url: `${siteConfig.url}/rooms/${room.slug}`,
     lastModified: new Date(),
-    changeFrequency: "monthly",
+    changeFrequency: "monthly" as const,
     priority: 0.8,
   }));
 
   const diningRoutes: MetadataRoute.Sitemap = restaurants.map((restaurant) => ({
     url: `${siteConfig.url}/dining/${restaurant.slug}`,
     lastModified: new Date(),
-    changeFrequency: "monthly",
+    changeFrequency: "monthly" as const,
     priority: 0.7,
   }));
 
   const postRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
     url: `${siteConfig.url}/blog/${post.slug}`,
     lastModified: new Date(post.date),
-    changeFrequency: "yearly",
+    changeFrequency: "yearly" as const,
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...roomRoutes, ...diningRoutes, ...postRoutes];
+  const seoRoutes: MetadataRoute.Sitemap = seoLandings.map((page) => ({
+    url: `${siteConfig.url}/${page.path}`,
+    lastModified: page.updatedAt,
+    changeFrequency: "weekly" as const,
+    priority: 0.85,
+  }));
+
+  return [
+    ...staticRoutes,
+    ...roomRoutes,
+    ...diningRoutes,
+    ...postRoutes,
+    ...seoRoutes,
+  ];
 }

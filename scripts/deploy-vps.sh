@@ -192,6 +192,8 @@ if [[ -n "${DATABASE_URL:-}" ]] || grep -qE '^DATABASE_URL=.+' .env 2>/dev/null;
   node --env-file=.env scripts/purge-demo-media.mjs || echo "WARN: demo media purge skipped"
   echo "==> ensure sitewide SEO keywords entry for Orbit"
   node --env-file=.env scripts/seed-site-seo.mjs || echo "WARN: site SEO seed skipped"
+  echo "==> ensure SEO landing pages (Marlo-only /hotels/...)"
+  node --env-file=.env scripts/seed-seo-landings.mjs || echo "WARN: SEO landing seed skipped"
 else
   echo "WARN: DATABASE_URL not set — skipping migrate (Orbit login may still work)."
 fi

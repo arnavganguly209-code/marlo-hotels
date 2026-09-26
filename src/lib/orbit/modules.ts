@@ -204,8 +204,16 @@ export const orbitModules: OrbitModule[] = [
     singular: "SEO record",
     icon: "search-check",
     group: "Website",
-    description: "Page metadata, keywords, schema, social cards, robots and sitemap.",
-    capabilities: ["Keywords", "Metadata", "OpenGraph", "Schema", "Robots", "Sitemap"],
+    description: "Page metadata, keywords, landing pages, schema, robots and sitemap.",
+    capabilities: [
+      "Keywords",
+      "Landing pages",
+      "Metadata",
+      "OpenGraph",
+      "Schema",
+      "Robots",
+      "Sitemap",
+    ],
   },
   {
     slug: "media-library",

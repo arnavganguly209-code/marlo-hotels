@@ -73,6 +73,7 @@ const PRIMARY_NAV: { slug: string; label: string; icon: string }[] = [
   { slug: "blog", label: "Blog", icon: "notebook-pen" },
   { slug: "legal", label: "Legal", icon: "scroll-text" },
   { slug: "seo", label: "SEO", icon: "search-check" },
+  { slug: "seo/pages", label: "SEO Pages", icon: "search-check" },
   { slug: "media-library", label: "Media Library", icon: "folder-image" },
   { slug: "site-settings", label: "Settings", icon: "settings-2" },
 ];

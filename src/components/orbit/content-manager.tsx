@@ -206,6 +206,14 @@ export function ContentManager({
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#62716b]">
             {module.description}
           </p>
+          {module.slug === "seo" ? (
+            <Link
+              href="/orbit/seo/pages"
+              className="mt-3 inline-flex text-[10px] font-semibold tracking-[0.14em] text-[#a67a30] uppercase"
+            >
+              Manage /hotels SEO landing pages →
+            </Link>
+          ) : null}
         </div>
         <button
           type="button"
@@ -574,6 +582,12 @@ function EditorDrawer({
                   className="mt-4 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.16em] text-[#a67a30] uppercase"
                 >
                   Open SEO module <ExternalLink className="size-3.5" />
+                </Link>
+                <Link
+                  href="/orbit/seo/pages"
+                  className="mt-3 inline-flex items-center gap-2 text-[10px] font-semibold tracking-[0.16em] text-[#a67a30] uppercase"
+                >
+                  SEO landing pages <ExternalLink className="size-3.5" />
                 </Link>
               </div>
             )
