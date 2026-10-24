@@ -56,6 +56,37 @@ export async function PATCH(request: Request, { params }: Context) {
   revalidatePath("/rooms");
   return NextResponse.json({ booking: serialize(booking) });
 }
-export async function DELETE(request: Request, context: Context) {
-  return PATCH(new Request(request.url, { method: "PATCH", headers: request.headers, body: JSON.stringify({ status: "CANCELLED" }) }), context);
+export async function DELETE(request: Request, { params }: Context) {
+  if (!(await authorized(request))) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const db = getDb();
+  if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  const { id } = await params;
+  const existing = await db.booking.findUnique({
+    where: { id },
+    include: { room: { select: { slug: true } } },
+  });
+  if (!existing || existing.source !== "OFFLINE") {
+    return NextResponse.json({ error: "Offline booking not found" }, { status: 404 });
+  }
+  try {
+    await db.booking.delete({ where: { id } });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not remove booking";
+    console.error("[admin] offline booking delete failed", { id, error: message });
+    return NextResponse.json({ error: "Could not remove booking" }, { status: 500 });
+  }
+  if (existing.physicalRoomNumber) {
+    await markPhysicalRoomStatus(
+      existing.room.slug,
+      existing.physicalRoomNumber,
+      "AVAILABLE"
+    );
+  }
+  revalidatePath("/admin/offline-bookings");
+  revalidatePath("/admin/online-bookings");
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin");
+  revalidatePath("/rooms");
+  return NextResponse.json({ ok: true, reference: existing.reference });
 }

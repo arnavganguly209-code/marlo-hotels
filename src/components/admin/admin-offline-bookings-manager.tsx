@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import type {
   MarloRoomCategory,
   PhysicalRoomRow,
@@ -188,6 +188,25 @@ export function AdminOfflineBookingsManager({
     }
   }
 
+  async function remove(booking: Booking) {
+    if (
+      !window.confirm(
+        `Permanently remove booking ${booking.reference}? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    const response = await fetch(`/api/admin/offline-bookings/${booking.id}`, {
+      method: "DELETE",
+    });
+    const result = await response.json().catch(() => ({} as { error?: string }));
+    if (!response.ok) {
+      setError(result.error || "Could not remove booking");
+      return;
+    }
+    setBookings((items) => items.filter((item) => item.id !== booking.id));
+  }
+
   async function setStatus(id: string, status: string) {
     const response = await fetch(`/api/admin/offline-bookings/${id}`, {
       method: "PATCH",
@@ -223,6 +242,12 @@ export function AdminOfflineBookingsManager({
         </button>
       </div>
 
+      {error && !open ? (
+        <p className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-200">
+          {error}
+        </p>
+      ) : null}
+
       <div className="overflow-x-auto rounded-2xl border border-white/10">
         <table className="min-w-full text-left text-sm">
           <thead className="bg-white/[.04] text-[10px] tracking-widest text-[#D9B46B] uppercase">
@@ -235,6 +260,7 @@ export function AdminOfflineBookingsManager({
                 "Room no.",
                 "Payment",
                 "Status",
+                "Actions",
               ].map((h) => (
                 <th key={h} className="px-3 py-3">
                   {h}
@@ -268,6 +294,16 @@ export function AdminOfflineBookingsManager({
                       </option>
                     ))}
                   </select>
+                </td>
+                <td className="px-3 py-3">
+                  <button
+                    type="button"
+                    onClick={() => void remove(b)}
+                    className="inline-flex items-center gap-1 rounded-md border border-red-300/30 px-2 py-1 text-[10px] font-semibold tracking-wide text-red-300 uppercase hover:bg-red-500/15 hover:text-red-200"
+                  >
+                    <Trash2 className="size-3.5" />
+                    Remove
+                  </button>
                 </td>
               </tr>
             ))}

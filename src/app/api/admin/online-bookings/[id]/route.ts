@@ -137,7 +137,17 @@ export async function DELETE(request: Request, { params }: Context) {
   const id = (await params).id;
   const existing = await db.booking.findUnique({ where: { id } });
   if (!existing || !isOnline(existing.source)) return NextResponse.json({ error: "Online booking not found" }, { status: 404 });
-  await db.booking.delete({ where: { id } });
+  try {
+    await db.booking.delete({ where: { id } });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not remove booking";
+    console.error("[admin] online booking delete failed", { id, error: message });
+    return NextResponse.json({ error: "Could not remove booking" }, { status: 500 });
+  }
   revalidatePath("/admin/online-bookings");
-  return NextResponse.json({ ok: true });
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/admin");
+  return NextResponse.json({ ok: true, reference: existing.reference });
 }

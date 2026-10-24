@@ -123,15 +123,25 @@ export function AdminOnlineBookingsManager({
     return result.booking as Booking;
   };
   const remove = async (booking: Booking) => {
-    if (!window.confirm(`Permanently delete ${booking.reference}?`)) return;
+    if (
+      !window.confirm(
+        `Permanently remove booking ${booking.reference}? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
     const res = await fetch(`/api/admin/online-bookings/${booking.id}`, {
       method: "DELETE",
     });
-    if (res.ok) {
-      setBookings((items) => items.filter((b) => b.id !== booking.id));
-      setSelected(null);
-      setNotice("Booking deleted.");
+    const result = await res.json().catch(() => ({} as { error?: string }));
+    if (!res.ok) {
+      setNotice(result.error || "Could not remove booking.");
+      return;
     }
+    setBookings((items) => items.filter((b) => b.id !== booking.id));
+    setSelected(null);
+    setEditing(null);
+    setNotice(`Booking ${booking.reference} removed.`);
   };
   const sendEmail = async (booking: Booking) => {
     const res = await fetch(`/api/admin/online-bookings/${booking.id}/email`, {
@@ -233,7 +243,14 @@ export function AdminOnlineBookingsManager({
                 "Special requests",
                 "Actions",
               ].map((h) => (
-                <th key={h} className="px-3 py-3">
+                <th
+                  key={h}
+                  className={
+                    h === "Actions"
+                      ? "sticky right-0 bg-[#0B1713] px-3 py-3"
+                      : "px-3 py-3"
+                  }
+                >
                   {h}
                 </th>
               ))}
@@ -314,9 +331,10 @@ export function AdminOnlineBookingsManager({
                 <td className="max-w-44 truncate px-3 py-3">
                   {b.notes || "—"}
                 </td>
-                <td className="px-3 py-3">
-                  <div className="flex gap-1">
+                <td className="sticky right-0 bg-[#0B1713] px-3 py-3">
+                  <div className="flex items-center gap-1">
                     <button
+                      type="button"
                       title="View"
                       onClick={() => setSelected(b)}
                       className="p-1.5 hover:text-[#D9B46B]"
@@ -324,6 +342,7 @@ export function AdminOnlineBookingsManager({
                       <Eye className="size-4" />
                     </button>
                     <button
+                      type="button"
                       title="Edit"
                       onClick={() => setEditing(b)}
                       className="p-1.5 hover:text-[#D9B46B]"
@@ -346,6 +365,7 @@ export function AdminOnlineBookingsManager({
                       <FileDown className="size-4" />
                     </a>
                     <button
+                      type="button"
                       title="Send Email (Ready)"
                       onClick={() => void sendEmail(b)}
                       className="p-1.5 hover:text-[#D9B46B]"
@@ -353,11 +373,13 @@ export function AdminOnlineBookingsManager({
                       <Mail className="size-4" />
                     </button>
                     <button
-                      title="Delete"
+                      type="button"
+                      title="Remove booking"
                       onClick={() => void remove(b)}
-                      className="p-1.5 text-red-300 hover:text-red-200"
+                      className="inline-flex items-center gap-1 rounded-md border border-red-300/30 px-2 py-1 text-[10px] font-semibold tracking-wide text-red-300 uppercase hover:bg-red-500/15 hover:text-red-200"
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-3.5" />
+                      Remove
                     </button>
                   </div>
                 </td>
@@ -640,6 +662,16 @@ export function AdminOnlineBookingsManager({
                       }
                     />
                   </label>
+                  <div className="flex justify-end border-t border-white/10 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => void remove(selected)}
+                      className="inline-flex items-center gap-2 rounded-lg border border-red-300/35 px-4 py-2 text-sm text-red-300 hover:bg-red-500/15"
+                    >
+                      <Trash2 className="size-4" />
+                      Remove booking
+                    </button>
+                  </div>
                 </div>
               )
             )}
