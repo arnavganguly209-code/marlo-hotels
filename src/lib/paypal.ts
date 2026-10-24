@@ -205,7 +205,11 @@ export async function createPayPalOrder(input: {
         {
           reference_id: input.reference.slice(0, 256),
           custom_id: input.bookingId.slice(0, 127),
-          description: input.description.slice(0, 127),
+          description: input.description
+        .replace(/[^\x20-\x7E]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 127),
           soft_descriptor: (input.softDescriptor || "MARLO HOTELS").slice(0, 22),
           amount: {
             currency_code: currency,

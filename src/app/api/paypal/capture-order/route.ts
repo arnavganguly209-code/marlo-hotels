@@ -17,10 +17,21 @@ const captureSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  try {
+    return await capturePayPalCheckout(request);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "PayPal capture failed";
+    console.error("[paypal] capture-order failed", { error: message });
+    return NextResponse.json({ error: message }, { status: 422 });
+  }
+}
+
+async function capturePayPalCheckout(request: Request) {
   if (!paypalConfigured()) {
     return NextResponse.json(
       { error: "PayPal is not configured" },
-      { status: 503 }
+      { status: 422 }
     );
   }
 
@@ -37,7 +48,7 @@ export async function POST(request: Request) {
   if (!db) {
     return NextResponse.json(
       { error: "Database unavailable" },
-      { status: 503 }
+      { status: 422 }
     );
   }
 
@@ -144,7 +155,7 @@ export async function POST(request: Request) {
       where: { id: existing.id },
       data: { paymentStatus: "FAILED" },
     });
-    return NextResponse.json({ error: message }, { status: 503 });
+    return NextResponse.json({ error: message }, { status: 422 });
   }
 
   const details = extractCapture(captured);

@@ -44,7 +44,9 @@ export async function POST(request: Request) {
     const message =
       error instanceof Error ? error.message : "Could not start PayPal checkout";
     console.error("[paypal] create-order failed", { error: message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Never return 5xx here — Cloudflare replaces 502/504 (and some 500/503)
+    // with a generic "error code: 502" page and hides the real JSON.
+    return NextResponse.json({ error: message }, { status: 422 });
   }
 }
 
@@ -52,7 +54,7 @@ async function createPayPalCheckout(request: Request) {
   if (!paypalConfigured()) {
     return NextResponse.json(
       { error: "PayPal is not configured" },
-      { status: 503 }
+      { status: 422 }
     );
   }
 
@@ -89,7 +91,7 @@ async function createPayPalCheckout(request: Request) {
   if (!db) {
     return NextResponse.json(
       { error: "Database unavailable" },
-      { status: 503 }
+      { status: 422 }
     );
   }
 
@@ -231,7 +233,6 @@ async function createPayPalCheckout(request: Request) {
     }
     const message =
       error instanceof Error ? error.message : "PayPal order creation failed";
-    // Do not return HTTP 502 — Cloudflare replaces origin 502 bodies.
-    return NextResponse.json({ error: message }, { status: 503 });
+    return NextResponse.json({ error: message }, { status: 422 });
   }
 }
