@@ -4,8 +4,8 @@ const ORBIT_COOKIE = "marlo_orbit_session";
 const ADMIN_COOKIE = "marlo_hotel_admin_session";
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
   try {
-    const { pathname } = request.nextUrl;
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-marlo-pathname", pathname);
 
@@ -77,7 +77,23 @@ export function middleware(request: NextRequest) {
     });
   } catch (error) {
     console.error("[middleware] failure", error);
-    return NextResponse.next();
+    const locked =
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/orbit") ||
+      pathname.startsWith("/api/admin") ||
+      pathname.startsWith("/api/orbit");
+    if (locked) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      const login = request.nextUrl.clone();
+      login.pathname = pathname.startsWith("/admin") ? "/admin" : "/orbit";
+      login.search = "";
+      return NextResponse.redirect(login);
+    }
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-marlo-pathname", pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 }
 

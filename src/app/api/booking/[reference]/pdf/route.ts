@@ -2,10 +2,22 @@ import { NextResponse } from "next/server";
 import { toBookingConfirmationPdfPayload } from "@/lib/booking-pdf-payload";
 import { generateBookingConfirmationPdf } from "@/lib/booking-confirmation-pdf";
 import { getDb } from "@/lib/db";
+import {
+  clientIpFromRequest,
+  consumeRateLimit,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 
 type Context = { params: Promise<{ reference: string }> };
 
 export async function GET(request: Request, { params }: Context) {
+  const limited = consumeRateLimit(
+    `booking-pdf:${clientIpFromRequest(request)}`,
+    30,
+    15 * 60 * 1000
+  );
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSeconds);
+
   const db = getDb();
   if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   const reference = (await params).reference;

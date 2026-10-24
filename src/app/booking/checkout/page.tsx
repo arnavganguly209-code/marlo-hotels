@@ -8,6 +8,7 @@ export const metadata: Metadata = buildMetadata({
   title: "Guest Details",
   description: "Complete your Marlo Hotels booking guest details.",
   path: "/booking/checkout",
+  noIndex: true,
 });
 
 export default async function BookingCheckoutPage() {

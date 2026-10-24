@@ -1,3 +1,4 @@
+import { sanitizePublicCopy } from "@/lib/content-accuracy";
 import { getDb } from "@/lib/db";
 
 export type AboutContent = {
@@ -55,7 +56,7 @@ const defaults: AboutContent = {
     heading: "Hospitality of unhurried detail",
     paragraphs: [
       "Marlo Hotels was composed with one intention: that you feel the mountains before you see them. Deep forest tones, hand-carved timber and gold that catches the evening sun shape every space.",
-      "From tasting tables to spa stillness and the infinity pool that pours into the horizon, ours is a hospitality of Himalayan heart and world-class execution.",
+      "From tasting tables to spa stillness, ours is a hospitality of Himalayan heart and world-class execution.",
     ],
     image: { src: "", alt: "Marlo Hotels architecture" },
   },
@@ -98,7 +99,7 @@ const defaults: AboutContent = {
     images: [
       { src: "", alt: "Architecture" },
       { src: "", alt: "Suite" },
-      { src: "", alt: "Pool" },
+      { src: "", alt: "Gardens" },
     ],
   },
   cta: {
@@ -136,7 +137,7 @@ export async function getAboutContent(): Promise<AboutContent> {
     );
     const storyParagraphs = storyDescription
       .split(/\n\n+/)
-      .map((item) => item.trim())
+      .map((item) => sanitizePublicCopy(item.trim()))
       .filter(Boolean);
 
     return {

@@ -7,9 +7,9 @@ import { getAboutContent } from "@/content/about";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "About Marlo Hotels",
+  title: "About Marlo Hotels in Kathmandu",
   description:
-    "The story of Marlo Hotels — a sanctuary of mountain light, quiet luxury and Himalayan hospitality in Kathmandu.",
+    "The story of Marlo Hotels on Paryatan Marg in Thamel, Kathmandu — a hotel of considered design, dining, spa and Himalayan hospitality.",
   path: "/about",
 });
 

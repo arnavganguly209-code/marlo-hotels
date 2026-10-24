@@ -19,13 +19,18 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = doc.seo;
   const hero = doc.hero;
   return buildMetadata({
-    title: seo?.seoTitle || hero?.seoTitle || "Experiences",
+    title:
+      seo?.seoTitle ||
+      hero?.seoTitle ||
+      "Things to Do near Thamel, Kathmandu",
     description:
       seo?.seoDescription ||
       hero?.seoDescription ||
-      "Private luxury experiences in Kathmandu — arranged by the Marlo Hotels concierge.",
+      "Kathmandu travel experiences arranged from Marlo Hotels in Thamel — places to visit, valley days and hotel-near attractions, described with verified local context.",
     path: "/experiences",
-    keywords: seo?.seoKeywords || undefined,
+    keywords:
+      seo?.seoKeywords ||
+      "things to do near Thamel, places to visit in Kathmandu, Kathmandu travel experiences, hotel near Kathmandu attractions",
   });
 }
 

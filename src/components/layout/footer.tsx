@@ -51,7 +51,7 @@ export function Footer({
     "A considered letter from the valley — new seasons, quiet openings and offers reserved for subscribers.";
   const description =
     content?.description ??
-    "A five-star sanctuary in the heart of Kathmandu — timeless elegance, celebrated dining and Himalayan hospitality.";
+    "A hotel in Thamel, Kathmandu — considered rooms, dining, spa and Himalayan hospitality.";
   const hotelHeading = content?.hotelHeading ?? "The Hotel";
   const discoverHeading = content?.discoverHeading ?? "Discover";
   const findUsHeading = content?.findUsHeading ?? "Find Us";

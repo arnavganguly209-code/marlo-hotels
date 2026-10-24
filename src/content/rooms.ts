@@ -164,6 +164,8 @@ function mapEntryToRoom(entry: {
       "buttonLink",
       defaults?.buttonLink || `/rooms/${entry.slug ?? entry.key}`
     ),
+    metaTitle: text("metaTitle", defaults?.metaTitle || ""),
+    metaDescription: text("metaDescription", defaults?.metaDescription || ""),
   };
 }
 

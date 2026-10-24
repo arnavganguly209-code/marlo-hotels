@@ -26,8 +26,8 @@ export async function generateMetadata({
   const restaurant = await getRestaurantBySlug(slug);
   if (!restaurant) return {};
   return buildMetadata({
-    title: `${restaurant.name} — ${restaurant.cuisine}`,
-    description: restaurant.shortDescription,
+    title: `${restaurant.name} restaurant in Kathmandu`,
+    description: `${restaurant.shortDescription} ${restaurant.cuisine} dining at Marlo Hotels in Thamel.`.trim(),
     path: `/dining/${restaurant.slug}`,
     image: restaurant.images[0].src,
   });

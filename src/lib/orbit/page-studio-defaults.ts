@@ -63,7 +63,7 @@ export const PAGE_STUDIO_DEFAULTS: Record<
       items: [
         "Private Treatment Rooms | Suites finished in cream, champagne gold and soft textile — composed for privacy and deep rest.",
         "Peaceful Atmosphere | Warm cove lighting, quiet corridors and a pace that never hurries the guest.",
-        "Premium Wellness Experience | From thermal rituals to signature massage, every detail is tuned to five-star calm.",
+        "Premium Wellness Experience | From thermal rituals to signature massage, every detail is tuned to quiet calm.",
         "Professional Therapists | Skilled practitioners who listen first — then compose the treatment your body asks for.",
       ].join("\n"),
     }),
@@ -111,7 +111,7 @@ export const PAGE_STUDIO_DEFAULTS: Record<
       eyebrow: "Why Marlo Spa",
       heading: "Why Choose Our Spa",
       description:
-        "Not an amenity checklist — a considered house of wellness within Marlo Hotels, where Himalayan tradition meets international five-star care.",
+        "Not an amenity checklist — a considered house of wellness within Marlo Hotels, where Himalayan tradition meets attentive care.",
       image: {
         src: "/images/spa/treatment-suite.png",
         alt: "Couples spa suite with Himalayan singing bowls",
@@ -187,7 +187,7 @@ export const PAGE_STUDIO_DEFAULTS: Record<
       eyebrow: "Highlights",
       heading: "Dining Highlights",
       description:
-        "The essentials of a five-star table — freshness, comfort and hospitality held in balance from morning until late evening.",
+        "The essentials of a considered table — freshness, comfort and hospitality held in balance from morning until late evening.",
       items: [
         "Fresh Daily Breakfast | A considered morning table — eggs to order, regional breads, orchard fruit and coffee roasted for altitude.",
         "International Cuisine | Familiar favourites and contemporary plates, composed with quiet precision for travellers and locals alike.",

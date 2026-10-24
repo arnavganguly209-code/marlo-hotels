@@ -2,8 +2,20 @@ import { NextResponse } from "next/server";
 import { generateBookingConfirmationPdf } from "@/lib/booking-confirmation-pdf";
 import { toBookingConfirmationPdfPayload } from "@/lib/booking-pdf-payload";
 import { getDb } from "@/lib/db";
+import {
+  clientIpFromRequest,
+  consumeRateLimit,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
+  const limited = consumeRateLimit(
+    `booking-pdf:${clientIpFromRequest(request)}`,
+    30,
+    15 * 60 * 1000
+  );
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSeconds);
+
   const { searchParams } = new URL(request.url);
   const reference = searchParams.get("reference")?.trim();
   if (!reference) return NextResponse.json({ error: "Booking reference is required" }, { status: 400 });

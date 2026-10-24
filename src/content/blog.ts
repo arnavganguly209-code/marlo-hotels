@@ -37,7 +37,7 @@ export const STATIC_BLOG_POSTS: Post[] = [
       {
         heading: "Day Three: The Slow Morning",
         paragraphs: [
-          "Keep the final day unhurried. Sunrise yoga on the pool deck, a long breakfast at The Terrace, and a last walk through the neighbourhood's hidden bahals — the courtyard sanctuaries most visitors never find. Ask the concierge desk for our hand-drawn map; we made it precisely for this morning.",
+          "Keep the final day unhurried. Sunrise yoga on the terrace, a long breakfast at The Terrace, and a last walk through the neighbourhood's hidden bahals — the courtyard sanctuaries most visitors never find. Ask the concierge desk for our hand-drawn map; we made it precisely for this morning.",
         ],
       },
     ],
@@ -126,7 +126,7 @@ export const STATIC_BLOG_POSTS: Post[] = [
       {
         heading: "Begin Before the Day Does",
         paragraphs: [
-          "Sunrise yoga on the pool deck is deliberately short — forty minutes, mostly breath. The mountains do the rest. Afterwards, guests tell me the infinity pool feels different; they are not swimming laps, they are swimming in a landscape.",
+          "Sunrise yoga on the terrace is deliberately short — forty minutes, mostly breath. The mountains do the rest. Afterwards, guests linger over the valley view rather than rushing into the day.",
           "Follow it with the thermal circuit while it is quiet: salt steam, cedar sauna, and the cold plunge that our returning guests describe as the best decision of their trip, always in those words, always after protesting first.",
         ],
       },

@@ -25,11 +25,14 @@ type SignedPayload = {
 };
 
 function sessionSecret() {
-  return (
+  const secret =
     process.env.ADMIN_SESSION_SECRET?.trim() ||
-    process.env.ORBIT_SESSION_SECRET?.trim() ||
-    "marlo-hotels-admin-session-v1"
-  );
+    process.env.ORBIT_SESSION_SECRET?.trim();
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("ADMIN_SESSION_SECRET is not configured");
+  }
+  return "marlo-hotels-admin-session-v1";
 }
 
 function sign(body: string) {
@@ -97,6 +100,8 @@ export async function verifyAdminCredentials(userId: string, password: string) {
       // fall through to default
     }
   }
+
+  if (process.env.NODE_ENV === "production") return false;
 
   const candidate = createHash("sha256").update(password).digest();
   const expected = createHash("sha256").update(DEFAULT_PASSWORD).digest();

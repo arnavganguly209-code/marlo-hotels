@@ -5,8 +5,9 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
   title: "Payment",
-  description: "Secure payment for your Marlo Hotels stay.",
+  description: "Choose PayPal or Pay at Hotel for your Marlo Hotels stay.",
   path: "/booking/payment",
+  noIndex: true,
 });
 
 export default function BookingPaymentPage() {

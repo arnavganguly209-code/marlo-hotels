@@ -13,10 +13,16 @@ import { getRoomsPageContent } from "@/lib/rooms-page-content";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Rooms & Suites",
+  title: "Hotel Rooms & Suites in Kathmandu",
   description:
-    "Choose your room at Marlo Hotels — live pricing with breakfast options and guest calculations.",
+    "Explore Marlo Hotels’ room categories in Kathmandu. Compare verified room amenities, occupancy, available facilities and direct booking options.",
   path: "/rooms",
+  keywords: [
+    "hotel rooms in Thamel Kathmandu",
+    "rooms and suites in Kathmandu",
+    "hotel room booking Kathmandu",
+    "affordable hotel rooms in Thamel",
+  ],
 });
 
 type PageProps = {

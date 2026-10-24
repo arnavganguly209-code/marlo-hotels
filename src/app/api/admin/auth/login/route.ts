@@ -4,6 +4,11 @@ import {
   createAdminSessionCookie,
   verifyAdminCredentials,
 } from "@/lib/admin/auth";
+import {
+  clientIpFromRequest,
+  consumeRateLimit,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 
 const schema = z.object({
   userId: z.string().min(1).max(64),
@@ -11,6 +16,13 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const limited = consumeRateLimit(
+    `admin-login:${clientIpFromRequest(request)}`,
+    8,
+    15 * 60 * 1000
+  );
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSeconds);
+
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

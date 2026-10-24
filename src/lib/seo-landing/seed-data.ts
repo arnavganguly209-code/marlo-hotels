@@ -29,10 +29,10 @@ export const SEO_LANDING_SEEDS: SeoLandingSeed[] = [
     title: "Hotels in Kathmandu",
     metaTitle: "Hotels in Kathmandu | Marlo Hotels",
     metaDescription:
-      "Stay at Marlo Hotels in Kathmandu — a five-star address on Paryatan Marg with refined rooms, dining and spa. Explore rooms and book direct.",
+      "Stay at Marlo Hotels in Kathmandu — a refined address on Paryatan Marg with refined rooms, dining and spa. Explore rooms and book direct.",
     h1: "Hotels in Kathmandu",
     intro:
-      "Looking for a considered place to stay in Kathmandu? Marlo Hotels is a five-star sanctuary on Paryatan Marg in the heart of the city — close to Thamel’s energy, yet designed for calm, comfort and Himalayan hospitality.",
+      "Looking for a considered place to stay in Kathmandu? Marlo Hotels is a refined sanctuary on Paryatan Marg in the heart of the city — close to Thamel’s energy, yet designed for calm, comfort and Himalayan hospitality.",
     body: "Guests choose Marlo for thoughtful rooms and suites, celebrated dining, restorative spa rituals and a front desk that understands both leisure and business travel. Browse the room collection below and reserve directly for the clearest rates and stay details.",
     faqs: [
       {
@@ -74,7 +74,7 @@ export const SEO_LANDING_SEEDS: SeoLandingSeed[] = [
       {
         question: "What makes Marlo a strong choice in Kathmandu?",
         answer:
-          "A central Kathmandu address, five-star positioning, on-site dining and spa, and a room collection designed for both comfort and clarity of booking.",
+          "A central Kathmandu address, refined positioning, on-site dining and spa, and a room collection designed for both comfort and clarity of booking.",
       },
     ],
     locationKey: "kathmandu",
@@ -98,7 +98,7 @@ export const SEO_LANDING_SEEDS: SeoLandingSeed[] = [
       "Luxury stay in Kathmandu at Marlo Hotels — suites and refined rooms, fine dining and spa wellness in the heart of the city.",
     h1: "Luxury Hotels in Kathmandu",
     intro:
-      "Luxury in Kathmandu at Marlo is quiet and intentional: generous suites, considered interiors, fine dining and a spa for recovery after a day in the valley. It is five-star hospitality without unnecessary noise.",
+      "Luxury in Kathmandu at Marlo is quiet and intentional: generous suites, considered interiors, fine dining and a spa for recovery after a day in the valley. It is refined hospitality without unnecessary noise.",
     body: "Explore Marlo’s suites and elevated room categories below. Each listing reflects live catalogue details from our rooms module — names, descriptions and starting rates as published on the site.",
     faqs: [
       {
@@ -159,7 +159,7 @@ export const SEO_LANDING_SEEDS: SeoLandingSeed[] = [
       "Stay near Thamel at Marlo Hotels, Kathmandu — a refined base on Paryatan Marg with easy access to Thamel’s cafés, shops and travel services.",
     h1: "Hotels in Thamel",
     intro:
-      "Thamel is Kathmandu’s well-known traveller hub — cafés, outfitters and evening energy. Marlo Hotels sits on Paryatan Marg as a quieter, five-star base with convenient access to the Thamel area, so you can explore by day and return to calm.",
+      "Thamel is Kathmandu’s well-known traveller hub — cafés, outfitters and evening energy. Marlo Hotels sits on Paryatan Marg as a quieter, refined base with convenient access to the Thamel area, so you can explore by day and return to calm.",
     body: "We do not invent walking times or pin distances. What we can say accurately: Marlo is a central Kathmandu hotel positioned for guests who want Thamel’s convenience without giving up spa, dining and polished rooms. Browse available categories below.",
     faqs: [
       {
@@ -187,7 +187,7 @@ export const SEO_LANDING_SEEDS: SeoLandingSeed[] = [
     title: "Best Hotels in Thamel",
     metaTitle: "Best Hotels in Thamel | Marlo Hotels Kathmandu",
     metaDescription:
-      "A refined Thamel-area stay at Marlo Hotels — featured rooms for travellers who want the best of Kathmandu’s hub with five-star comfort.",
+      "A refined Thamel-area stay at Marlo Hotels — featured rooms for travellers who want the best of Kathmandu’s hub with refined comfort.",
     h1: "Best Hotels in Thamel",
     intro:
       "For many visitors, the “best” Thamel-area stay balances access to the neighbourhood with a hotel that still feels restorative. Marlo’s featured rooms are curated for that balance — central Kathmandu, elevated service, and a calm return after Thamel.",
@@ -214,7 +214,7 @@ export const SEO_LANDING_SEEDS: SeoLandingSeed[] = [
       "Luxury hotel near Thamel at Marlo Hotels — suites and elevated rooms with dining and spa in central Kathmandu.",
     h1: "Luxury Hotels in Thamel",
     intro:
-      "Luxury near Thamel at Marlo means suite-led comfort, spa recovery and dining that matches a five-star brief — while keeping you connected to Kathmandu’s most walkable traveller district.",
+      "Luxury near Thamel at Marlo means suite-led comfort, spa recovery and dining that matches a refined brief — while keeping you connected to Kathmandu’s most walkable traveller district.",
     body: "Suite and elevated categories from our catalogue are listed here when published. Details and starting rates come directly from Marlo’s rooms data — not invented listings.",
     faqs: [],
     locationKey: "thamel",

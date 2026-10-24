@@ -145,7 +145,7 @@ export function extractGuestSpecialRequest(notes?: string | null) {
   const special: string[] = [];
   for (const line of lines) {
     if (
-      /^(WhatsApp|Country|Arrival|Breakfast|Airport pickup|Payment|PayPal)\b/i.test(
+      /^(WhatsApp|Country|Arrival|Breakfast|Airport pickup|Payment|PayPal|Intent)\b/i.test(
         line.trim()
       )
     ) {

@@ -187,9 +187,9 @@ export const ROOM_CATALOG: RoomCatalogSeed[] = [
       imageAlt: "Standard Double Room",
       mediaAssetId: null,
       gallery: [],
-      metaTitle: "Standard Double Room | Marlo Hotels",
+      metaTitle: "Double Room in Kathmandu | Marlo Hotels",
       metaDescription:
-        "Book the Standard Double Room at Marlo Hotels — 22 USD without breakfast, includes 2 adults and 1 child.",
+        "Book a double room at Marlo Hotels in Thamel, Kathmandu. Comfortable double bedding, en-suite bathroom and direct hotel booking.",
     },
   },
   {
@@ -233,9 +233,9 @@ export const ROOM_CATALOG: RoomCatalogSeed[] = [
       imageAlt: "Standard Twin Room",
       mediaAssetId: null,
       gallery: [],
-      metaTitle: "Standard Twin Room | Marlo Hotels",
+      metaTitle: "Twin Room in Kathmandu | Marlo Hotels",
       metaDescription:
-        "Book the Standard Twin Room at Marlo Hotels — 22 USD without breakfast, includes 2 adults and 1 child.",
+        "Book a twin room at Marlo Hotels in Thamel, Kathmandu. Two single beds, en-suite bathroom and straightforward occupancy for travelling companions.",
     },
   },
   {
@@ -279,9 +279,9 @@ export const ROOM_CATALOG: RoomCatalogSeed[] = [
       imageAlt: "Standard Triple Room",
       mediaAssetId: null,
       gallery: [],
-      metaTitle: "Standard Triple Room | Marlo Hotels",
+      metaTitle: "Triple Room in Kathmandu | Marlo Hotels",
       metaDescription:
-        "Book the Standard Triple Room at Marlo Hotels — 27 USD without breakfast, includes 3 adults and 1 child.",
+        "Book a triple room at Marlo Hotels in Thamel, Kathmandu. Extra bedding for three guests and a private bathroom.",
     },
   },
   {
@@ -325,9 +325,9 @@ export const ROOM_CATALOG: RoomCatalogSeed[] = [
       imageAlt: "Standard Family Room",
       mediaAssetId: null,
       gallery: [],
-      metaTitle: "Standard Family Room | Marlo Hotels",
+      metaTitle: "Family Room in Kathmandu | Marlo Hotels",
       metaDescription:
-        "Book the Standard Family Room at Marlo Hotels — 27 USD without breakfast, includes 3 adults and 2 children.",
+        "Book a family room at Marlo Hotels in Thamel, Kathmandu. Space for adults and children with a private bathroom and hotel amenities.",
     },
   },
   {
@@ -371,9 +371,9 @@ export const ROOM_CATALOG: RoomCatalogSeed[] = [
       imageAlt: "Premier Room",
       mediaAssetId: null,
       gallery: [],
-      metaTitle: "Premier Room | Marlo Hotels",
+      metaTitle: "Premier Room in Kathmandu | Marlo Hotels",
       metaDescription:
-        "Book the Premier Room at Marlo Hotels — 35 USD without breakfast, includes 2 adults and 2 children.",
+        "Book the Premier Room at Marlo Hotels in Thamel, Kathmandu — a more spacious category with hotel amenities and direct booking.",
     },
   },
   {
@@ -416,9 +416,9 @@ export const ROOM_CATALOG: RoomCatalogSeed[] = [
       imageAlt: "Premier Family Room",
       mediaAssetId: null,
       gallery: [],
-      metaTitle: "Premier Family Room | Marlo Hotels",
+      metaTitle: "Premier Family Room in Kathmandu | Marlo Hotels",
       metaDescription:
-        "Book the Premier Family Room at Marlo Hotels — 35 USD without breakfast, includes 2 adults and 2 children.",
+        "Book the Premier Family Room at Marlo Hotels in Thamel, Kathmandu — extra space for families travelling together.",
     },
   },
   {
@@ -463,9 +463,9 @@ export const ROOM_CATALOG: RoomCatalogSeed[] = [
       imageAlt: "Suite Apartment",
       mediaAssetId: null,
       gallery: [],
-      metaTitle: "Suite Apartment | Marlo Hotels",
+      metaTitle: "Suite Apartment in Kathmandu | Marlo Hotels",
       metaDescription:
-        "Book the Suite Apartment at Marlo Hotels — 55 USD without breakfast, includes 3 adults and 2 children.",
+        "Book the Suite Apartment at Marlo Hotels in Thamel, Kathmandu — a larger suite-style stay with room to settle in.",
     },
   },
 ];
@@ -541,5 +541,7 @@ export function catalogToRoom(seed: RoomCatalogSeed): Room {
     checkOutTime: data.checkOut,
     buttonText: data.buttonText,
     buttonLink: data.buttonLink,
+    metaTitle: data.metaTitle,
+    metaDescription: data.metaDescription,
   };
 }

@@ -5,7 +5,7 @@ export const DEFAULT_SITE_KEYWORDS: string[] = [
   "luxury hotel Kathmandu Nepal",
   "luxury hotel in Thamel Kathmandu",
   "best luxury hotel in Kathmandu",
-  "5 star hotel Kathmandu",
+  "hotel booking in Kathmandu",
   "boutique hotel Kathmandu",
   "luxury accommodation Kathmandu",
   "hotel in Thamel Kathmandu",

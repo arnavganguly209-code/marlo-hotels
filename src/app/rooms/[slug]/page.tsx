@@ -43,9 +43,15 @@ export async function generateMetadata({
   const { slug } = await params;
   const room = await getRoomBySlug(slug);
   if (!room) return {};
+  const uniqueTitle =
+    room.metaTitle ||
+    `${room.name} in Kathmandu`;
+  const uniqueDescription =
+    room.metaDescription ||
+    `${room.shortDescription} ${room.occupancy ? `Occupancy: ${room.occupancy}.` : ""} Book this ${room.category} at Marlo Hotels in Thamel, Kathmandu.`.trim();
   return buildMetadata({
-    title: room.name,
-    description: room.shortDescription,
+    title: uniqueTitle,
+    description: uniqueDescription,
     path: `/rooms/${room.slug}`,
     image: room.images[0]?.src,
   });

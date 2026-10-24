@@ -20,13 +20,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = doc.seo;
   const hero = doc.hero;
   return buildMetadata({
-    title: seo?.seoTitle || hero?.seoTitle || "Offers & Packages",
+    title: seo?.seoTitle || hero?.seoTitle || "Hotel Deals & Offers in Kathmandu",
     description:
       seo?.seoDescription ||
       hero?.seoDescription ||
-      "Seasonal offers and packages at Marlo Hotels Kathmandu. Book direct for considered privileges.",
+      "Current hotel deals and booking offers at Marlo Hotels in Thamel, Kathmandu. Review dates, conditions and book directly.",
     path: "/offers",
-    keywords: seo?.seoKeywords || undefined,
+    keywords:
+      seo?.seoKeywords ||
+      "hotel deals in Kathmandu, hotel offers in Thamel, Kathmandu hotel booking offers, book hotel directly in Kathmandu",
   });
 }
 

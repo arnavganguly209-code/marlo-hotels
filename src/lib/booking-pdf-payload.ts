@@ -5,6 +5,7 @@ import {
 } from "@/lib/booking-confirmation-pdf";
 import { airportPickupVehiclesLabel } from "@/lib/booking-pricing";
 import { extractGuestSpecialRequest } from "@/lib/booking-total-server";
+import { paymentMethodLabel } from "@/lib/payment-method";
 
 export type BookingPdfSource = {
   reference: string;
@@ -51,10 +52,9 @@ export function toBookingConfirmationPdfPayload(
     : 0;
   const roomStay =
     total == null ? null : Number(Math.max(0, total - pickupAmount).toFixed(2));
-  const methodLabel =
-    booking.paymentMethod === "PAYPAL"
-      ? "PayPal"
-      : booking.paymentMethod || null;
+  const methodLabel = booking.paymentMethod
+    ? paymentMethodLabel(booking.paymentMethod)
+    : null;
 
   return {
     reference: booking.reference,

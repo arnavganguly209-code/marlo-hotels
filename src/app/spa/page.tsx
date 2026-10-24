@@ -9,13 +9,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = doc.seo;
   const hero = doc.hero;
   return buildMetadata({
-    title: seo?.seoTitle || hero?.seoTitle || "Spa & Wellness",
+    title: seo?.seoTitle || hero?.seoTitle || "Spa & Wellness in Kathmandu",
     description:
       seo?.seoDescription ||
       hero?.seoDescription ||
-      "Marlo Spa — Himalayan wellness, private treatment suites and luxury rituals in Kathmandu.",
+      "Spa and wellness at Marlo Hotels in Thamel, Kathmandu. See current treatments, massage and recovery experiences offered at the hotel.",
     path: "/spa",
-    keywords: seo?.seoKeywords || undefined,
+    keywords:
+      seo?.seoKeywords ||
+      "spa in Kathmandu, hotel spa in Kathmandu, spa in Thamel, massage and spa Kathmandu",
   });
 }
 

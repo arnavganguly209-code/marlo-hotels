@@ -134,16 +134,16 @@ export async function ensureSitewideSeoEntry() {
       publishedAt: new Date(),
       data: {
         page: "site",
-        metaTitle: "Marlo Hotels — Stay Beyond Extraordinary",
+        metaTitle: "Best Hotel in Thamel, Kathmandu | Marlo Hotels",
         metaDescription:
-          "Marlo Hotels is a five-star luxury sanctuary in the heart of Kathmandu — timeless elegance, celebrated dining, restorative wellness and Himalayan hospitality.",
+          "Discover Marlo Hotels in Thamel, Kathmandu, Nepal. Explore our rooms, dining, spa and hotel experiences, then book your stay directly.",
         keywords: keywordsToTextarea(DEFAULT_SITE_KEYWORDS),
         robots: "index, follow",
       },
       seo: {
-        metaTitle: "Marlo Hotels — Stay Beyond Extraordinary",
+        metaTitle: "Best Hotel in Thamel, Kathmandu | Marlo Hotels",
         metaDescription:
-          "Marlo Hotels is a five-star luxury sanctuary in the heart of Kathmandu — timeless elegance, celebrated dining, restorative wellness and Himalayan hospitality.",
+          "Discover Marlo Hotels in Thamel, Kathmandu, Nepal. Explore our rooms, dining, spa and hotel experiences, then book your stay directly.",
         keywords: keywordsToTextarea(DEFAULT_SITE_KEYWORDS),
         robots: "index, follow",
       },

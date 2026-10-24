@@ -12,6 +12,10 @@ import {
 } from "@/content/gallery";
 import { getRooms } from "@/content/rooms";
 import { treatments } from "@/content/spa";
+import {
+  mentionsUnverifiedPool,
+  sanitizePublicCopy,
+} from "@/lib/content-accuracy";
 import { getDb } from "@/lib/db";
 import { footerNav, siteConfig } from "@/lib/site";
 import type {
@@ -285,16 +289,16 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
         "Marlo Hotels rises at the meeting point of Kathmandu's royal quarter and the valley's green rim — a house of deep forest tones, hand-carved timber and gold that catches the evening sun. Every space was composed with one intention: that you feel the mountains before you see them.",
       paragraphs: [
         "Marlo Hotels rises at the meeting point of Kathmandu's royal quarter and the valley's green rim — a house of deep forest tones, hand-carved timber and gold that catches the evening sun. Every space was composed with one intention: that you feel the mountains before you see them.",
-        "From the tasting tables of Amaya to the stillness of the spa and the infinity pool that pours into the horizon, ours is a hospitality of unhurried detail — Himalayan at heart, world-class in execution.",
+        "From the tasting tables of Amaya to the stillness of the spa, ours is a hospitality of unhurried detail — Himalayan at heart, world-class in execution.",
       ],
       buttonText: "Explore The Hotel",
       buttonLink: "/about",
       badgeValue: "Since 2024",
       badgeLabel: "A New Landmark",
       stats: [
-        { value: "68", label: "Rooms & Suites" },
-        { value: "3", label: "Dining Venues" },
-        { value: "5★", label: "Service Standard" },
+        { value: "7", label: "Room Categories" },
+        { value: "On-site", label: "Dining" },
+        { value: "Spa", label: "Wellness" },
         { value: "24/7", label: "Concierge" },
       ],
       images: [
@@ -304,7 +308,7 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
         ),
         image(
           "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1200&auto=format&fit=crop",
-          "The infinity pool at first light"
+          "Morning light across the hotel gardens"
         ),
       ],
     },
@@ -313,7 +317,7 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       eyebrow: "Rooms & Suites",
       heading: "Quarters of quiet grandeur",
       description:
-        "Sixty-eight rooms and suites layered in forest green, cream and hand-finished brass — each one an argument for staying in.",
+        "A collection of rooms and suites layered in forest green, cream and hand-finished brass — each one an argument for staying in.",
       buttonText: "View All Rooms & Suites",
       buttonLink: "/rooms",
       labels: {
@@ -447,7 +451,7 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
       buttonLink: "/gallery",
       image: image(
         "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=2400&auto=format&fit=crop",
-        "The infinity pool pouring into the valley horizon"
+        "Terrace overlooking the Kathmandu valley"
       ),
       overlay: "Balanced",
     },
@@ -609,7 +613,7 @@ export async function getHomepageDefaults(): Promise<HomepageContent> {
     footer: {
       enabled: true,
       description:
-        "A five-star sanctuary in the heart of Kathmandu — timeless elegance, celebrated dining and Himalayan hospitality.",
+        "A hotel in Thamel, Kathmandu — considered rooms, dining, spa and Himalayan hospitality.",
       hotelHeading: "The Hotel",
       discoverHeading: "Discover",
       findUsHeading: "Find Us",
@@ -927,11 +931,42 @@ async function withLiveRooms(
   });
   // Drop Parking so the forest grid stays a clean 4×3 (12 cards).
   const facilityItems = [...content.facilities.items, ...guestOnly].filter(
-    (item) => item.title.trim().toLowerCase() !== "parking"
+    (item) => {
+      const title = item.title.trim().toLowerCase();
+      if (title === "parking") return false;
+      if (mentionsUnverifiedPool(`${item.title} ${item.description}`)) {
+        return false;
+      }
+      return true;
+    }
   );
+
+  const aboutStats = content.about.stats.map((stat) => {
+    if (/68|36/.test(stat.value) && /room/i.test(stat.label)) {
+      return { value: "7", label: "Room Categories" };
+    }
+    if (/5★|5\s*\*|five/i.test(stat.value)) {
+      return { value: "Spa", label: "Wellness" };
+    }
+    return { ...stat, label: sanitizePublicCopy(stat.label) };
+  });
 
   return {
     ...content,
+    about: {
+      ...content.about,
+      description: sanitizePublicCopy(content.about.description),
+      paragraphs: content.about.paragraphs.map(sanitizePublicCopy),
+      stats: aboutStats,
+      images: content.about.images.map((img) => ({
+        ...img,
+        alt: sanitizePublicCopy(img.alt),
+      })),
+    },
+    footer: {
+      ...content.footer,
+      description: sanitizePublicCopy(content.footer.description),
+    },
     pool: { ...content.pool, enabled: false },
     events: { ...content.events, enabled: false },
     experiences: { ...content.experiences, enabled: false },
@@ -946,6 +981,7 @@ async function withLiveRooms(
     },
     rooms: {
       ...content.rooms,
+      description: sanitizePublicCopy(content.rooms.description),
       items: rooms,
     },
     featuredSuites: {

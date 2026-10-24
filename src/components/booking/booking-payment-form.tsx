@@ -7,6 +7,10 @@ import {
 } from "@paypal/react-paypal-js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import {
+  PAYMENT_METHOD_PAYPAL,
+  PAYMENT_METHOD_PAY_AT_HOTEL,
+} from "@/lib/payment-method";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type PayPalConfig = {
@@ -37,8 +41,11 @@ export function BookingPaymentForm() {
   const router = useRouter();
   const params = useSearchParams();
   const [paypalBusy, setPaypalBusy] = useState(false);
+  const [payAtHotelBusy, setPayAtHotelBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paypalConfig, setPaypalConfig] = useState<PayPalConfig | null>(null);
+  const [method, setMethod] = useState<"PAYPAL" | "PAY_AT_HOTEL">("PAYPAL");
+  const [intentToken, setIntentToken] = useState<string | null>(null);
 
   const summary = useMemo(() => {
     const total = Number(params.get("total") || 0);
@@ -109,6 +116,29 @@ export function BookingPaymentForm() {
     };
   }, []);
 
+  useEffect(() => {
+    if (method !== "PAY_AT_HOTEL") return;
+    if (!summary.roomSlug || !summary.checkIn || !summary.checkOut) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const query = new URLSearchParams({
+          roomSlug: summary.roomSlug,
+          checkIn: summary.checkIn,
+          checkOut: summary.checkOut,
+        });
+        const response = await fetch(`/api/booking/intent?${query.toString()}`);
+        const data = (await response.json()) as { token?: string };
+        if (!cancelled) setIntentToken(data.token || null);
+      } catch {
+        if (!cancelled) setIntentToken(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [method, summary.roomSlug, summary.checkIn, summary.checkOut]);
+
   function bookingPayload() {
     return {
       checkIn: summary.checkIn,
@@ -152,10 +182,12 @@ export function BookingPaymentForm() {
     reference: string;
     paymentStatus?: string;
     status?: string;
+    paymentMethod: string;
+    total?: number;
   }) {
     const success = new URLSearchParams({
       reference: input.reference,
-      total: String(grandTotal),
+      total: String(input.total ?? grandTotal),
       roomName: summary.roomName,
       room: summary.roomSlug,
       checkIn: summary.checkIn,
@@ -167,7 +199,7 @@ export function BookingPaymentForm() {
       guestName: summary.guestName,
       arrivalTime: summary.arrivalTime,
       mealPlan: summary.mealPlanLabel,
-      paymentMethod: "PAYPAL",
+      paymentMethod: input.paymentMethod,
       paymentStatus: input.paymentStatus || "",
       status: input.status || "",
       airportPickup: summary.airportPickup ? "1" : "0",
@@ -194,6 +226,50 @@ export function BookingPaymentForm() {
     }
   }
 
+  async function confirmPayAtHotel() {
+    setError(null);
+    setPayAtHotelBusy(true);
+    try {
+      const response = await fetch("/api/booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...bookingPayload(),
+          paymentMethod: PAYMENT_METHOD_PAY_AT_HOTEL,
+          intentToken: intentToken || undefined,
+        }),
+      });
+      const result = (await response.json()) as {
+        ok?: boolean;
+        reference?: string;
+        amount?: number;
+        error?: string;
+        message?: string;
+        paymentStatus?: string;
+        status?: string;
+      };
+      if (!response.ok || !result.ok || !result.reference) {
+        throw new Error(
+          result.message || result.error || "Could not complete Pay at Hotel booking"
+        );
+      }
+      goToSuccess({
+        reference: result.reference,
+        paymentMethod: PAYMENT_METHOD_PAY_AT_HOTEL,
+        paymentStatus: result.paymentStatus || "UNPAID",
+        status: result.status || "PENDING",
+        total: typeof result.amount === "number" ? result.amount : grandTotal,
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not complete Pay at Hotel booking"
+      );
+      setPayAtHotelBusy(false);
+    }
+  }
+
   const paypalReady =
     Boolean(paypalConfig?.configured && paypalConfig.clientId) &&
     Boolean(summary.roomSlug && summary.checkIn && summary.checkOut);
@@ -209,32 +285,85 @@ export function BookingPaymentForm() {
             Complete your reservation
           </h1>
           <p className="mt-3 text-sm font-light text-charcoal-900/60">
-            Pay securely with PayPal Checkout. Your booking is confirmed only
-            after payment is verified on our server.
+            Choose PayPal to pay now, or Pay at Hotel to reserve and settle the
+            balance on arrival. Online payment is confirmed only after PayPal
+            capture is verified on our server.
           </p>
         </div>
 
-        <div className="rounded-xl border border-gold-500/40 bg-cream-50 px-4 py-3">
-          <p className="text-[10px] font-semibold tracking-[0.2em] text-gold-700 uppercase">
-            Payment Method
-          </p>
-          <p className="mt-2 text-sm font-medium text-forest-950">PayPal</p>
-          <p className="mt-0.5 text-xs font-light text-charcoal-900/55">
-            Pay securely with PayPal Checkout
-          </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setMethod("PAYPAL")}
+            className={`rounded-xl border px-4 py-4 text-left transition ${
+              method === "PAYPAL"
+                ? "border-gold-500 bg-cream-50 shadow-luxury-sm"
+                : "border-forest-800/15 bg-white hover:border-gold-500/50"
+            }`}
+          >
+            <p className="text-[10px] font-semibold tracking-[0.2em] text-gold-700 uppercase">
+              Option 1
+            </p>
+            <p className="mt-2 text-sm font-medium text-forest-950">
+              Pay Now with PayPal
+            </p>
+            <p className="mt-0.5 text-xs font-light text-charcoal-900/55">
+              Secure PayPal Checkout. Booking confirmed after verified payment.
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMethod("PAY_AT_HOTEL")}
+            className={`rounded-xl border px-4 py-4 text-left transition ${
+              method === "PAY_AT_HOTEL"
+                ? "border-gold-500 bg-cream-50 shadow-luxury-sm"
+                : "border-forest-800/15 bg-white hover:border-gold-500/50"
+            }`}
+          >
+            <p className="text-[10px] font-semibold tracking-[0.2em] text-gold-700 uppercase">
+              Option 2
+            </p>
+            <p className="mt-2 text-sm font-medium text-forest-950">
+              Pay at Hotel
+            </p>
+            <p className="mt-0.5 text-xs font-light text-charcoal-900/55">
+              Reserve now. Payment remains due at the hotel and is not taken online.
+            </p>
+          </button>
         </div>
 
         {error ? <p className="text-sm text-red-700">{error}</p> : null}
 
         <div className="space-y-4 border-t border-forest-800/10 pt-5">
           <p className="text-sm font-light text-charcoal-900/60">
-            You will be charged{" "}
-            <span className="font-medium text-forest-950">
-              {formatCurrency(grandTotal)}
-            </span>{" "}
-            USD.
+            {method === "PAYPAL" ? (
+              <>
+                You will be charged{" "}
+                <span className="font-medium text-forest-950">
+                  {formatCurrency(grandTotal)}
+                </span>{" "}
+                USD now via PayPal.
+              </>
+            ) : (
+              <>
+                Amount due at the hotel:{" "}
+                <span className="font-medium text-forest-950">
+                  {formatCurrency(grandTotal)}
+                </span>{" "}
+                USD. No online charge will be taken.
+              </>
+            )}
           </p>
-          {!paypalConfig ? (
+          {method === "PAY_AT_HOTEL" ? (
+            <button
+              type="button"
+              disabled={payAtHotelBusy || !summary.roomSlug || !intentToken}
+              onClick={() => void confirmPayAtHotel()}
+              className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-forest-900 px-5 text-[11px] font-semibold tracking-[0.18em] text-ivory uppercase transition hover:bg-forest-800 disabled:opacity-60"
+            >
+              {payAtHotelBusy ? "Confirming reservation…" : "Confirm Pay at Hotel"}
+            </button>
+          ) : !paypalConfig ? (
             <p className="text-sm text-charcoal-900/55">
               Preparing PayPal Checkout…
             </p>
@@ -330,6 +459,7 @@ export function BookingPaymentForm() {
                       }
                       goToSuccess({
                         reference: result.reference,
+                        paymentMethod: PAYMENT_METHOD_PAYPAL,
                         paymentStatus: result.paymentStatus || "PAID",
                         status: result.status || "CONFIRMED",
                       });
@@ -431,7 +561,8 @@ export function BookingPaymentForm() {
         </dl>
         <p className="mt-6 text-[11px] leading-relaxed text-cream-200/50">
           Extra guest charges and meal plan are included in the stay total when
-          selected. PayPal is the only payment method for online reservations.
+          selected. PayPal charges are captured only after server verification.
+          Pay at Hotel reservations stay unpaid until you settle at the hotel.
         </p>
       </aside>
     </div>

@@ -1,3 +1,4 @@
+import { isPayAtHotel, paymentMethodLabel } from "@/lib/payment-method";
 import { siteConfig } from "@/lib/site";
 
 export type BookingConfirmationEmailPayload = {
@@ -99,7 +100,11 @@ export function buildBookingConfirmationEmailHtml(
       <div style="padding:34px 28px">
         <p style="margin:0;color:#c9963f;font-size:11px;letter-spacing:2.4px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif">Booking Confirmation</p>
         <h1 style="margin:12px 0 12px;font-size:28px;font-weight:500;line-height:1.25">Thank you, ${escapeHtml(payload.guestName)}.</h1>
-        <p style="margin:0 0 24px;line-height:1.65;color:#52605a;font-family:Arial,Helvetica,sans-serif;font-size:14px">Your booking at Marlo Hotels has been received. A confirmation PDF is attached — we look forward to welcoming you to Kathmandu.</p>
+        <p style="margin:0 0 24px;line-height:1.65;color:#52605a;font-family:Arial,Helvetica,sans-serif;font-size:14px">${
+          isPayAtHotel(payload.paymentMethod)
+            ? "Your Pay at Hotel booking at Marlo Hotels has been received. Payment is due at the hotel and has not been captured online. A confirmation PDF is attached — we look forward to welcoming you to Kathmandu."
+            : "Your booking at Marlo Hotels has been received. A confirmation PDF is attached — we look forward to welcoming you to Kathmandu."
+        }</p>
         <div style="padding:16px 18px;background:#f5f0e7;border-left:3px solid #c9963f;margin-bottom:22px">
           <span style="font-size:11px;color:#66716c;text-transform:uppercase;letter-spacing:1.5px;font-family:Arial,Helvetica,sans-serif">Booking / Reference ID</span><br>
           <strong style="font-size:18px;letter-spacing:0.04em">${escapeHtml(payload.reference)}</strong>
@@ -125,11 +130,7 @@ export function buildBookingConfirmationEmailHtml(
           ${row("Payment status", escapeHtml(statusLabel(payload.paymentStatus)))}
           ${row(
             "Payment method",
-            escapeHtml(
-              payload.paymentMethod === "PAYPAL"
-                ? "PayPal"
-                : payload.paymentMethod || "—"
-            )
+            escapeHtml(paymentMethodLabel(payload.paymentMethod))
           )}
           ${
             payload.paypalOrderId

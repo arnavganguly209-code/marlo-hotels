@@ -4,7 +4,8 @@ import { headers } from "next/headers";
 import { SiteShell } from "@/components/layout/site-shell";
 import { JsonLd } from "@/components/shared/json-ld";
 import { getHomepageContent } from "@/lib/homepage-content";
-import { hotelJsonLd } from "@/lib/seo";
+import { sanitizePublicCopy } from "@/lib/content-accuracy";
+import { hotelJsonLd, websiteJsonLd } from "@/lib/seo";
 import { DEFAULT_SITE_KEYWORDS } from "@/lib/seo-keywords";
 import { getSiteSeo } from "@/lib/site-seo";
 import { socialShareImageUrl } from "@/lib/social-share-image";
@@ -168,8 +169,10 @@ const siteUrl = safeSiteUrl();
 export async function generateMetadata(): Promise<Metadata> {
   const siteSeo = await getSiteSeo();
   const title =
-    siteSeo.metaTitle || `${siteConfig.name} — ${siteConfig.tagline}`;
-  const description = siteSeo.metaDescription || siteConfig.description;
+    sanitizePublicCopy(siteSeo.metaTitle) ||
+    `${siteConfig.name} — ${siteConfig.tagline}`;
+  const description =
+    sanitizePublicCopy(siteSeo.metaDescription) || siteConfig.description;
   const keywords =
     siteSeo.keywords.length > 0 ? siteSeo.keywords : DEFAULT_SITE_KEYWORDS;
   const ogImage = siteSeo.ogImageUrl || socialShareImageUrl(siteUrl);
@@ -282,6 +285,7 @@ export default async function RootLayout({
     >
       <body className="antialiased">
         <JsonLd data={hotelJsonLd(siteKeywords)} />
+        <JsonLd data={websiteJsonLd()} />
         <SiteShell
           logoUrl={homepage?.hero.logo.src || brand.logoUrl}
           footerLogoUrl={brand.footerLogoUrl}

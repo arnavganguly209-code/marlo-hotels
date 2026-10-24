@@ -3,7 +3,7 @@ export const siteConfig = {
   legalName: "Marlo Hotels & Resorts Pvt. Ltd.",
   tagline: "Stay Beyond Extraordinary",
   description:
-    "Marlo Hotels is a five-star luxury sanctuary in the heart of Kathmandu — an address of timeless elegance, celebrated dining, restorative wellness and Himalayan hospitality.",
+    "Marlo Hotels is a hotel in Thamel, Kathmandu, Nepal — an address of considered rooms, dining, spa and Himalayan hospitality. Book your stay directly.",
   url:
     process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://marlohotels.com",
   currency: "USD",

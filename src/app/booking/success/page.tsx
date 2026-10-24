@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { isPayAtHotel, isPayPalMethod, paymentMethodLabel } from "@/lib/payment-method";
 import { buildMetadata } from "@/lib/seo";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -7,6 +8,7 @@ export const metadata: Metadata = buildMetadata({
   title: "Booking Confirmation",
   description: "Thank you for choosing Marlo Hotels.",
   path: "/booking/success",
+  noIndex: true,
 });
 
 type PageProps = {
@@ -49,8 +51,9 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
   const rooms = Number(params.rooms || 0);
   const total = Number(params.total || 0);
   const paymentMethod = (params.paymentMethod || "").toUpperCase();
+  const payAtHotel = isPayAtHotel(paymentMethod);
   const isPayPalPaid =
-    paymentMethod === "PAYPAL" &&
+    isPayPalMethod(paymentMethod) &&
     (params.paymentStatus || "").toUpperCase() === "PAID";
   const airportPickup = params.airportPickup === "1";
   const pickupVehicles = Number(params.pickupVehicles || 0);
@@ -71,11 +74,15 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
           <p className="mt-6 text-base leading-relaxed font-light text-charcoal-900/70">
             {isPayPalPaid
               ? "PayPal payment was successful. Your reservation at Marlo Hotels is confirmed."
-              : "Your reservation request has been received successfully."}
+              : payAtHotel
+                ? "Your Pay at Hotel reservation has been received. Payment has not been collected online and remains due at the hotel."
+                : "Your reservation request has been received successfully."}
           </p>
           {!isPayPalPaid ? (
             <p className="mt-3 text-base leading-relaxed font-light text-charcoal-900/70">
-              Our reservations team will contact you shortly.
+              {payAtHotel
+                ? "Please keep your booking reference for check-in. Our reservations team may contact you if anything further is needed."
+                : "Our reservations team will contact you shortly."}
             </p>
           ) : null}
 
@@ -221,13 +228,19 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
                 <div className="flex justify-between gap-4">
                   <dt>Payment method</dt>
                   <dd className="font-medium text-forest-950">
-                    {paymentMethod === "PAYPAL" ? "PayPal" : paymentMethod}
+                    {paymentMethodLabel(paymentMethod)}
                   </dd>
                 </div>
               ) : null}
               {total > 0 ? (
                 <div className="flex justify-between gap-4 border-t border-forest-800/10 pt-3">
-                  <dt>{isPayPalPaid ? "Total paid" : "Estimated total"}</dt>
+                  <dt>
+                    {isPayPalPaid
+                      ? "Total paid"
+                      : payAtHotel
+                        ? "Amount due at hotel"
+                        : "Estimated total"}
+                  </dt>
                   <dd className="font-medium text-forest-950">
                     {formatCurrency(total)}
                   </dd>

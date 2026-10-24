@@ -1,8 +1,20 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import {
+  clientIpFromRequest,
+  consumeRateLimit,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 import { newsletterSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
+  const limited = consumeRateLimit(
+    `newsletter:${clientIpFromRequest(request)}`,
+    10,
+    15 * 60 * 1000
+  );
+  if (!limited.ok) return rateLimitResponse(limited.retryAfterSeconds);
+
   const body = await request.json().catch(() => null);
   const parsed = newsletterSchema.safeParse(body);
 

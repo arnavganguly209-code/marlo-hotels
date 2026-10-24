@@ -9,9 +9,9 @@ import { buildMetadata } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = buildMetadata({
-  title: "The Journal",
+  title: "Kathmandu Travel Journal",
   description:
-    "Dispatches from Marlo Hotels — concierge itineraries for Kathmandu, the craft behind our suites, stories from Amaya's kitchen and the art of slow mornings.",
+    "Articles from Marlo Hotels for travellers planning a Kathmandu stay — neighbourhood itineraries, rooms, dining notes and practical hotel guidance.",
   path: "/blog",
 });
 

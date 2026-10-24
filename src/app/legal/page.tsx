@@ -7,8 +7,8 @@ import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Legal",
-  description: `Privacy Policy, Terms & Conditions, Cancellation Policy and Cookie Settings for ${siteConfig.name}.`,
+  title: "Privacy, Terms & Cancellation Policy",
+  description: `Privacy Policy, Terms & Conditions, Cancellation Policy and Cookie Settings for ${siteConfig.name} in Kathmandu.`,
   path: "/legal",
 });
 

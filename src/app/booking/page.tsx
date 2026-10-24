@@ -13,10 +13,15 @@ import { getRooms } from "@/content/rooms";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Reserve Your Stay",
+  title: "Book a Hotel in Kathmandu",
   description:
-    "Reserve your stay at Marlo Hotels — choose dates, meal plan and room, then complete guest details and payment.",
+    "Book Marlo Hotels in Thamel, Kathmandu directly — choose dates, room category, extras and pay with PayPal or at the hotel.",
   path: "/booking",
+  keywords: [
+    "hotel booking in Kathmandu",
+    "book a hotel in Kathmandu",
+    "direct hotel booking Kathmandu",
+  ],
 });
 
 type PageProps = {

@@ -2,7 +2,7 @@ import type { GalleryImage, Testimonial, Award, Attraction } from "@/types/conte
 
 export const galleryImages: GalleryImage[] = [
   { src: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1600&auto=format&fit=crop", alt: "Marlo Hotels facade glowing at dusk", category: "Architecture" },
-  { src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop", alt: "Infinity pool and resort architecture", category: "Architecture" },
+  { src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1600&auto=format&fit=crop", alt: "Hotel architecture and gardens", category: "Architecture" },
   { src: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1600&auto=format&fit=crop", alt: "Deluxe room with garden views", category: "Rooms" },
   { src: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=1600&auto=format&fit=crop", alt: "Signature Suite living salon", category: "Rooms" },
   { src: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=1600&auto=format&fit=crop", alt: "Royal Heritage Suite bedroom", category: "Rooms" },
@@ -14,7 +14,7 @@ export const galleryImages: GalleryImage[] = [
   { src: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1600&auto=format&fit=crop", alt: "Spa treatment in a private suite", category: "Wellness" },
   { src: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1600&auto=format&fit=crop", alt: "Morning ritual at Marlo Spa", category: "Wellness" },
   { src: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=1600&auto=format&fit=crop", alt: "Poolside daybeds at first light", category: "Wellness" },
-  { src: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1600&auto=format&fit=crop", alt: "Infinity pool meeting the horizon", category: "Wellness" },
+  { src: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=1600&auto=format&fit=crop", alt: "Garden terrace at first light", category: "Wellness" },
   { src: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=1600&auto=format&fit=crop", alt: "Wedding reception under chandeliers", category: "Events" },
   { src: "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1600&auto=format&fit=crop", alt: "Gala dinner service", category: "Events" },
   { src: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1600&auto=format&fit=crop", alt: "Terrace wedding at golden hour", category: "Events" },
@@ -52,7 +52,7 @@ export const testimonials: Testimonial[] = [
     name: "Rajiv Menon",
     origin: "Mumbai, India",
     quote:
-      "Flawless from airport to farewell. The spa's singing bowl ritual is unlike anything I have experienced, and the infinity pool at dusk belongs on canvas.",
+      "Flawless from airport to farewell. The spa's singing bowl ritual is unlike anything I have experienced, and dusk on the terrace belongs on canvas.",
     rating: 5,
     stay: "Wellness Pool Room, April 2026",
   },
@@ -102,7 +102,7 @@ export const attractions: Attraction[] = [
 ];
 
 export const instagramFeed: { src: string; alt: string }[] = [
-  { src: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=800&auto=format&fit=crop", alt: "Infinity pool at dusk" },
+  { src: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=800&auto=format&fit=crop", alt: "Terrace at dusk" },
   { src: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=800&auto=format&fit=crop", alt: "Cocktail hour at Bar 1959" },
   { src: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=800&auto=format&fit=crop", alt: "Morning light in a garden room" },
   { src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=800&auto=format&fit=crop", alt: "Himalayan sunrise" },

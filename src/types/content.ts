@@ -42,6 +42,8 @@ export type Room = {
   checkOutTime?: string;
   buttonText?: string;
   buttonLink?: string;
+  metaTitle?: string;
+  metaDescription?: string;
 };
 
 export type MenuSection = {

@@ -173,7 +173,7 @@ const EXPERIENCE_POINTS = [
   {
     title: "Premium Wellness Experience",
     description:
-      "From thermal rituals to signature massage, every detail is tuned to five-star calm.",
+      "From thermal rituals to signature massage, every detail is tuned to quiet calm.",
   },
   {
     title: "Professional Therapists",
@@ -390,7 +390,7 @@ export function SpaExperience({ doc }: { doc: PageStudioDocument }) {
                   {why?.heading || "Why Choose Our Spa"}
                 </h2>
                 <p className="mt-6 text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-                  {why?.description || "Not an amenity checklist — a considered house of wellness within Marlo Hotels, where Himalayan tradition meets international five-star care."}
+                  {why?.description || "Not an amenity checklist — a considered house of wellness within Marlo Hotels, where Himalayan tradition meets attentive care."}
                 </p>
               </Reveal>
 

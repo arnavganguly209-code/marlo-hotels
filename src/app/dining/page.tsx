@@ -16,13 +16,16 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = doc.seo;
   const hero = doc.hero;
   return buildMetadata({
-    title: seo?.seoTitle || hero?.seoTitle || "Dining",
+    title:
+      seo?.seoTitle || hero?.seoTitle || "Dining & Restaurant in Kathmandu",
     description:
       seo?.seoDescription ||
       hero?.seoDescription ||
-      "Elegant dining at Marlo Hotels — fresh cuisine, peaceful atmosphere and international hospitality in Kathmandu.",
+      "Dine at Marlo Hotels in Thamel, Kathmandu — hotel restaurant service, breakfast and Nepali and international cuisine. See menus, timings and reservations.",
     path: "/dining",
-    keywords: seo?.seoKeywords || undefined,
+    keywords:
+      seo?.seoKeywords ||
+      "restaurant in Thamel Kathmandu, hotel restaurant in Kathmandu, breakfast at a Kathmandu hotel, dining in Thamel",
   });
 }
 

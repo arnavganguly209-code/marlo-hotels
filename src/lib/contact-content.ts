@@ -103,9 +103,9 @@ export function getContactDefaults(): ContactPageContent {
       previewImage: emptyImage("Map preview"),
     },
     seo: {
-      title: "Contact",
+      title: "Contact & Location in Kathmandu",
       description:
-        "Reach Marlo Hotels — Paryatan Marg, 44600 Kathmandu, Nepal. Reservations, events, dining and concierge enquiries by phone, WhatsApp, email or our contact form.",
+        "Reach Marlo Hotels on Paryatan Marg, Thamel, Kathmandu, Nepal. Reservations, dining and concierge by phone, WhatsApp, email or our contact form.",
     },
   };
 }

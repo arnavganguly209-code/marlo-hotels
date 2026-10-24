@@ -5,9 +5,9 @@ import { getGalleryContent } from "@/lib/gallery-content";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
-  title: "Gallery",
+  title: "Hotel Gallery in Kathmandu",
   description:
-    "Light on water, brass at dusk and the valley from a suite window — explore Marlo Hotels through the lens: rooms, dining, wellness, architecture and celebrations.",
+    "Photographs of Marlo Hotels in Thamel, Kathmandu — rooms, dining, wellness, architecture and celebrations at the hotel.",
   path: "/gallery",
 });
 

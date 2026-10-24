@@ -12,8 +12,10 @@ import { RoomsShowcase } from "@/components/home/rooms-showcase";
 import { TestimonialsSection } from "@/components/home/testimonials-section";
 import { WellnessSection } from "@/components/home/wellness-section";
 import { getHomepageContent } from "@/lib/homepage-content";
+import { JsonLd } from "@/components/shared/json-ld";
 import { getHomepageShareImageUrl } from "@/lib/homepage-share-image";
-import { siteConfig } from "@/lib/site";
+import { breadcrumbJsonLd, buildMetadata, webPageJsonLd } from "@/lib/seo";
+import { getSiteSeo } from "@/lib/site-seo";
 import { getGalleryContent } from "@/lib/gallery-content";
 import { occupancyIndexFromRooms } from "@/lib/booking-occupancy";
 import { getPlacement } from "@/lib/orbit/media";
@@ -36,18 +38,30 @@ function toPreviewCategory(category: string): GalleryImage["category"] {
   return "Rooms";
 }
 
-export async function generateMetadata(): Promise<Metadata> {
-  const shareImage = await getHomepageShareImageUrl();
-  const title = `${siteConfig.name} — ${siteConfig.tagline}`;
+const HOME_TITLE = "Best Hotel in Thamel, Kathmandu";
+const HOME_DESCRIPTION =
+  "Discover Marlo Hotels in Thamel, Kathmandu, Nepal. Explore our rooms, dining, spa and hotel experiences, then book your stay directly.";
 
-  return {
-    openGraph: {
-      images: [{ url: shareImage, width: 1200, height: 630, alt: title }],
-    },
-    twitter: {
-      images: [shareImage],
-    },
-  };
+export async function generateMetadata(): Promise<Metadata> {
+  const [shareImage, siteSeo] = await Promise.all([
+    getHomepageShareImageUrl(),
+    getSiteSeo(),
+  ]);
+  const staleCmsTitle = /five-star|5[\s-]?star/i.test(siteSeo.metaTitle);
+  const staleCmsDescription = /five-star|5[\s-]?star|swimming pool|infinity pool/i.test(
+    siteSeo.metaDescription
+  );
+
+  return buildMetadata({
+    title: staleCmsTitle || !siteSeo.metaTitle ? HOME_TITLE : siteSeo.metaTitle,
+    description:
+      staleCmsDescription || !siteSeo.metaDescription
+        ? HOME_DESCRIPTION
+        : siteSeo.metaDescription,
+    path: "/",
+    image: shareImage,
+    keywords: siteSeo.keywords,
+  });
 }
 
 export default async function HomePage() {
@@ -123,6 +137,16 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd
+        data={webPageJsonLd({
+          name: HOME_TITLE,
+          description: HOME_DESCRIPTION,
+          path: "/",
+        })}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd([{ name: "Home", path: "/" }])}
+      />
       {posterHref ? (
         <link rel="preload" as="image" href={posterHref} fetchPriority="high" />
       ) : null}

@@ -66,6 +66,7 @@ const nights = (b: Booking) =>
 const paymentMethodLabel = (value?: string | null) => {
   if (!value) return "—";
   if (value === "PAYPAL") return "PayPal";
+  if (value === "PAY_AT_HOTEL") return "Pay at Hotel";
   if (value === "CARD") return "Card";
   return value;
 };

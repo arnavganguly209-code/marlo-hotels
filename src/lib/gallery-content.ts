@@ -42,7 +42,7 @@ export function getGalleryDefaults(): GalleryPageContent {
   return {
     cover: {
       src: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2400&auto=format&fit=crop",
-      alt: "Marlo Hotels architecture and pool",
+      alt: "Marlo Hotels architecture and gardens",
       assetId: null,
       eyebrow: "Gallery",
       title: "Marlo, framed",

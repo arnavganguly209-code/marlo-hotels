@@ -1,37 +1,28 @@
 import "server-only";
 
+import { randomBytes } from "node:crypto";
 import { getDb } from "@/lib/db";
 
 /**
- * Booking ID format: MARLO-YYMMDD-XXXX
- * Example: MARLO-250725-0001
+ * Booking ID format: MARLO-YYMMDD-XXXXXXXX
+ * Random suffix avoids sequential guessing. Email/PDF only print the string.
  */
 export async function generateMarloBookingId(): Promise<string> {
   const now = new Date();
   const yy = String(now.getFullYear()).slice(-2);
   const mm = String(now.getMonth() + 1).padStart(2, "0");
   const dd = String(now.getDate()).padStart(2, "0");
-  const dayKey = `${yy}${mm}${dd}`;
-  const prefix = `MARLO-${dayKey}-`;
+  const prefix = `MARLO-${yy}${mm}${dd}-`;
 
   const db = getDb();
-  if (!db) {
-    const random = String(Math.floor(Math.random() * 9000) + 1000);
-    return `${prefix}${random}`;
-  }
-
-  const existing = await db.booking.count({
-    where: { reference: { startsWith: prefix } },
-  });
-  let attempt = existing + 1;
-  for (let i = 0; i < 100; i += 1) {
-    const reference = `${prefix}${String(attempt).padStart(4, "0")}`;
+  for (let i = 0; i < 12; i += 1) {
+    const reference = `${prefix}${randomBytes(4).toString("hex").toUpperCase()}`;
+    if (!db) return reference;
     const clash = await db.booking.findUnique({
       where: { reference },
       select: { id: true },
     });
     if (!clash) return reference;
-    attempt += 1;
   }
-  return `${prefix}${String(Date.now()).slice(-4)}`;
+  return `${prefix}${randomBytes(6).toString("hex").toUpperCase()}`;
 }

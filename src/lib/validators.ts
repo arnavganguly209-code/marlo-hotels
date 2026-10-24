@@ -38,6 +38,8 @@ export const bookingRequestSchema = z
     pickupDate: z.string().optional(),
     pickupTime: z.string().optional(),
     pickupNotes: z.string().optional(),
+    paymentMethod: z.enum(["PAY_AT_HOTEL"]).optional(),
+    intentToken: z.string().min(20).optional(),
   })
   .refine(
     (data) => new Date(data.checkOut) > new Date(data.checkIn),

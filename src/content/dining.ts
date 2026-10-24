@@ -66,14 +66,14 @@ const restaurants: Restaurant[] = [
     cuisine: "All-Day Mediterranean",
     tagline: "Long lunches under the valley sky",
     shortDescription:
-      "An open-air brasserie wrapped around the infinity pool, serving wood-fired Mediterranean fare from sunrise to sundown.",
+      "An open-air brasserie serving wood-fired Mediterranean fare from sunrise to sundown.",
     description: [
-      "The Terrace is Marlo's daytime heart — breakfast as the mist lifts off the hills, wood-fired flatbreads by the pool at noon, and golden-hour aperitivo as the valley lights come on.",
-      "The kitchen is built around a wood oven and charcoal grill, with produce delivered daily from our partner farms in the valley. Come barefoot from the pool or dressed for a long celebratory lunch; both are equally at home here.",
+      "The Terrace is Marlo's daytime heart — breakfast as the mist lifts off the hills, wood-fired flatbreads at noon, and golden-hour aperitivo as the valley lights come on.",
+      "The kitchen is built around a wood oven and charcoal grill, with produce delivered daily from our partner farms in the valley. Come from a morning in the city or dressed for a long celebratory lunch; both are equally at home here.",
     ],
     hours: "Daily 6:30 AM – 6:00 PM",
     dressCode: "Resort casual",
-    location: "Pool deck, level 3",
+    location: "Terrace, level 3",
     images: [
       {
         src: "https://images.unsplash.com/photo-1521017432531-fbd92d768814?q=80&w=1600&auto=format&fit=crop",

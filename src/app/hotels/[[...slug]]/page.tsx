@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { SeoLandingView } from "@/components/seo-landing/seo-landing-view";
 import { getRooms } from "@/content/rooms";
+import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 import {
   getPublicSeoLandingPage,
@@ -23,7 +24,12 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   if (!slug?.length) {
-    return { title: "Hotels in Kathmandu | Marlo Hotels" };
+    return buildMetadata({
+      title: "Hotels in Kathmandu",
+      description:
+        "Marlo Hotels in Kathmandu, Nepal — rooms, dining and spa in Thamel. Explore the official hotel pages and book directly.",
+      path: "/hotels/kathmandu",
+    });
   }
   const path = segmentsToPath(slug);
   const page = await getPublicSeoLandingPage(path);

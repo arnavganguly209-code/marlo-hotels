@@ -232,7 +232,7 @@ export function DiningExperience({
               {highlights?.heading || "Dining Highlights"}
             </h2>
             <p className="mx-auto mt-6 max-w-2xl text-[15.5px] leading-[1.85] font-light text-charcoal-900/70">
-              {highlights?.description || "The essentials of a five-star table — freshness, comfort and hospitality held in balance from morning until late evening."}
+              {highlights?.description || "The essentials of a considered table — freshness, comfort and hospitality held in balance from morning until late evening."}
             </p>
           </Reveal>
 

@@ -4,6 +4,7 @@ import { JsonLd } from "@/components/shared/json-ld";
 import { PageHero } from "@/components/shared/page-hero";
 import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { sanitizePublicCopy } from "@/lib/content-accuracy";
 import { breadcrumbJsonLd } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 import {
@@ -60,7 +61,7 @@ export function SeoLandingView({ page, rooms, related }: Props) {
       <PageHero
         eyebrow="Marlo Hotels · Kathmandu"
         title={page.h1}
-        description={page.intro}
+        description={sanitizePublicCopy(page.intro)}
         image={{
           src: page.featuredImageUrl || "/images/brand/social-share.jpg",
           alt: page.featuredImageAlt || page.h1,
@@ -75,7 +76,7 @@ export function SeoLandingView({ page, rooms, related }: Props) {
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
           {page.body ? (
             <p className="font-body text-base leading-relaxed text-forest-800/85 whitespace-pre-line">
-              {page.body}
+              {sanitizePublicCopy(page.body)}
             </p>
           ) : null}
           <p className="mt-6 text-sm text-forest-800/70">
