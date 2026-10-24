@@ -15,9 +15,9 @@ import {
 const createOrderSchema = z.object({
   checkIn: z.string().min(1),
   checkOut: z.string().min(1),
-  adults: z.number().int().min(1).max(8),
-  children: z.number().int().min(0).max(10),
-  rooms: z.number().int().min(1).max(5),
+  adults: z.coerce.number().int().min(1).max(8),
+  children: z.coerce.number().int().min(0).max(10),
+  rooms: z.coerce.number().int().min(1).max(5),
   roomSlug: z.string().min(1),
   promoCode: z.string().optional(),
   guestName: z.string().min(2),
@@ -29,7 +29,7 @@ const createOrderSchema = z.object({
   notes: z.string().optional(),
   breakfast: z.boolean().optional(),
   airportPickup: z.boolean().optional(),
-  pickupVehicles: z.number().int().min(1).max(3).optional(),
+  pickupVehicles: z.coerce.number().int().min(1).max(3).optional(),
   flightNumber: z.string().optional(),
   flightArrivalTime: z.string().optional(),
   pickupDate: z.string().optional(),
@@ -38,6 +38,17 @@ const createOrderSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  try {
+    return await createPayPalCheckout(request);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not start PayPal checkout";
+    console.error("[paypal] create-order failed", { error: message });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function createPayPalCheckout(request: Request) {
   if (!paypalConfigured()) {
     return NextResponse.json(
       { error: "PayPal is not configured" },
@@ -88,6 +99,12 @@ export async function POST(request: Request) {
   }
 
   const quote = quoteResult.quote;
+  if (!(quote.grandTotal > 0)) {
+    return NextResponse.json(
+      { error: "Booking total is invalid. Please return to rooms and book again." },
+      { status: 400 }
+    );
+  }
   const reference = await generateMarloBookingId();
   const wantsPickup = Boolean(data.airportPickup);
   const pickupTime =

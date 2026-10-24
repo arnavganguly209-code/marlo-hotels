@@ -398,10 +398,27 @@ export function BookingPaymentForm() {
                     tagline: false,
                   }}
                   disabled={paypalBusy}
+                  forceReRender={[
+                    String(grandTotal),
+                    summary.roomSlug,
+                    summary.checkIn,
+                    summary.checkOut,
+                  ]}
                   createOrder={async () => {
                     setError(null);
                     setPaypalBusy(true);
                     try {
+                      if (
+                        !summary.roomSlug ||
+                        !summary.checkIn ||
+                        !summary.checkOut ||
+                        !summary.guestEmail ||
+                        !summary.guestName
+                      ) {
+                        throw new Error(
+                          "Missing stay or guest details. Please return to checkout and try again."
+                        );
+                      }
                       const response = await fetch("/api/paypal/create-order", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },

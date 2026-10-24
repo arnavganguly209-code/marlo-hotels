@@ -23,6 +23,17 @@ const IDEMPOTENCY_WINDOW_MS = 15 * 60 * 1000;
  * Totals and availability are computed server-side; client amounts are ignored.
  */
 export async function POST(request: Request) {
+  try {
+    return await createPayAtHotelReservation(request);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not complete Pay at Hotel booking";
+    console.error("[booking] Pay at Hotel create failed", { error: message });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function createPayAtHotelReservation(request: Request) {
   const ip = clientIpFromRequest(request);
   const ipLimit = consumeRateLimit(`booking:${ip}`, 5, 15 * 60 * 1000);
   if (!ipLimit.ok) return rateLimitResponse(ipLimit.retryAfterSeconds);

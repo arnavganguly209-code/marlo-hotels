@@ -21,16 +21,14 @@ function intentSecret() {
     process.env.BOOKING_INTENT_SECRET?.trim() ||
     process.env.ORBIT_SESSION_SECRET?.trim() ||
     process.env.ADMIN_SESSION_SECRET?.trim() ||
-    (process.env.NODE_ENV === "production" ? "" : "marlo-booking-intent-dev")
+    process.env.PAYPAL_CLIENT_ID?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    "marlo-booking-intent"
   );
 }
 
 function sign(body: string) {
-  const secret = intentSecret();
-  if (!secret) {
-    throw new Error("BOOKING_INTENT_SECRET is not configured");
-  }
-  return createHmac("sha256", secret).update(body).digest("base64url");
+  return createHmac("sha256", intentSecret()).update(body).digest("base64url");
 }
 
 export function createBookingIntent(input: {

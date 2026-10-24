@@ -110,7 +110,14 @@ export async function computeServerBookingQuote(
     : 0;
   const grandTotal = Number((stay.total + pickupFee).toFixed(2));
 
-  const availability = await getAvailableCapacity(room.slug, checkIn, checkOut);
+  let availability;
+  try {
+    availability = await getAvailableCapacity(room.slug, checkIn, checkOut);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Availability check failed";
+    return { ok: false, error: message, status: 503 };
+  }
   if (rooms > availability.available) {
     return {
       ok: false,
