@@ -66,20 +66,17 @@ async function createPayAtHotelReservation(request: Request) {
   );
   if (!emailLimit.ok) return rateLimitResponse(emailLimit.retryAfterSeconds);
 
-  if (!data.intentToken) {
-    return NextResponse.json(
-      { error: "Booking intent is required. Refresh the payment page and try again." },
-      { status: 400 }
-    );
-  }
-
-  const intent = verifyBookingIntent(data.intentToken, {
-    roomSlug: data.roomSlug,
-    checkIn: data.checkIn,
-    checkOut: data.checkOut,
-  });
-  if (!intent.ok) {
-    return NextResponse.json({ error: intent.error }, { status: 400 });
+  let intentHash: string | null = null;
+  if (data.intentToken) {
+    const intent = verifyBookingIntent(data.intentToken, {
+      roomSlug: data.roomSlug,
+      checkIn: data.checkIn,
+      checkOut: data.checkOut,
+    });
+    if (!intent.ok) {
+      return NextResponse.json({ error: intent.error }, { status: 400 });
+    }
+    intentHash = intent.hash;
   }
 
   const quoteResult = await computeServerBookingQuote({
@@ -148,13 +145,21 @@ async function createPayAtHotelReservation(request: Request) {
     },
   });
 
-  const intentMarker = `Intent:${intent.hash}`;
+  const intentMarker = intentHash ? `Intent:${intentHash}` : null;
   const recent = await db.booking.findFirst({
     where: {
       paymentMethod: PAYMENT_METHOD_PAY_AT_HOTEL,
-      notes: { contains: intentMarker },
       status: { in: ["PENDING", "CONFIRMED", "ON_HOLD"] },
       createdAt: { gte: new Date(Date.now() - IDEMPOTENCY_WINDOW_MS) },
+      ...(intentMarker
+        ? { notes: { contains: intentMarker } }
+        : {
+            guestEmail: data.guestEmail.trim(),
+            guestPhone: data.guestPhone.trim(),
+            roomId: roomRecord.id,
+            checkIn: new Date(data.checkIn),
+            checkOut: new Date(data.checkOut),
+          }),
     },
     include: { room: true },
   });
@@ -209,7 +214,9 @@ async function createPayAtHotelReservation(request: Request) {
       paymentLabel: "PAY_AT_HOTEL",
     }),
     intentMarker,
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const booking = await db.booking.create({
     data: {
@@ -247,37 +254,39 @@ async function createPayAtHotelReservation(request: Request) {
     },
   });
 
-  void sendBookingEmails({
-    id: booking.id,
-    reference: booking.reference,
-    status: booking.status,
-    paymentStatus: booking.paymentStatus,
-    paymentMethod: booking.paymentMethod,
-    guestName: booking.guestName,
-    guestEmail: booking.guestEmail,
-    guestPhone: booking.guestPhone,
-    country: booking.country,
-    checkIn: booking.checkIn,
-    checkOut: booking.checkOut,
-    adults: booking.adults,
-    children: booking.children,
-    rooms: booking.rooms,
-    breakfast: booking.breakfast,
-    totalAmount: freshQuote.quote.grandTotal,
-    notes: booking.notes,
-    airportPickup: booking.airportPickup,
-    pickupVehicles: booking.pickupVehicles,
-    pickupAmount: freshQuote.quote.pickupFee,
-    flightNumber: booking.flightNumber,
-    pickupDate: booking.pickupDate,
-    pickupTime: booking.pickupTime,
-    pickupNotes: booking.pickupNotes,
-    createdAt: booking.createdAt,
-    roomName: room.name,
-    room: { name: room.name },
-  }).catch(() => {
-    /* Email failure must not create a second booking. */
-  });
+  try {
+    await sendBookingEmails({
+      id: booking.id,
+      reference: booking.reference,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      paymentMethod: booking.paymentMethod,
+      guestName: booking.guestName,
+      guestEmail: booking.guestEmail,
+      guestPhone: booking.guestPhone,
+      country: booking.country,
+      checkIn: booking.checkIn,
+      checkOut: booking.checkOut,
+      adults: booking.adults,
+      children: booking.children,
+      rooms: booking.rooms,
+      breakfast: booking.breakfast,
+      totalAmount: freshQuote.quote.grandTotal,
+      notes: booking.notes,
+      airportPickup: booking.airportPickup,
+      pickupVehicles: booking.pickupVehicles,
+      pickupAmount: freshQuote.quote.pickupFee,
+      flightNumber: booking.flightNumber,
+      pickupDate: booking.pickupDate,
+      pickupTime: booking.pickupTime,
+      pickupNotes: booking.pickupNotes,
+      createdAt: booking.createdAt,
+      roomName: room.name,
+      room: { name: room.name },
+    });
+  } catch {
+    /* Email failure must not roll back the reservation. */
+  }
 
   return NextResponse.json({
     ok: true,

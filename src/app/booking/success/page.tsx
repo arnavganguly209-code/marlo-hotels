@@ -252,10 +252,10 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
           <p className="mt-8 text-sm text-charcoal-900/60">
             If you wish to modify or cancel your reservation please contact:{" "}
             <a
-              href="mailto:info@marlohotels.com"
+              href="mailto:booking@marlohotels.com"
               className="text-gold-700 underline-offset-4 hover:underline"
             >
-              info@marlohotels.com
+              booking@marlohotels.com
             </a>
           </p>
 

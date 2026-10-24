@@ -89,7 +89,7 @@ export function AdminOnlineBookingsManager({
     () =>
       bookings.filter((b) => {
         const text =
-          `${b.reference} ${b.guestName} ${b.guestEmail} ${b.guestPhone} ${b.paypalOrderId || ""} ${b.paypalCaptureId || ""}`.toLowerCase();
+          `${b.reference} ${b.guestName} ${b.guestEmail} ${b.guestPhone} ${b.paymentMethod || ""} ${b.paypalOrderId || ""} ${b.paypalCaptureId || ""}`.toLowerCase();
         return (
           (!query || text.includes(query.toLowerCase())) &&
           (statusFilter === "ALL" || b.status === statusFilter) &&
@@ -269,9 +269,7 @@ export function AdminOnlineBookingsManager({
                 <td className="px-3 py-3">
                   <select
                     className="rounded border border-white/15 bg-[#0B1713] p-1"
-                    value={
-                      b.paymentStatus === "UNPAID" ? "PENDING" : b.paymentStatus
-                    }
+                    value={b.paymentStatus}
                     onChange={(e) =>
                       void update(b.id, { paymentStatus: e.target.value })
                     }
@@ -432,11 +430,7 @@ export function AdminOnlineBookingsManager({
                   Payment
                   <select
                     className={input}
-                    value={
-                      editing.paymentStatus === "UNPAID"
-                        ? "PENDING"
-                        : editing.paymentStatus
-                    }
+                    value={editing.paymentStatus}
                     onChange={(e) =>
                       setEditing({
                         ...editing,

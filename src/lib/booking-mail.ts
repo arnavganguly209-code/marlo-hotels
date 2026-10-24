@@ -67,22 +67,26 @@ function smtpConfigured() {
   );
 }
 
+const BOOKING_MAILBOX = "booking@marlohotels.com";
+
 function mailFrom() {
-  const raw =
-    process.env.SMTP_FROM?.trim() ||
-    process.env.BOOKING_FROM_EMAIL?.trim() ||
-    "booking@marlohotels.com";
-  // Allow plain address or already-formatted "Name <email>"
-  if (raw.includes("<") && raw.includes(">")) return raw;
-  return `Marlo Hotels <${raw}>`;
+  return `Marlo Hotels <${BOOKING_MAILBOX}>`;
 }
 
 function hotelNotifyTo() {
-  return (
-    process.env.BOOKING_NOTIFICATION_EMAIL?.trim() ||
-    process.env.BOOKING_NOTIFY_EMAIL?.trim() ||
-    "booking@marlohotels.com"
-  );
+  const extras = [
+    process.env.BOOKING_NOTIFICATION_EMAIL?.trim(),
+    process.env.BOOKING_NOTIFY_EMAIL?.trim(),
+  ].filter(Boolean) as string[];
+  const seen = new Set<string>([BOOKING_MAILBOX.toLowerCase()]);
+  const recipients = [BOOKING_MAILBOX];
+  for (const extra of extras) {
+    const key = extra.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    recipients.push(extra);
+  }
+  return recipients.join(", ");
 }
 
 function pdfFilename(reference: string) {
@@ -146,6 +150,7 @@ async function sendSmtpMail(options: {
   try {
     const info = await transport.sendMail({
       from: mailFrom(),
+      replyTo: BOOKING_MAILBOX,
       to: options.to,
       subject: options.subject,
       html: options.html,

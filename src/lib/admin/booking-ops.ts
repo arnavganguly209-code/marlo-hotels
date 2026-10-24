@@ -23,6 +23,7 @@ export const BOOKING_OPS_STATUS_LABELS: Record<BookingOpsStatus, string> = {
 };
 
 export const PAYMENT_OPS_STATUSES = [
+  "UNPAID",
   "PENDING",
   "PAID",
   "PARTIAL",
@@ -33,6 +34,7 @@ export const PAYMENT_OPS_STATUSES = [
 export type PaymentOpsStatus = (typeof PAYMENT_OPS_STATUSES)[number];
 
 export const PAYMENT_OPS_STATUS_LABELS: Record<PaymentOpsStatus, string> = {
+  UNPAID: "Unpaid",
   PENDING: "Pending",
   PAID: "Paid",
   PARTIAL: "Partial",
@@ -41,7 +43,5 @@ export const PAYMENT_OPS_STATUS_LABELS: Record<PaymentOpsStatus, string> = {
 };
 
 export function paymentOpsLabel(status: string) {
-  return status === "UNPAID"
-    ? "Pending"
-    : PAYMENT_OPS_STATUS_LABELS[status as PaymentOpsStatus] ?? status;
+  return PAYMENT_OPS_STATUS_LABELS[status as PaymentOpsStatus] ?? status;
 }

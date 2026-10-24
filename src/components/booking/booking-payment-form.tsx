@@ -357,7 +357,7 @@ export function BookingPaymentForm() {
           {method === "PAY_AT_HOTEL" ? (
             <button
               type="button"
-              disabled={payAtHotelBusy || !summary.roomSlug || !intentToken}
+              disabled={payAtHotelBusy || !summary.roomSlug}
               onClick={() => void confirmPayAtHotel()}
               className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-forest-900 px-5 text-[11px] font-semibold tracking-[0.18em] text-ivory uppercase transition hover:bg-forest-800 disabled:opacity-60"
             >
