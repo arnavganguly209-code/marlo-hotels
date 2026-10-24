@@ -382,6 +382,7 @@ export function BookingPaymentForm() {
                   currency: "USD",
                   intent: "capture",
                   components: "buttons",
+                  "data-page-type": "checkout",
                   ...(paypalConfig.environment === "sandbox"
                     ? { "enable-funding": "paypal" }
                     : {}),
@@ -424,17 +425,23 @@ export function BookingPaymentForm() {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(bookingPayload()),
                       });
-                      const result = (await response.json()) as {
+                      const raw = await response.text();
+                      let result: {
                         orderId?: string;
                         bookingId?: string;
                         error?: string;
                         message?: string;
-                      };
+                      } = {};
+                      try {
+                        result = raw ? (JSON.parse(raw) as typeof result) : {};
+                      } catch {
+                        result = {};
+                      }
                       if (!response.ok || !result.orderId) {
                         throw new Error(
                           result.message ||
                             result.error ||
-                            "Could not start PayPal checkout"
+                            "Could not start PayPal checkout. Please try again."
                         );
                       }
                       return result.orderId;

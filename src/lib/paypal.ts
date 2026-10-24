@@ -1,5 +1,7 @@
 import "server-only";
 
+import { siteConfig } from "@/lib/site";
+
 export type PayPalEnvironment = "sandbox" | "live";
 
 type PayPalTokenResponse = {
@@ -84,15 +86,22 @@ async function getAccessToken() {
   }
 
   const auth = Buffer.from(`${clientId}:${secret}`).toString("base64");
-  const response = await fetch(`${paypalApiBase()}/v1/oauth2/token`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${auth}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: "grant_type=client_credentials",
-  });
-  const data = (await response.json()) as PayPalTokenResponse;
+  let response: Response;
+  try {
+    response = await fetch(`${paypalApiBase()}/v1/oauth2/token`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: "grant_type=client_credentials",
+      cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
+    });
+  } catch {
+    throw new Error("Could not reach PayPal to start checkout");
+  }
+  const data = (await response.json().catch(() => ({}))) as PayPalTokenResponse;
   if (!response.ok || !data.access_token) {
     console.error("[paypal] OAuth failed", {
       status: response.status,
@@ -106,6 +115,23 @@ async function getAccessToken() {
     expiresAt: now + Math.max(60, Number(data.expires_in || 300)) * 1000,
   };
   return cachedToken.value;
+}
+
+function paypalErrorMessage(
+  data: {
+    message?: string;
+    name?: string;
+    details?: Array<{ issue?: string; description?: string }>;
+  },
+  status: number
+) {
+  const detail = data.details?.[0];
+  return (
+    detail?.description ||
+    detail?.issue ||
+    data.message ||
+    `PayPal request failed (${status})`
+  );
 }
 
 async function paypalFetch<T>(
@@ -123,14 +149,29 @@ async function paypalFetch<T>(
     headers["PayPal-Request-Id"] = init.idempotencyKey;
   }
 
-  const response = await fetch(`${paypalApiBase()}${path}`, {
-    ...init,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${paypalApiBase()}${path}`, {
+      ...init,
+      headers,
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const timedOut =
+      error instanceof Error &&
+      (error.name === "TimeoutError" || error.name === "AbortError");
+    throw new Error(
+      timedOut
+        ? "PayPal did not respond in time. Please try again."
+        : "Could not reach PayPal. Please try again."
+    );
+  }
+
   const data = (await response.json().catch(() => ({}))) as T & {
     message?: string;
     name?: string;
-    details?: unknown;
+    details?: Array<{ issue?: string; description?: string }>;
   };
   if (!response.ok) {
     console.error("[paypal] API error", {
@@ -138,8 +179,9 @@ async function paypalFetch<T>(
       status: response.status,
       name: data.name,
       message: data.message,
+      issue: data.details?.[0]?.issue,
     });
-    throw new Error(data.message || `PayPal request failed (${response.status})`);
+    throw new Error(paypalErrorMessage(data, response.status));
   }
   return data;
 }
@@ -176,6 +218,8 @@ export async function createPayPalOrder(input: {
         landing_page: "NO_PREFERENCE",
         user_action: "PAY_NOW",
         shipping_preference: "NO_SHIPPING",
+        return_url: `${siteConfig.url}/booking/success`,
+        cancel_url: `${siteConfig.url}/booking/payment`,
       },
     }),
   });

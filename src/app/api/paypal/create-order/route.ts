@@ -213,16 +213,25 @@ async function createPayPalCheckout(request: Request) {
       currency: "USD",
     });
   } catch (error) {
-    await db.booking.update({
-      where: { id: booking.id },
-      data: {
-        status: "CANCELLED",
-        paymentStatus: "FAILED",
-        notes: `${notesPayload}\nPayPal order creation failed`,
-      },
-    });
+    try {
+      await db.booking.update({
+        where: { id: booking.id },
+        data: {
+          status: "CANCELLED",
+          paymentStatus: "FAILED",
+          notes: `${notesPayload}\nPayPal order creation failed`,
+        },
+      });
+    } catch (updateError) {
+      console.error("[paypal] failed to mark booking after order error", {
+        bookingId: booking.id,
+        error:
+          updateError instanceof Error ? updateError.message : "update failed",
+      });
+    }
     const message =
       error instanceof Error ? error.message : "PayPal order creation failed";
-    return NextResponse.json({ error: message }, { status: 502 });
+    // Do not return HTTP 502 — Cloudflare replaces origin 502 bodies.
+    return NextResponse.json({ error: message }, { status: 503 });
   }
 }

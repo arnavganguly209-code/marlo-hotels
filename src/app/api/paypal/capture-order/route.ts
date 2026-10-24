@@ -144,7 +144,7 @@ export async function POST(request: Request) {
       where: { id: existing.id },
       data: { paymentStatus: "FAILED" },
     });
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: message }, { status: 503 });
   }
 
   const details = extractCapture(captured);
