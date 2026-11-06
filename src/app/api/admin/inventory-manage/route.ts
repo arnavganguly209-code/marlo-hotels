@@ -2,8 +2,11 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin/auth";
 import { assertSameOrigin } from "@/lib/orbit/auth";
+import { getRooms } from "@/content/rooms";
 import {
   applyInventoryRange,
+  clearInventoryRange,
+  deleteInventoryNight,
   getInventoryManageGrid,
   resolveInventoryViewRange,
   toUtcDate,
@@ -67,9 +70,18 @@ export async function PATCH(request: Request) {
     const amount = Number(value);
     return Number.isFinite(amount) ? amount : undefined;
   };
-  const inventoryValue = numberOrUndef(body?.inventory);
+  const hasInventoryKey =
+    body !== null && typeof body === "object" && "inventory" in body;
+  const inventoryValue = hasInventoryKey
+    ? numberOrUndef(body?.inventory)
+    : undefined;
 
   try {
+    if (hasInventoryKey && inventoryValue === null) {
+      await deleteInventoryNight(slug, date);
+      revalidateBookingSurfaces();
+      return NextResponse.json({ ok: true });
+    }
     await upsertInventoryNight({
       slug,
       date,
@@ -104,7 +116,12 @@ export async function POST(request: Request) {
   > | null;
   const startDate = typeof body?.startDate === "string" ? body.startDate : "";
   const endDate = typeof body?.endDate === "string" ? body.endDate : startDate;
-  const inventory = Math.max(0, Math.floor(Number(body?.inventory)));
+  const clearOverrides = body?.clearOverrides === true;
+  const inventoryRaw = Number(body?.inventory);
+  const inventory =
+    clearOverrides || !Number.isFinite(inventoryRaw)
+      ? 0
+      : Math.max(0, Math.floor(inventoryRaw));
   if (!startDate || Number.isNaN(+toUtcDate(startDate))) {
     return NextResponse.json(
       { error: "A valid date range is required." },
@@ -114,10 +131,42 @@ export async function POST(request: Request) {
 
   const slugs =
     body?.slug === "__ALL__" || body?.slug === "all"
-      ? (await getMarloRoomCategories()).map((item) => item.slug)
+      ? (await getRooms())
+          .filter((room) => room.published !== false)
+          .map((room) => room.slug)
       : typeof body?.slug === "string" && body.slug.trim()
         ? [body.slug.trim()]
         : [];
+  if (
+    (body?.slug === "__ALL__" || body?.slug === "all") &&
+    !slugs.length
+  ) {
+    const fallbacks = (await getMarloRoomCategories()).map((item) => item.slug);
+    if (fallbacks.length) {
+      if (clearOverrides) {
+        let updated = 0;
+        for (const slug of fallbacks) {
+          updated += await clearInventoryRange({
+            slug,
+            startDate,
+            endDate,
+          });
+        }
+        revalidateBookingSurfaces();
+        return NextResponse.json({ ok: true, updated });
+      }
+      for (const slug of fallbacks) {
+        await applyInventoryRange({
+          slug,
+          startDate,
+          endDate,
+          inventory,
+        });
+      }
+      revalidateBookingSurfaces();
+      return NextResponse.json({ ok: true, updated: fallbacks.length });
+    }
+  }
   if (!slugs.length) {
     return NextResponse.json(
       { error: "Choose a room category or All rooms." },
@@ -126,6 +175,18 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (clearOverrides) {
+      let updated = 0;
+      for (const slug of slugs) {
+        updated += await clearInventoryRange({
+          slug,
+          startDate,
+          endDate,
+        });
+      }
+      revalidateBookingSurfaces();
+      return NextResponse.json({ ok: true, updated });
+    }
     let updated = 0;
     for (const slug of slugs) {
       updated += await applyInventoryRange({

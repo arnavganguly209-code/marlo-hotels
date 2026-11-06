@@ -276,6 +276,20 @@ export async function getInventoryManageGrid(
   };
 }
 
+/** Remove nightly row so inventory and rates fall back to room catalogue defaults. */
+export async function deleteInventoryNight(slug: string, date: string) {
+  const db = getDb();
+  if (!db) throw new Error("Database unavailable");
+  const room = await getRoomBySlug(slug);
+  if (!room || room.published === false) {
+    throw new Error("Unknown Marlo room category.");
+  }
+  const d = toUtcDate(date);
+  await db.roomInventoryNight.deleteMany({
+    where: { roomCategorySlug: slug, date: d },
+  });
+}
+
 export async function upsertInventoryNight(input: {
   slug: string;
   date: string;
@@ -351,6 +365,26 @@ export async function applyInventoryRange(input: {
       date,
       inventory: input.inventory,
     });
+  }
+  return nights.length;
+}
+
+/** Delete nightly overrides in range so each night uses catalogue defaults. */
+export async function clearInventoryRange(input: {
+  slug: string;
+  startDate: string;
+  endDate: string;
+}) {
+  const startMs = toUtcDate(input.startDate).getTime();
+  const endMs = toUtcDate(input.endDate).getTime();
+  if (endMs < startMs) {
+    throw new Error("End date must be on or after start date.");
+  }
+  const nightCount =
+    Math.round((endMs - startMs) / 86_400_000) + 1;
+  const nights = enumerateCalendarDays(input.startDate, nightCount);
+  for (const date of nights) {
+    await deleteInventoryNight(input.slug, date);
   }
   return nights.length;
 }

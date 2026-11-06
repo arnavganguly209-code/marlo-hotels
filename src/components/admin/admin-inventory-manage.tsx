@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Check, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
 import type {
   InventoryManageCategory,
@@ -54,6 +54,11 @@ export function AdminInventoryManage({
   const [error, setError] = useState("");
   const [bulkInventory, setBulkInventory] = useState(0);
 
+  const fromRef = useRef(from);
+  const daysRef = useRef(days);
+  fromRef.current = from;
+  daysRef.current = days;
+
   const visible = useMemo(
     () =>
       tab === "all"
@@ -70,13 +75,15 @@ export function AdminInventoryManage({
     0
   );
 
-  async function load(nextFrom = from, nextDays = days) {
+  const load = useCallback(async (nextFrom?: string, nextDays?: number) => {
+    const useFrom = nextFrom ?? fromRef.current;
+    const useDays = nextDays ?? daysRef.current;
     setLoading(true);
     setError("");
     try {
-      const monthStart = utcMonthStart(nextFrom);
+      const monthStart = utcMonthStart(useFrom);
       const response = await fetch(
-        `/api/admin/inventory-manage?from=${encodeURIComponent(monthStart)}&days=${nextDays}`,
+        `/api/admin/inventory-manage?from=${encodeURIComponent(monthStart)}&days=${useDays}`,
         { credentials: "same-origin" }
       );
       const result = (await response.json()) as {
@@ -94,34 +101,37 @@ export function AdminInventoryManage({
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function saveCell(
-    slug: string,
-    date: string,
-    patch: Record<string, number>
-  ) {
-    const key = `${slug}:${date}:${Object.keys(patch).join(",")}`;
-    setSaving(key);
-    setError("");
-    try {
-      const response = await fetch("/api/admin/inventory-manage", {
-        method: "PATCH",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ slug, date, ...patch }),
-      });
-      const result = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
-      if (!response.ok) throw new Error(result.error || "Save failed");
-      await load(from, days);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Save failed");
-    } finally {
-      setSaving("");
-    }
-  }
+  const saveCell = useCallback(
+    async (
+      slug: string,
+      date: string,
+      patch: Record<string, number | null | undefined>
+    ) => {
+      const key = `${slug}:${date}`;
+      setSaving(key);
+      setError("");
+      try {
+        const response = await fetch("/api/admin/inventory-manage", {
+          method: "PATCH",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ slug, date, ...patch }),
+        });
+        const result = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        if (!response.ok) throw new Error(result.error || "Save failed");
+        await load(fromRef.current, daysRef.current);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Save failed");
+      } finally {
+        setSaving("");
+      }
+    },
+    [load]
+  );
 
   async function applyRange() {
     const endDate = shiftDate(from, days - 1);
@@ -151,6 +161,34 @@ export function AdminInventoryManage({
     }
   }
 
+  async function clearOverridesInRange() {
+    const endDate = shiftDate(from, days - 1);
+    setSaving("bulk-clear");
+    setError("");
+    try {
+      const response = await fetch("/api/admin/inventory-manage", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          slug: tab === "all" ? "__ALL__" : tab,
+          startDate: from,
+          endDate,
+          clearOverrides: true,
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+      if (!response.ok) throw new Error(result.error || "Could not clear");
+      await load(from, days);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not clear");
+    } finally {
+      setSaving("");
+    }
+  }
+
   function goMonth(delta: number) {
     const start = new Date(Date.UTC(year, month - 1 + delta, 1))
       .toISOString()
@@ -166,9 +204,11 @@ export function AdminInventoryManage({
             Management Console
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-[#6F6458]">
-            Date-wise allotment and occupancy rates. Inventory − booked =
-            available. Website checkout charges the 1 / 2 / 3 adult rate for
-            that night, plus extra-child charges after included children.
+            Edits save automatically shortly after you stop typing. Clear an
+            inventory cell to revert that night to the room&apos;s default from
+            Admin → Rooms. Inventory − booked = available. Checkout uses each
+            night&apos;s 1 / 2 /
+            3 adult rate, plus extra-child charges after included children.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -322,15 +362,32 @@ export function AdminInventoryManage({
         </label>
         <button
           type="button"
-          disabled={saving === "bulk"}
+          disabled={saving === "bulk" || saving === "bulk-clear"}
           onClick={() => void applyRange()}
           className="h-10 rounded-xl bg-[#C4A36A] px-4 text-xs font-semibold text-[#2C241C] disabled:opacity-50"
         >
-          {saving === "bulk" ? "Saving…" : tab === "all" ? "Apply to all rooms" : "Apply to this room"}
+          {saving === "bulk"
+            ? "Saving…"
+            : tab === "all"
+              ? "Apply to all rooms"
+              : "Apply to this room"}
+        </button>
+        <button
+          type="button"
+          disabled={saving === "bulk" || saving === "bulk-clear"}
+          onClick={() => void clearOverridesInRange()}
+          className="h-10 rounded-xl border border-[#D4C4B0] bg-white px-4 text-xs font-semibold text-[#4A4238] disabled:opacity-50"
+        >
+          {saving === "bulk-clear"
+            ? "Clearing…"
+            : tab === "all"
+              ? "Clear overrides (all rooms)"
+              : "Clear overrides (this room)"}
         </button>
         <p className="text-xs text-[#8A7C6E]">
-          Set 0 to hide these dates on the website. The number you keep is how
-          many rooms can be booked.
+          Apply sets inventory for the visible date range. Clear removes saved
+          night rows for those dates so each room falls back to its catalogue
+          default and rates.
         </p>
       </div>
 
@@ -394,6 +451,8 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
+type FieldKey = "inventory" | "rate1Adult" | "rate2Adult" | "rate3Adult";
+
 function CategoryTable({
   category,
   dates,
@@ -403,7 +462,11 @@ function CategoryTable({
   category: InventoryManageCategory;
   dates: InventoryManageGrid["dates"];
   saving: string;
-  onSave: (slug: string, date: string, patch: Record<string, number>) => void;
+  onSave: (
+    slug: string,
+    date: string,
+    patch: Record<string, number | null | undefined>
+  ) => void;
 }) {
   const rows: {
     key: string;
@@ -494,7 +557,7 @@ function CategoryTable({
                     </td>
                   );
                 }
-                const field =
+                const field: FieldKey =
                   row.kind === "inventory"
                     ? "inventory"
                     : row.kind === "rate1"
@@ -521,19 +584,14 @@ function CategoryTable({
                         : undefined
                     )}
                   >
-                    <input
-                      key={`${category.slug}-${day.date}-${field}-${value}`}
-                      type="number"
-                      min={0}
-                      step={row.kind === "inventory" ? 1 : 0.01}
-                      defaultValue={value}
+                    <DebouncedNumberInput
+                      slug={category.slug}
+                      date={day.date}
+                      field={field}
+                      committed={value}
+                      isInventory={row.kind === "inventory"}
                       disabled={busy || (row.kind === "inventory" && day.blocked)}
-                      className="h-8 w-16 rounded-md border border-transparent bg-transparent text-center outline-none hover:border-[#E6DED0] focus:border-[#C4A36A] focus:bg-white disabled:opacity-60"
-                      onBlur={(event) => {
-                        const next = Number(event.target.value);
-                        if (!Number.isFinite(next) || next === value) return;
-                        onSave(category.slug, day.date, { [field]: next });
-                      }}
+                      onCommit={onSave}
                     />
                   </td>
                 );
@@ -543,5 +601,78 @@ function CategoryTable({
         </tbody>
       </table>
     </section>
+  );
+}
+
+function DebouncedNumberInput({
+  slug,
+  date,
+  field,
+  committed,
+  isInventory,
+  disabled,
+  onCommit,
+}: {
+  slug: string;
+  date: string;
+  field: FieldKey;
+  committed: number;
+  isInventory: boolean;
+  disabled: boolean;
+  onCommit: (
+    slug: string,
+    date: string,
+    patch: Record<string, number | null | undefined>
+  ) => void;
+}) {
+  const [text, setText] = useState(() => String(committed));
+  const lastServer = useRef(committed);
+  const lastSent = useRef<number | "clear">(committed);
+
+  useEffect(() => {
+    if (committed !== lastServer.current) {
+      lastServer.current = committed;
+      lastSent.current = committed;
+      setText(String(committed));
+    }
+  }, [committed, slug, date, field]);
+
+  useEffect(() => {
+    if (disabled) return;
+
+    if (isInventory && text.trim() === "") {
+      if (lastSent.current === "clear") return;
+      const timer = window.setTimeout(() => {
+        lastSent.current = "clear";
+        onCommit(slug, date, { inventory: null });
+      }, 450);
+      return () => window.clearTimeout(timer);
+    }
+
+    const parsed = Number(text);
+    if (!Number.isFinite(parsed)) return;
+    const next = isInventory
+      ? Math.max(0, Math.floor(parsed))
+      : Number(parsed.toFixed(2));
+    if (typeof lastSent.current === "number" && next === lastSent.current) return;
+
+    const timer = window.setTimeout(() => {
+      lastSent.current = next;
+      onCommit(slug, date, { [field]: next });
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [text, slug, date, field, isInventory, onCommit, disabled]);
+
+  return (
+    <input
+      type="number"
+      min={0}
+      step={isInventory ? 1 : 0.01}
+      value={text}
+      disabled={disabled}
+      onChange={(e) => setText(e.target.value)}
+      className="h-8 w-16 rounded-md border border-transparent bg-transparent text-center outline-none hover:border-[#E6DED0] focus:border-[#C4A36A] focus:bg-white disabled:opacity-60"
+    />
   );
 }
