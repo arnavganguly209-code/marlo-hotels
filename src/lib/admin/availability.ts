@@ -12,6 +12,12 @@ import {
   ALL_ROOMS_BLOCK_SLUG,
   isHotelWideDateBlock,
 } from "@/lib/admin/pms-public";
+import {
+  closedNightsForCategory,
+  enumerateNights,
+  getBookedByNight,
+  getNightlyAllotments,
+} from "@/lib/admin/inventory-nights";
 
 const ACTIVE_BOOKING_STATUSES = [
   "PENDING",
@@ -154,28 +160,52 @@ export async function getAvailableCapacity(
     return { capacity: 0, booked: 0, blocked: 0, available: 0 };
   }
 
+  const nights = enumerateNights(checkIn, checkOut);
+  if (!nights.length) {
+    return { capacity: 0, booked: 0, blocked: 0, available: 0 };
+  }
+
   const physical = await listPhysicalRooms(slug);
-  // Admin Inventory sets ContentEntry.inventory — that is the bookable capacity
-  // for online booking. Physical room numbers remain for ops/assignment; when
-  // present they can only reduce capacity (never inflate above admin inventory).
   const catalogueCap = Math.max(0, room.inventory);
   const physicalSellable = physical.length
     ? physical.filter((unit) =>
         isSellableStatus(unit.status as PhysicalRoomStatusValue)
       ).length
     : null;
-  const sellable =
+  const defaultCap =
     physicalSellable == null
       ? catalogueCap
       : Math.min(catalogueCap, physicalSellable);
 
-  const [booked, blocked] = await Promise.all([
-    countBookedUnits(slug, checkIn, checkOut, excludeBookingId),
-    countBlockedUnits(slug, checkIn, checkOut),
+  const [allotments, bookedByNight, closed] = await Promise.all([
+    getNightlyAllotments(slug, nights),
+    getBookedByNight(slug, nights, excludeBookingId),
+    closedNightsForCategory(slug, nights),
   ]);
 
-  const available = Math.max(0, sellable - booked - blocked);
-  return { capacity: sellable, booked, blocked, available };
+  let available = Number.POSITIVE_INFINITY;
+  let booked = 0;
+  let blocked = 0;
+  let capacity = defaultCap;
+
+  for (const night of nights) {
+    const override = allotments.get(night);
+    let cap = override ? Math.max(0, override.inventory) : defaultCap;
+    if (closed.has(night)) {
+      cap = 0;
+      blocked = Math.max(blocked, defaultCap);
+    }
+    const nightBooked = bookedByNight.get(night) || 0;
+    const nightAvailable = Math.max(0, cap - nightBooked);
+    if (nightAvailable < available) {
+      available = nightAvailable;
+      booked = nightBooked;
+      capacity = cap;
+    }
+  }
+
+  if (!Number.isFinite(available)) available = 0;
+  return { capacity, booked, blocked, available };
 }
 
 /** Physical rooms selectable for offline booking on given dates. */

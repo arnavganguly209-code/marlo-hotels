@@ -3,6 +3,7 @@ export const adminNav = [
   { label: "Rooms", href: "/admin/rooms" },
   { label: "Room Numbers", href: "/admin/room-numbers" },
   { label: "Inventory", href: "/admin/inventory" },
+  { label: "Inventory Manage", href: "/admin/inventory-manage" },
   { label: "Date Blocking", href: "/admin/date-blocking" },
   { label: "Online Bookings", href: "/admin/online-bookings" },
   { label: "Offline Bookings", href: "/admin/offline-bookings" },

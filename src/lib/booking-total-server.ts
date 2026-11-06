@@ -3,6 +3,10 @@ import "server-only";
 import { getRoomBySlug } from "@/content/rooms";
 import { getAvailableCapacity } from "@/lib/admin/availability";
 import {
+  adultOccupancyRate,
+  getStayNightRates,
+} from "@/lib/admin/inventory-nights";
+import {
   airportPickupCharge,
   airportPickupMaxGuests,
   airportPickupVehiclesForGuests,
@@ -47,14 +51,6 @@ export async function computeServerBookingQuote(
   if (!room || room.published === false) {
     return { ok: false, error: "Unknown room", status: 400 };
   }
-  if (room.inventory <= 0) {
-    return {
-      ok: false,
-      error: "Sold Out",
-      status: 409,
-    };
-  }
-
   const checkIn = input.checkIn;
   const checkOut = input.checkOut;
   if (!checkIn || !checkOut || new Date(checkOut) <= new Date(checkIn)) {
@@ -70,6 +66,7 @@ export async function computeServerBookingQuote(
   const children = Math.max(0, input.children || 0);
   const breakfast = Boolean(input.breakfast);
 
+  const nightly = await getStayNightRates(room.slug, checkIn, checkOut);
   const stay = quoteFromDates({
     basePricePerNight: room.priceFrom,
     checkIn,
@@ -84,6 +81,21 @@ export async function computeServerBookingQuote(
     extraAdultPerNight: room.extraAdultPrice,
     extraChildPerNight: room.extraChildPrice,
   });
+  if (nightly?.length) {
+    const roomSubtotal = nightly.reduce((sum, night) => {
+      const rate = adultOccupancyRate(adults, night, room.extraAdultPrice);
+      return sum + rate * rooms;
+    }, 0);
+    stay.roomSubtotal = Number(roomSubtotal.toFixed(2));
+    stay.extraAdultCharge = 0;
+    stay.total = Number(
+      (
+        stay.roomSubtotal +
+        stay.extraChildCharge +
+        stay.breakfastCharge
+      ).toFixed(2)
+    );
+  }
 
   const guestCount = adults + children;
   const pickupVehicles = input.airportPickup

@@ -548,6 +548,27 @@ model DateBlock {
 }
 
 /**
+ * Booking.com-style nightly allotment. Inventory on a date is how many
+ * rooms of that category can sell that night. Null rates fall back to
+ * the room catalogue 1 / 2 / 3 adult prices.
+ */
+model RoomInventoryNight {
+  id               String   @id @default(cuid())
+  roomCategorySlug String
+  date             DateTime @db.Date
+  inventory        Int
+  rate1Adult       Decimal? @db.Decimal(10, 2)
+  rate2Adult       Decimal? @db.Decimal(10, 2)
+  rate3Adult       Decimal? @db.Decimal(10, 2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([roomCategorySlug, date])
+  @@index([date])
+  @@index([roomCategorySlug, date])
+}
+
+/**
  * Isolated SEO landing pages for /hotels/... (Marlo-only).
  * Does not alter Room, Booking, or other existing tables.
  */
