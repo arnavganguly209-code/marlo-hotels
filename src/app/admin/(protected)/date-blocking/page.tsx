@@ -14,7 +14,7 @@ export default async function AdminDateBlockingPage() {
   return (
     <AdminModulePage
       title="Date Blocking"
-      description="Block unsellable dates for maintenance, private events or overbooking control."
+      description="Close dates like Booking.com: block one room, one category, or every room at once. Closed dates do not appear on the website."
     >
       <AdminDateBlockingManager {...{ initialCategories, initialBlocks, initialPhysicalRooms }} />
     </AdminModulePage>

@@ -228,11 +228,43 @@ export async function getRequestFingerprint() {
   };
 }
 
+function hostAliases(value: string) {
+  const hostname = value.split(",")[0]?.trim().split(":")[0]?.toLowerCase() ?? "";
+  if (!hostname) return [] as string[];
+  const bare = hostname.replace(/^www\./, "");
+  return [hostname, bare, `www.${bare}`];
+}
+
+function publicAllowedHosts() {
+  const hosts = new Set<string>();
+  for (const raw of [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.SITE_URL,
+    "https://marlohotels.com",
+    "https://www.marlohotels.com",
+  ]) {
+    if (!raw?.trim()) continue;
+    try {
+      const url = raw.includes("://") ? raw : `https://${raw}`;
+      for (const alias of hostAliases(new URL(url).host)) hosts.add(alias);
+    } catch {
+      // ignore malformed public URL
+    }
+  }
+  return hosts;
+}
+
 export async function assertSameOrigin(request: Request) {
   const origin = request.headers.get("origin");
   const host =
     request.headers.get("x-forwarded-host") || request.headers.get("host");
-  if (!host) return false;
+  const allowed = publicAllowedHosts();
+  if (host) {
+    for (const alias of hostAliases(host)) allowed.add(alias);
+  }
+
+  const matchesAllowed = (candidate: string) =>
+    hostAliases(candidate).some((alias) => allowed.has(alias));
 
   // Same-origin fetches sometimes omit Origin (or send "null"). Accept when
   // Sec-Fetch-Site reports same-origin / same-site, or Referer matches host.
@@ -244,13 +276,7 @@ export async function assertSameOrigin(request: Request) {
     const referer = request.headers.get("referer");
     if (referer) {
       try {
-        const refererHost = new URL(referer).host;
-        const normalize = (value: string) =>
-          value.split(":")[0]?.toLowerCase() ?? "";
-        return (
-          refererHost === host ||
-          normalize(refererHost) === normalize(host)
-        );
+        return matchesAllowed(new URL(referer).host);
       } catch {
         return false;
       }
@@ -260,11 +286,9 @@ export async function assertSameOrigin(request: Request) {
   }
 
   try {
-    const originHost = new URL(origin).host;
-    const normalize = (value: string) => value.split(":")[0]?.toLowerCase();
-    return (
-      originHost === host || normalize(originHost) === normalize(host)
-    );
+    // Cloudflare/nginx often send Host as the origin IP while Origin is the
+    // public site. Accept the known public host as well as the request host.
+    return matchesAllowed(new URL(origin).host);
   } catch {
     return false;
   }

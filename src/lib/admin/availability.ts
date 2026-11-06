@@ -8,6 +8,10 @@ import {
   syncCategoryInventory,
   type PhysicalRoomStatusValue,
 } from "@/lib/admin/physical-rooms";
+import {
+  ALL_ROOMS_BLOCK_SLUG,
+  isHotelWideDateBlock,
+} from "@/lib/admin/pms-public";
 
 const ACTIVE_BOOKING_STATUSES = [
   "PENDING",
@@ -31,6 +35,28 @@ function rangesOverlap(
   return startA < endB && endA > startB;
 }
 
+/** Admin end date is inclusive (last closed night / last closed check-in day). */
+function inclusiveBlockEnd(end: Date) {
+  const date = toDateOnly(end);
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1)
+  );
+}
+
+function blockOverlapsStay(
+  stayStart: Date,
+  stayEnd: Date,
+  blockStart: Date,
+  blockEnd: Date
+) {
+  return rangesOverlap(
+    stayStart,
+    stayEnd,
+    toDateOnly(blockStart),
+    inclusiveBlockEnd(blockEnd)
+  );
+}
+
 export async function getActiveDateBlocks(slug?: string) {
   const db = getDb();
   if (!db) return [];
@@ -38,7 +64,14 @@ export async function getActiveDateBlocks(slug?: string) {
     return await db.dateBlock.findMany({
       where: {
         status: "ACTIVE",
-        ...(slug ? { roomCategorySlug: slug } : {}),
+        ...(slug
+          ? {
+              OR: [
+                { roomCategorySlug: slug },
+                { roomCategorySlug: ALL_ROOMS_BLOCK_SLUG },
+              ],
+            }
+          : {}),
       },
       orderBy: [{ startDate: "asc" }, { endDate: "asc" }],
     });
@@ -57,11 +90,16 @@ export async function countBlockedUnits(
   const end = toDateOnly(checkOut);
   const blocks = await getActiveDateBlocks(slug);
   const overlapping = blocks.filter((block) =>
-    rangesOverlap(start, end, toDateOnly(block.startDate), toDateOnly(block.endDate))
+    blockOverlapsStay(start, end, block.startDate, block.endDate)
   );
 
-  if (overlapping.some((block) => !block.physicalRoomNumber)) {
-    // Whole category blocked.
+  if (
+    overlapping.some(
+      (block) =>
+        !block.physicalRoomNumber || isHotelWideDateBlock(block.roomCategorySlug)
+    )
+  ) {
+    // Whole category or entire hotel blocked for these dates.
     const room = await getRoomBySlug(slug);
     return Math.max(room?.inventory ?? 0, 999);
   }
@@ -157,8 +195,9 @@ export async function getAvailablePhysicalRooms(
 
   const categoryBlocked = blocks.some(
     (block) =>
-      !block.physicalRoomNumber &&
-      rangesOverlap(start, end, toDateOnly(block.startDate), toDateOnly(block.endDate))
+      (!block.physicalRoomNumber ||
+        isHotelWideDateBlock(block.roomCategorySlug)) &&
+      blockOverlapsStay(start, end, block.startDate, block.endDate)
   );
   if (categoryBlocked) return [];
 
@@ -167,12 +206,7 @@ export async function getAvailablePhysicalRooms(
       .filter(
         (block) =>
           block.physicalRoomNumber &&
-          rangesOverlap(
-            start,
-            end,
-            toDateOnly(block.startDate),
-            toDateOnly(block.endDate)
-          )
+          blockOverlapsStay(start, end, block.startDate, block.endDate)
       )
       .map((block) => block.physicalRoomNumber!.trim().toUpperCase())
   );
@@ -232,4 +266,24 @@ export async function markPhysicalRoomStatus(
   } catch {
     // ignore if room number does not exist
   }
+}
+
+/** Hide room types with no sellable stock for the stay (Booking.com-style). */
+export async function filterRoomsOpenForStay<T extends { slug: string }>(
+  rooms: T[],
+  checkIn: string,
+  checkOut: string,
+  needed = 1
+) {
+  const checked = await Promise.all(
+    rooms.map(async (room) => {
+      const { available } = await getAvailableCapacity(
+        room.slug,
+        checkIn,
+        checkOut
+      );
+      return available >= needed ? room : null;
+    })
+  );
+  return checked.filter((room): room is T => room !== null);
 }

@@ -5,6 +5,7 @@ import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { RoomsSearchBar } from "@/components/rooms/rooms-search-bar";
 import { getRooms } from "@/content/rooms";
+import { filterRoomsOpenForStay } from "@/lib/admin/availability";
 import {
   occupancyIndexFromRooms,
   resolvePartySearch,
@@ -78,9 +79,18 @@ export default async function RoomsPage({ searchParams }: PageProps) {
     : undefined;
 
   const matchSlugs = new Set(resolved?.matches.map((room) => room.slug) ?? []);
-  const matched = search
+  const occupancyMatched = search
     ? published.filter((room) => matchSlugs.has(room.slug))
     : published;
+  const matched =
+    search
+      ? await filterRoomsOpenForStay(
+          occupancyMatched,
+          search.checkIn,
+          search.checkOut,
+          search.rooms
+        )
+      : occupancyMatched;
   const rooms = matched.filter((room) => room.category === "room");
   const suites = matched.filter((room) => room.category === "suite");
 
@@ -125,8 +135,8 @@ export default async function RoomsPage({ searchParams }: PageProps) {
           />
           {search && rooms.length === 0 ? (
             <p className="mt-10 text-sm text-charcoal-900/65">
-              No rooms match this guest mix. Try adjusting adults, children, or
-              dates.
+              No rooms are available for these dates. Try different dates or
+              guest numbers.
             </p>
           ) : (
             <Stagger className="mt-14 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -150,7 +160,7 @@ export default async function RoomsPage({ searchParams }: PageProps) {
           />
           {search && suites.length === 0 ? (
             <p className="mt-10 text-sm text-charcoal-900/65">
-              No suites match this guest mix.
+              No suites are available for these dates.
             </p>
           ) : (
             <Stagger className="mt-14 grid gap-8 md:grid-cols-2">

@@ -1,3 +1,11 @@
+/** Sentinel category: one date block covers every room type (Booking.com-style close-out). */
+export const ALL_ROOMS_BLOCK_SLUG = "__ALL__";
+export const ALL_ROOMS_BLOCK_NAME = "All rooms";
+
+export function isHotelWideDateBlock(slug: string | null | undefined) {
+  return slug === ALL_ROOMS_BLOCK_SLUG;
+}
+
 export const DATE_BLOCK_REASONS = [
   "MAINTENANCE",
   "RENOVATION",

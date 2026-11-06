@@ -3,8 +3,11 @@
 import { useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import {
+  ALL_ROOMS_BLOCK_NAME,
+  ALL_ROOMS_BLOCK_SLUG,
   DATE_BLOCK_REASONS,
   DATE_BLOCK_REASON_LABELS,
+  isHotelWideDateBlock,
   type DateBlockReasonValue,
 } from "@/lib/admin/pms-public";
 import type {
@@ -37,12 +40,12 @@ type FormState = {
 
 const dateOnly = (value: string) => value.slice(0, 10);
 
-const empty = (slug = ""): FormState => ({
-  roomCategorySlug: slug,
+const empty = (slug = ALL_ROOMS_BLOCK_SLUG): FormState => ({
+  roomCategorySlug: slug || ALL_ROOMS_BLOCK_SLUG,
   physicalRoomNumber: "",
   startDate: "",
   endDate: "",
-  reason: "MAINTENANCE",
+  reason: "BLOCKED",
   notes: "",
   createdBy: "",
 });
@@ -57,7 +60,7 @@ export function AdminDateBlockingManager({
   initialPhysicalRooms: PhysicalRoomRow[];
 }) {
   const [blocks, setBlocks] = useState(initialBlocks);
-  const [form, setForm] = useState(empty(initialCategories[0]?.slug));
+  const [form, setForm] = useState(empty(ALL_ROOMS_BLOCK_SLUG));
   const [editing, setEditing] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -93,17 +96,25 @@ export function AdminDateBlockingManager({
       const endpoint = editing
         ? `/api/admin/date-blocks/${editing}`
         : "/api/admin/date-blocks";
+      const hotelWide = isHotelWideDateBlock(form.roomCategorySlug);
       const response = await fetch(endpoint, {
         method: editing ? "PATCH" : "POST",
+        credentials: "same-origin",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          physicalRoomNumber: hotelWide ? "" : form.physicalRoomNumber,
+        }),
       });
-      const result = await response.json();
-      if (!response.ok) {
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        block?: Block;
+      };
+      if (!response.ok || !result.block) {
         setError(result.error || "Could not save date block");
         return;
       }
-      const block = result.block as Block;
+      const block = result.block;
       setBlocks((items) => [
         block,
         ...items.filter((item) => item.id !== block.id),
@@ -118,6 +129,7 @@ export function AdminDateBlockingManager({
     if (!confirm("Cancel this date block?")) return;
     const response = await fetch(`/api/admin/date-blocks/${id}`, {
       method: "DELETE",
+      credentials: "same-origin",
     });
     if (response.ok) {
       setBlocks((items) =>
@@ -137,7 +149,7 @@ export function AdminDateBlockingManager({
         <button
           type="button"
           onClick={() => {
-            setForm(empty(initialCategories[0]?.slug));
+            setForm(empty(ALL_ROOMS_BLOCK_SLUG));
             setEditing(null);
             setOpen(true);
           }}
@@ -176,9 +188,15 @@ export function AdminDateBlockingManager({
                   block.status === "CANCELLED" ? "opacity-45" : ""
                 }`}
               >
-                <td className="px-3 py-3">{block.roomCategoryName}</td>
                 <td className="px-3 py-3">
-                  {block.physicalRoomNumber || "All rooms"}
+                  {isHotelWideDateBlock(block.roomCategorySlug)
+                    ? ALL_ROOMS_BLOCK_NAME
+                    : block.roomCategoryName}
+                </td>
+                <td className="px-3 py-3">
+                  {isHotelWideDateBlock(block.roomCategorySlug)
+                    ? "Entire hotel"
+                    : block.physicalRoomNumber || "Entire category"}
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap">
                   {dateOnly(block.startDate)}
@@ -254,6 +272,12 @@ export function AdminDateBlockingManager({
                 {error}
               </p>
             )}
+            {isHotelWideDateBlock(form.roomCategorySlug) && (
+              <p className="mb-3 text-xs leading-relaxed text-cream-200/55">
+                Entire hotel will be closed for these dates. Room types will
+                not appear on /booking or /rooms for that stay.
+              </p>
+            )}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1 text-xs text-cream-200/60">
@@ -269,6 +293,9 @@ export function AdminDateBlockingManager({
                     })
                   }
                 >
+                  <option value={ALL_ROOMS_BLOCK_SLUG}>
+                    All rooms (entire hotel)
+                  </option>
                   {initialCategories.map((c) => (
                     <option key={c.slug} value={c.slug}>
                       {c.title}
@@ -281,17 +308,27 @@ export function AdminDateBlockingManager({
                 Physical room number (optional)
                 <select
                   className={field}
-                  value={form.physicalRoomNumber}
+                  value={
+                    isHotelWideDateBlock(form.roomCategorySlug)
+                      ? ""
+                      : form.physicalRoomNumber
+                  }
+                  disabled={isHotelWideDateBlock(form.roomCategorySlug)}
                   onChange={(e) =>
                     setForm({ ...form, physicalRoomNumber: e.target.value })
                   }
                 >
-                  <option value="">Entire category</option>
-                  {rooms.map((r) => (
-                    <option key={r.id} value={r.number}>
-                      {r.number}
-                    </option>
-                  ))}
+                  <option value="">
+                    {isHotelWideDateBlock(form.roomCategorySlug)
+                      ? "All rooms"
+                      : "Entire category"}
+                  </option>
+                  {!isHotelWideDateBlock(form.roomCategorySlug) &&
+                    rooms.map((r) => (
+                      <option key={r.id} value={r.number}>
+                        {r.number}
+                      </option>
+                    ))}
                 </select>
               </label>
 
