@@ -25,6 +25,12 @@ export type Room = {
   maxGuests: number;
   extraAdultPrice: number;
   extraChildPrice: number;
+  /**
+   * Live stock for the searched dates (from Inventory Manage). When present it
+   * overrides `inventory` for display and sold-out decisions. A catalogue
+   * `inventory` of 0 means "not set", not "sold out".
+   */
+  availableNow?: number;
   size: string;
   floor?: string;
   occupancy: string;

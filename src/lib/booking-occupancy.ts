@@ -58,9 +58,18 @@ export function toRoomCapacity(room: Room): RoomCapacity {
   };
 }
 
+/**
+ * Party-fit index of published room types.
+ *
+ * Deliberately does NOT filter on `room.inventory`: catalogue inventory can be
+ * 0 while the admin has set per-night allotment in Inventory Manage (production
+ * runs that way), and dropping those rooms here made the whole site report
+ * "no rooms available". Real stock is decided per date by
+ * `filterRoomsOpenForStay`, which reads the nightly allotment.
+ */
 export function occupancyIndexFromRooms(rooms: Room[]): RoomCapacity[] {
   return rooms
-    .filter((room) => room.published !== false && room.inventory > 0)
+    .filter((room) => room.published !== false)
     .map(toRoomCapacity);
 }
 
@@ -103,6 +112,8 @@ export function roomCanHoldParty(
   const a = Math.max(1, adults);
   const c = Math.max(0, children);
   const n = Math.max(1, roomCount);
+  // Only enforce a cap when the catalogue actually declares one; per-date stock
+  // is enforced by filterRoomsOpenForStay after this party-fit filter.
   if (room.inventory > 0 && room.inventory < n) return false;
   if (!adultCapacityMatches(room, a, n)) return false;
   if (n * room.maxChildren < c) return false;
@@ -113,6 +124,10 @@ export function roomCanHoldParty(
 /**
  * Minimum rooms required given live inventory capacities.
  * Prefers 1 room when an exact adult-capacity match exists.
+ *
+ * Note: a catalogue inventory of 0 is treated as "unknown", not "unavailable" —
+ * per-date stock comes from Inventory Manage and is enforced later by
+ * `filterRoomsOpenForStay`.
  */
 export function minRoomsForParty(
   adults: number,
@@ -120,7 +135,9 @@ export function minRoomsForParty(
   inventory: RoomCapacity[],
   maxRooms = 5
 ): number {
-  const available = inventory.filter((room) => room.inventory > 0);
+  const available = inventory.filter(
+    (room) => room.inventory !== 0 || room.maxAdults > 0
+  );
   if (!available.length) {
     return Math.max(1, adults);
   }
@@ -163,7 +180,12 @@ export function resolvePartySearch<T extends RoomCapacity>(
   const adults = Math.max(1, input.adults);
   const children = Math.max(0, input.children);
   const requestedRooms = Math.max(1, Math.min(maxRooms, input.rooms || 1));
-  const available = inventory.filter((room) => room.inventory > 0);
+  /**
+   * Do not drop rooms here on `inventory <= 0`: the catalogue number is a
+   * fallback, and real stock is per date (Inventory Manage). Dropping them made
+   * the site report "no rooms" whenever the catalogue value was 0.
+   */
+  const available = inventory;
 
   const matchesFor = (roomCount: number) =>
     available.filter((room) =>

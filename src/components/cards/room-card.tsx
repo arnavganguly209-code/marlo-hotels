@@ -35,7 +35,17 @@ export function RoomCard({
   priority?: boolean;
 }) {
   const cover = room.images[0];
-  const soldOut = room.inventory <= 0;
+  /**
+   * When dates are known, the stay's real allotment wins. The static catalogue
+   * value is only a fallback, and 0 there means "not configured" — so a room is
+   * only sold out when live stock for these dates is 0.
+   */
+  const liveStock =
+    typeof room.availableNow === "number" ? room.availableNow : undefined;
+  const stock = liveStock ?? room.inventory;
+  // Without dates there is no authoritative stock, so never claim "Sold Out"
+  // from a catalogue 0 — that would hide bookable rooms site-wide.
+  const soldOut = liveStock !== undefined && liveStock <= 0;
   const quote =
     search?.checkIn && search?.checkOut
       ? quoteFromDates({
@@ -184,7 +194,13 @@ export function RoomCard({
           </dl>
         ) : null}
         <p className="mt-3 text-[10px] font-medium tracking-[0.2em] text-gold-700 uppercase">
-          {soldOut ? "No rooms available" : `${room.inventory} available`}
+          {soldOut
+            ? "No rooms available"
+            : liveStock !== undefined
+              ? `${stock} available`
+              : stock > 0
+                ? `${stock} available`
+                : "Check availability"}
         </p>
 
         <dl className="mt-6 flex flex-wrap gap-x-6 gap-y-2 border-t border-forest-800/10 pt-5 text-xs font-light text-charcoal-900/70">

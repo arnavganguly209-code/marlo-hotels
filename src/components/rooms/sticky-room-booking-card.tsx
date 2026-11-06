@@ -82,7 +82,10 @@ export function StickyRoomBookingCard({
     ]
   );
 
-  const soldOut = room.inventory < rooms;
+  const soldOut =
+    typeof room.availableNow === "number"
+      ? room.availableNow < rooms
+      : room.inventory > 0 && room.inventory < rooms;
 
   function bookNow() {
     if (soldOut) return;
@@ -164,7 +167,13 @@ export function StickyRoomBookingCard({
           tone="dark"
           value={rooms}
           min={1}
-          max={Math.min(siteConfig.booking.maxRooms, Math.max(1, room.inventory))}
+          max={
+            typeof room.availableNow === "number" && room.availableNow > 0
+              ? Math.min(siteConfig.booking.maxRooms, room.availableNow)
+              : room.inventory > 0
+                ? Math.min(siteConfig.booking.maxRooms, room.inventory)
+                : siteConfig.booking.maxRooms
+          }
           onChange={setRooms}
         />
 
