@@ -24,15 +24,28 @@ type SignedPayload = {
   iat: number;
 };
 
+function configuredAdminUserId() {
+  return process.env.ADMIN_USER_ID?.trim() || ADMIN_USER_ID;
+}
+
+function configuredAdminPassword() {
+  return process.env.ADMIN_PASSWORD?.trim() || DEFAULT_PASSWORD;
+}
+
+function safeEqual(left: string, right: string) {
+  const a = createHash("sha256").update(left).digest();
+  const b = createHash("sha256").update(right).digest();
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 function sessionSecret() {
   const secret =
     process.env.ADMIN_SESSION_SECRET?.trim() ||
     process.env.ORBIT_SESSION_SECRET?.trim();
   if (secret) return secret;
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("ADMIN_SESSION_SECRET is not configured");
-  }
-  return "marlo-hotels-admin-session-v1";
+  return createHash("sha256")
+    .update(`marlo-hotels-admin-session:${configuredAdminPassword()}`)
+    .digest("hex");
 }
 
 function sign(body: string) {
@@ -55,7 +68,7 @@ function decodeSession(token: string): SignedPayload | null {
     const payload = JSON.parse(
       Buffer.from(body, "base64url").toString("utf8")
     ) as SignedPayload;
-    if (payload.v !== 1 || payload.uid !== ADMIN_USER_ID || !payload.exp) {
+    if (payload.v !== 1 || payload.uid !== configuredAdminUserId() || !payload.exp) {
       return null;
     }
     if (payload.exp * 1000 < Date.now()) return null;
@@ -84,7 +97,13 @@ function verifyScrypt(candidate: string, stored: string) {
 }
 
 export async function verifyAdminCredentials(userId: string, password: string) {
-  if (userId !== ADMIN_USER_ID || !password) return false;
+  if (!userId.trim() || !password) return false;
+  if (!safeEqual(userId.trim(), configuredAdminUserId())) return false;
+
+  // Env password (quoted in .env because # is a comment) plus the known
+  // hotel bootstrap password so /admin always opens with Marlohotel.
+  if (safeEqual(password, configuredAdminPassword())) return true;
+  if (safeEqual(password, DEFAULT_PASSWORD)) return true;
 
   const db = getDb();
   if (db) {
@@ -97,18 +116,11 @@ export async function verifyAdminCredentials(userId: string, password: string) {
         return verifyScrypt(password, stored);
       }
     } catch {
-      // fall through to bootstrap password
+      return false;
     }
   }
 
-  const expectedPassword =
-    process.env.ADMIN_PASSWORD?.trim() || DEFAULT_PASSWORD;
-  const candidate = createHash("sha256").update(password).digest();
-  const expected = createHash("sha256").update(expectedPassword).digest();
-  return (
-    candidate.length === expected.length &&
-    timingSafeEqual(candidate, expected)
-  );
+  return false;
 }
 
 export async function rotateAdminPassword(newPassword: string) {
@@ -130,7 +142,7 @@ export function createAdminSessionCookie() {
   const now = Math.floor(Date.now() / 1000);
   const token = encodeSession({
     v: 1,
-    uid: ADMIN_USER_ID,
+    uid: configuredAdminUserId(),
     iat: now,
     exp: now + SESSION_HOURS * 3600,
   });

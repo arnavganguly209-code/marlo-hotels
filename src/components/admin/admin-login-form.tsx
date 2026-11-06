@@ -20,7 +20,7 @@ export function AdminLoginForm() {
       const response = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, password }),
+        body: JSON.stringify({ userId: userId.trim(), password }),
       });
       const data = (await response.json().catch(() => ({}))) as {
         error?: string;
@@ -74,6 +74,7 @@ export function AdminLoginForm() {
               required
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
+              spellCheck={false}
               className="w-full bg-transparent text-sm font-medium text-[#F8F4EC] outline-none placeholder:text-white/40"
               placeholder="Enter User ID"
             />
