@@ -174,10 +174,14 @@ export function clearAdminSessionCookie() {
 }
 
 export async function getAdminSession() {
-  const jar = await cookies();
-  const token = jar.get(ADMIN_COOKIE)?.value;
-  if (!token) return null;
-  return decodeSession(token);
+  try {
+    const jar = await cookies();
+    const token = jar.get(ADMIN_COOKIE)?.value;
+    if (!token) return null;
+    return decodeSession(token);
+  } catch {
+    return null;
+  }
 }
 
 export async function requireAdminSession() {

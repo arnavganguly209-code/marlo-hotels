@@ -274,16 +274,15 @@ export async function filterRoomsOpenForStay<T extends { slug: string }>(
   checkIn: string,
   checkOut: string,
   needed = 1
-) {
-  const checked = await Promise.all(
-    rooms.map(async (room) => {
-      const { available } = await getAvailableCapacity(
-        room.slug,
-        checkIn,
-        checkOut
-      );
-      return available >= needed ? room : null;
-    })
-  );
-  return checked.filter((room): room is T => room !== null);
+): Promise<T[]> {
+  const open: T[] = [];
+  for (const room of rooms) {
+    const { available } = await getAvailableCapacity(
+      room.slug,
+      checkIn,
+      checkOut
+    );
+    if (available >= needed) open.push(room);
+  }
+  return open;
 }

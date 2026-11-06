@@ -10,13 +10,10 @@ export function middleware(request: NextRequest) {
     requestHeaders.set("x-marlo-pathname", pathname);
 
     // —— Hotel Admin panel ——
+    // Never bounce /admin away just because a cookie exists. An invalid or
+    // rotated session cookie would loop with requireAdminSession() and the
+    // login page would never render.
     if (pathname === "/admin" || pathname === "/admin/") {
-      if (request.cookies.has(ADMIN_COOKIE)) {
-        const dash = request.nextUrl.clone();
-        dash.pathname = "/admin/dashboard";
-        dash.search = "";
-        return NextResponse.redirect(dash);
-      }
       return NextResponse.next({
         request: { headers: requestHeaders },
       });

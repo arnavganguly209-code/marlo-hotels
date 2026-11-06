@@ -19,6 +19,7 @@ export function AdminLoginForm() {
     try {
       const response = await fetch("/api/admin/auth/login", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: userId.trim(), password }),
       });
