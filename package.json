@@ -12,7 +12,7 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "seo:generate-landings": "node scripts/generate-seo-landing-seeds.mjs",
-    "seo:seed-landings": "node --env-file=.env scripts/seed-seo-landings.mjs",
+    "seo:seed-landings": "tsx scripts/seed-seo-landings.ts",
     "media:seed": "node --env-file=.env scripts/seed-media.mjs",
     "test:media": "node --env-file=.env scripts/test-media.mjs",
     "test:media:offline": "node scripts/test-media-storage.mjs",
@@ -80,6 +80,7 @@
     "playwright": "^1.61.1",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
