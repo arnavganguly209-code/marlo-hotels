@@ -97,14 +97,14 @@ export async function verifyAdminCredentials(userId: string, password: string) {
         return verifyScrypt(password, stored);
       }
     } catch {
-      // fall through to default
+      // fall through to bootstrap password
     }
   }
 
-  if (process.env.NODE_ENV === "production") return false;
-
+  const expectedPassword =
+    process.env.ADMIN_PASSWORD?.trim() || DEFAULT_PASSWORD;
   const candidate = createHash("sha256").update(password).digest();
-  const expected = createHash("sha256").update(DEFAULT_PASSWORD).digest();
+  const expected = createHash("sha256").update(expectedPassword).digest();
   return (
     candidate.length === expected.length &&
     timingSafeEqual(candidate, expected)

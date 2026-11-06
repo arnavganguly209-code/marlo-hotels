@@ -44,8 +44,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const session = createAdminSessionCookie();
-  const response = NextResponse.json({ ok: true });
-  response.cookies.set(session.name, session.value, session.options);
-  return response;
+  try {
+    const session = createAdminSessionCookie();
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(session.name, session.value, session.options);
+    return response;
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not start admin session";
+    console.error("[admin] login session failed", { error: message });
+    return NextResponse.json(
+      {
+        error:
+          "Admin session secret is missing on the server. Set ADMIN_SESSION_SECRET or ORBIT_SESSION_SECRET and retry.",
+      },
+      { status: 422 }
+    );
+  }
 }
