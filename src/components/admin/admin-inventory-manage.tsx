@@ -9,6 +9,7 @@ import type {
 import {
   INVENTORY_VIEW_MAX_DAYS,
   inventoryUtcDaysInMonth as utcDaysInMonth,
+  inventoryUtcDaysThroughMonthEnd as utcDaysThroughMonthEnd,
   inventoryUtcMonthStart as utcMonthStart,
 } from "@/lib/admin/inventory-nights-public";
 import { cn } from "@/lib/utils";
@@ -81,9 +82,8 @@ export function AdminInventoryManage({
     setLoading(true);
     setError("");
     try {
-      const monthStart = utcMonthStart(useFrom);
       const response = await fetch(
-        `/api/admin/inventory-manage?from=${encodeURIComponent(monthStart)}&days=${useDays}`,
+        `/api/admin/inventory-manage?from=${encodeURIComponent(useFrom)}&days=${useDays}`,
         { credentials: "same-origin" }
       );
       const result = (await response.json()) as {
@@ -153,7 +153,7 @@ export function AdminInventoryManage({
         error?: string;
       };
       if (!response.ok) throw new Error(result.error || "Could not apply");
-      await load(from, days);
+      await load(fromRef.current, daysRef.current);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not apply");
     } finally {
@@ -181,7 +181,7 @@ export function AdminInventoryManage({
         error?: string;
       };
       if (!response.ok) throw new Error(result.error || "Could not clear");
-      await load(from, days);
+      await load(fromRef.current, daysRef.current);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not clear");
     } finally {
@@ -293,8 +293,8 @@ export function AdminInventoryManage({
             className="ml-2 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
             value={from}
             onChange={(event) => {
-              const start = utcMonthStart(event.target.value);
-              void load(start, utcDaysInMonth(start));
+              const picked = event.target.value;
+              void load(picked, utcDaysThroughMonthEnd(picked));
             }}
           />
         </label>
@@ -304,7 +304,7 @@ export function AdminInventoryManage({
             type="number"
             min={1}
             max={INVENTORY_VIEW_MAX_DAYS}
-            title="Full month is automatic from month picker; raise this for Nov→Dec or up to ~2 years"
+            title="First column date through that many nights. Bulk Apply uses this exact visible range."
             className="ml-2 w-20 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
             value={days}
             onChange={(event) =>
@@ -315,11 +315,11 @@ export function AdminInventoryManage({
                 )
               )
             }
-            onBlur={() => void load(from, days)}
+            onBlur={() => void load(fromRef.current, daysRef.current)}
           />
         </label>
         <span className="rounded-full border border-[#E6DED0] bg-white px-4 py-2 text-[10px] font-semibold tracking-[0.16em] text-[#6F6458] uppercase">
-          Month view
+          Range view
         </span>
         {loading ? <Loader2 className="size-4 animate-spin text-[#2F6B4F]" /> : null}
       </div>
@@ -385,9 +385,9 @@ export function AdminInventoryManage({
               : "Clear overrides (this room)"}
         </button>
         <p className="text-xs text-[#8A7C6E]">
-          Apply sets inventory for the visible date range. Clear removes saved
-          night rows for those dates so each room falls back to its catalogue
-          default and rates.
+          Apply / Clear use the range: Start date for exactly Days nights (e.g.
+          Start Nov 13 and Days 4 → Nov 13–16 only). All rooms updates every
+          category in the grid for that range.
         </p>
       </div>
 
