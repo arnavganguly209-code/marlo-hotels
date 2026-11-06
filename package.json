@@ -11,6 +11,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
+    "seo:generate-landings": "node scripts/generate-seo-landing-seeds.mjs",
+    "seo:seed-landings": "node --env-file=.env scripts/seed-seo-landings.mjs",
     "media:seed": "node --env-file=.env scripts/seed-media.mjs",
     "test:media": "node --env-file=.env scripts/test-media.mjs",
     "test:media:offline": "node scripts/test-media-storage.mjs",

@@ -1,6 +1,7 @@
 /**
- * Upsert priority SEO landing pages (Marlo-only).
- * Safe: only touches SeoLandingPage table.
+ * Upsert SEO landing pages (Marlo-only) from scripts/seo-landing-seeds.json.
+ * Regenerate that file first: `node scripts/generate-seo-landing-seeds.mjs` (or `npm run seo:generate-landings`).
+ * Safe: only touches SeoLandingPage table; existing paths are left unchanged.
  */
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
