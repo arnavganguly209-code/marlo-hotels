@@ -9,6 +9,110 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 
+/** Google SERP-friendly bands (approximate; we normalize all seeds to fit). */
+function trimToMaxChars(s, max, ellipsis) {
+  let t = String(s || "").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - (ellipsis ? 1 : 0));
+  const lastSpace = cut.lastIndexOf(" ");
+  const base =
+    lastSpace > max * 0.5 ? cut.slice(0, lastSpace).trimEnd() : cut.trimEnd();
+  return ellipsis ? `${base}…` : base;
+}
+
+/** Ensure first character is uppercase for display titles. */
+function titleCasePhrase(s) {
+  const t = String(s || "").trim();
+  if (!t) return t;
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+/** Google SERP-friendly bands (approximate; we normalize all seeds to fit). */
+function ensureSerp(metaTitle, metaDescription) {
+  let mt = String(metaTitle || "").trim().replace(/\s+/g, " ");
+  let md = String(metaDescription || "").trim().replace(/\s+/g, " ");
+  const titlePad = " | Marlo Hotels Kathmandu";
+  while (mt.length > 0 && mt.length < 30) {
+    mt = (mt + titlePad).trim();
+    if (mt.length >= 30) break;
+  }
+  if (mt.length > 65) mt = trimToMaxChars(mt, 65, true);
+  const descPad =
+    " Direct booking on marlohotels.com with live room catalogue and secure checkout.";
+  while (md.length < 120) {
+    md = (md + descPad).trim();
+    if (md.length >= 120) break;
+  }
+  if (md.length > 165) md = trimToMaxChars(md, 165, true);
+  return { metaTitle: mt, metaDescription: md };
+}
+
+function ensureLongBody(body, pagePath) {
+  let b = String(body || "").trim();
+  if (b.length >= 1100) return b;
+  const tail = `
+
+How to use this page: the room cards below pull from Marlo’s published catalogue only — names, descriptions and starting rates as maintained in Admin. That keeps this guide aligned with checkout: what you see here is what you can book, without scraped third-party listings or invented “compare 20 hotels” widgets.
+
+International visitors often land in Kathmandu before domestic flights to trekking regions, Chitwan, Pokhara or Lumbini. A composed hotel night helps when permits, weather or festival traffic shift plans. Local and regional guests use the same flow for celebrations and business — ask the front desk for quiet floors, dietary notes and realistic timing around valley traffic.
+
+Dining and wellness on property mean you can recover after long-haul flights or road days without hunting the city at night. Spa hours and menus can change; confirm at check-in. For ${pagePath.includes("guide") ? "high-intent keyword" : "destination-led"} searches, we keep copy factual: one hotel address (Paryatan Marg), transparent booking, and FAQs for quick answers.
+
+If a category does not appear, it is not published yet. Publish in Admin → Rooms, then refresh this page. For the clearest total, always run Check Availability with your exact dates, guests and add-ons — starting rates are not a final invoice.`;
+  b = `${b}${tail}`.trim();
+  if (b.length > 6000) return `${b.slice(0, 5997).trimEnd()}…`;
+  return b;
+}
+
+function ensureIntro(intro, h1) {
+  let t = String(intro || "").trim();
+  if (t.length >= 380) return t;
+  const isHotel = String(h1 || "").toLowerCase().includes("hotel");
+  const add = ` This ${isHotel ? "guide" : "page"} exists for searchers who want a single trustworthy Kathmandu property — Marlo Hotels on Paryatan Marg — with direct booking instead of OTA redirects.`;
+  t = (t + add).trim();
+  if (t.length > 900) return `${t.slice(0, 897).trimEnd()}…`;
+  return t;
+}
+
+function ensureFaqs(faqs) {
+  const list = Array.isArray(faqs) ? [...faqs] : [];
+  const extras = [
+    {
+      question: "Is this a list of many hotels in Kathmandu?",
+      answer:
+        "No. Only Marlo Hotels appears here. We route search keywords to our official catalogue and booking flow — not a directory of competitors.",
+    },
+    {
+      question: "How do international and local guests book the same way?",
+      answer:
+        "Everyone uses Check Availability on this site. Published rates, taxes and cancellation rules show before you pay; confirmation emails recap your stay details.",
+    },
+    {
+      question: "What if my room category is not listed?",
+      answer:
+        "Unpublished categories are hidden until Admin → Rooms marks them live. Contact the hotel if you need a room type that should be public.",
+    },
+  ];
+  let i = 0;
+  while (list.length < 3 && i < extras.length) {
+    if (!list.some((x) => x.question === extras[i].question)) list.push(extras[i]);
+    i += 1;
+  }
+  return list;
+}
+
+function enrichSeed(seed) {
+  const serp = ensureSerp(seed.metaTitle, seed.metaDescription);
+  return {
+    ...seed,
+    metaTitle: serp.metaTitle,
+    metaDescription: serp.metaDescription,
+    intro: ensureIntro(seed.intro, seed.h1),
+    body: ensureLongBody(seed.body, seed.path),
+    faqs: ensureFaqs(seed.faqs),
+  };
+}
+
 /** Keep in sync with legacy seed file — edit here if base copy changes. */
 const BASE_SEEDS = [
   {
@@ -385,7 +489,7 @@ const INTENT_SEGMENTS = [
     roomFilter: "all",
     introLead: (label, ctx) =>
       `Flying in for ${label}? International travellers often want a predictable Kathmandu hotel before domestic hops. Marlo publishes everything on this site — rooms, dining overview and a direct booking path. ${ctx}`,
-    bodyTemplate: (label) =>
+    bodyTemplate: () =>
       `We do not list other brands here. If you need invoices, payment clarity or room preferences, start from the booking flow and contact details published on the contact page.`,
   },
   {
@@ -399,7 +503,7 @@ const INTENT_SEGMENTS = [
     roomFilter: "all",
     introLead: (label, ctx) =>
       `Travelling with family around ${label}? Marlo is structured for calm lobby flow, predictable dining and front-desk clarity — helpful when schedules shift. ${ctx}`,
-    bodyTemplate: (label) =>
+    bodyTemplate: () =>
       `Review room layouts on each card, note occupancy rules in the booking step, and add extras there if available. Every price comes from our published catalogue at search time.`,
   },
   {
@@ -427,7 +531,7 @@ const INTENT_SEGMENTS = [
     roomFilter: "all",
     introLead: (label, ctx) =>
       `Solo travellers often want clarity more than hype. Marlo is one address in Kathmandu with published room facts and online booking — useful when ${label} logistics eat your attention. ${ctx}`,
-    bodyTemplate: (label) =>
+    bodyTemplate: () =>
       `Read each room card, confirm cancellation rules at checkout, and keep confirmations in email. This page is Marlo-only — no scraped listings or fake “compare 100 hotels” widgets.`,
   },
 ];
@@ -450,9 +554,9 @@ function buildNepalProgrammaticSeeds() {
       const body = seg.bodyTemplate(label);
       const faqs = [
         {
-          question: `Is Marlo Hotels inside ${label}?`,
+          question: `Is Marlo Hotels located inside ${label}?`,
           answer:
-            "Marlo Hotels is one property in Kathmandu Valley (Paryatan Marg). This page helps travellers who search region + hotel keywords find our direct booking path — not a map claim we cannot verify to the metre.",
+            "Marlo Hotels is one property in Kathmandu Valley on Paryatan Marg. This guide connects your search to our official booking path — we do not claim to be inside another town’s boundary to the metre.",
         },
         {
           question: "Why book direct on marlohotels.com?",
@@ -607,8 +711,8 @@ function buildKeywordGuideSeeds() {
         seg.suffix === ""
           ? `hotels/guide/${topic.slug}`
           : `hotels/guide/${topic.slug}/${seg.suffix}`;
-      const phrase = topic.phrase;
-      const h1 = seg.h1Template(phrase);
+      const phrase = titleCasePhrase(topic.phrase);
+      const h1 = titleCasePhrase(seg.h1Template(phrase));
       const title = `${phrase}${seg.titleSuffix} — Marlo Hotels`.trim();
       const metaTitle = seg.metaTitleTemplate(phrase);
       const metaDescription =
@@ -622,9 +726,10 @@ function buildKeywordGuideSeeds() {
       const body = seg.bodyTemplate(phrase);
       const faqs = [
         {
-          question: `Does this page list every ${phrase} in Kathmandu?`,
+          question:
+            "Does this page compare every hotel in Kathmandu for this search?",
           answer:
-            "No. It exists so searches for that phrase can reach Marlo’s official catalogue and booking flow. We do not aggregate other hotels.",
+            "No. Only Marlo Hotels is listed. This page matches common searches to our official catalogue and direct booking — not a competitor directory.",
         },
         {
           question: "Why only Marlo room cards?",
@@ -667,7 +772,11 @@ function buildKeywordGuideSeeds() {
 
 const nepalProgrammatic = buildNepalProgrammaticSeeds();
 const keywordProgrammatic = buildKeywordGuideSeeds();
-const merged = mergeSeeds(BASE_SEEDS, nepalProgrammatic, keywordProgrammatic);
+const merged = mergeSeeds(
+  BASE_SEEDS,
+  nepalProgrammatic,
+  keywordProgrammatic
+).map(enrichSeed);
 const outPath = path.join(process.cwd(), "scripts/seo-landing-seeds.json");
 writeFileSync(outPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
 console.log(

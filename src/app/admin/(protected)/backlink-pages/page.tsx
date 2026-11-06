@@ -17,13 +17,23 @@ function keywordKind(path: string) {
   return "Landing";
 }
 
-function seoHealth(metaTitle: string, metaDescription: string) {
+function seoHealth(
+  metaTitle: string,
+  metaDescription: string,
+  intro: string,
+  body: string,
+  faqs: { question: string; answer: string }[]
+) {
   const titleLen = metaTitle.length;
   const descLen = metaDescription.length;
   const titleOk = titleLen >= 30 && titleLen <= 65;
   const descOk = descLen >= 120 && descLen <= 165;
-  const score =
-    titleOk && descOk ? 100 : titleOk || descOk ? 75 : 50;
+  const introOk = intro.trim().length >= 350;
+  const bodyOk = body.trim().length >= 800;
+  const faqsOk = faqs.length >= 3;
+  const checks = [titleOk, descOk, introOk, bodyOk, faqsOk];
+  const pass = checks.filter(Boolean).length;
+  const score = pass === 5 ? 100 : pass >= 3 ? 75 : pass >= 1 ? 50 : 25;
   const notes: string[] = [];
   if (!titleOk) {
     notes.push(
@@ -31,7 +41,7 @@ function seoHealth(metaTitle: string, metaDescription: string) {
         ? "Title short"
         : titleLen > 65
           ? "Title long"
-          : "Title length check"
+          : "Title length"
     );
   }
   if (!descOk) {
@@ -40,9 +50,12 @@ function seoHealth(metaTitle: string, metaDescription: string) {
         ? "Meta desc short"
         : descLen > 165
           ? "Meta desc long"
-          : "Meta desc check"
+          : "Meta desc length"
     );
   }
+  if (!introOk) notes.push("Intro thin");
+  if (!bodyOk) notes.push("Body thin");
+  if (!faqsOk) notes.push("Need 3+ FAQs");
   return { score, label: `${score}%`, detail: notes.join(" · ") || "OK" };
 }
 
@@ -54,7 +67,13 @@ export default async function AdminBacklinkPagesPage() {
 
   const rows = pages.map((p) => {
     const url = pathToPublicUrl(p.path);
-    const health = seoHealth(p.metaTitle, p.metaDescription);
+    const health = seoHealth(
+      p.metaTitle,
+      p.metaDescription,
+      p.intro,
+      p.body,
+      p.faqs
+    );
     const kind = keywordKind(p.path);
     return [
       <Link
@@ -95,7 +114,7 @@ export default async function AdminBacklinkPagesPage() {
       title="Backlink pages"
       description={
         published.length === pages.length
-          ? `All programmatic SEO landing URLs (${pages.length}). Each row links to the live public page and checks title/description length for Google snippets (approx. 100% = both in range).`
+          ? `All programmatic SEO landing URLs (${pages.length}). Each row links to the live public page. “Snippet” score checks meta title/description bands, intro depth, long-form body and FAQ count — not a Google guarantee.`
           : `${published.length} of ${pages.length} rows are published, enabled and indexable. Fix drafts or noindex if you expect them in search.`
       }
     >
@@ -111,8 +130,8 @@ export default async function AdminBacklinkPagesPage() {
         . Orbit → SEO can override individual pages when connected to the same DB.
       </p>
       <p className="mb-4 text-xs text-cream-200/60">
-        Snippet score: meta title ~30–65 chars, meta description ~120–165 chars (common
-        SEO band; not a Google guarantee).
+        Snippet score bands: meta title ~30–65 chars, description ~120–165, intro ~350+
+        chars, body ~800+ chars, 3+ FAQs.
       </p>
       <AdminTable
         headers={[

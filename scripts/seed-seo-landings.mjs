@@ -1,7 +1,7 @@
 /**
  * Upsert SEO landing pages (Marlo-only) from scripts/seo-landing-seeds.json.
  * Regenerate that file first: `node scripts/generate-seo-landing-seeds.mjs` (or `npm run seo:generate-landings`).
- * Safe: only touches SeoLandingPage table; existing paths are left unchanged.
+ * Safe: only touches SeoLandingPage table. Existing rows are updated so new pages and copy reach production.
  */
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
@@ -43,36 +43,38 @@ try {
   for (const seed of seeds) {
     const existing = await prisma.seoLandingPage.findUnique({
       where: { path: seed.path },
-      select: { id: true },
+      select: { publishedAt: true },
     });
-    if (!existing) {
-      await prisma.seoLandingPage.create({
-        data: {
-          path: seed.path,
-          title: seed.title,
-          metaTitle: seed.metaTitle,
-          metaDescription: seed.metaDescription,
-          h1: seed.h1,
-          intro: seed.intro,
-          body: seed.body,
-          faqs: seed.faqs,
-          locationKey: seed.locationKey,
-          categoryKey: seed.categoryKey,
-          facilityKey: seed.facilityKey,
-          roomFilter: seed.roomFilter,
-          relatedPaths: seed.relatedPaths,
-          status: seed.status,
-          robotsIndex: seed.robotsIndex,
-          enabled: seed.enabled,
-          publishedAt: seed.status === "PUBLISHED" ? new Date() : null,
-          featuredImageUrl: "/images/brand/social-share.jpg",
-          featuredImageAlt: "Marlo Hotels Kathmandu",
-        },
-      });
-      console.log("created", seed.path);
-    } else {
-      console.log("exists", seed.path, "(left unchanged)");
-    }
+    const publishedAt =
+      seed.status === "PUBLISHED"
+        ? existing?.publishedAt ?? new Date()
+        : null;
+    const data = {
+      title: seed.title,
+      metaTitle: seed.metaTitle,
+      metaDescription: seed.metaDescription,
+      h1: seed.h1,
+      intro: seed.intro,
+      body: seed.body,
+      faqs: seed.faqs,
+      locationKey: seed.locationKey,
+      categoryKey: seed.categoryKey,
+      facilityKey: seed.facilityKey,
+      roomFilter: seed.roomFilter,
+      relatedPaths: seed.relatedPaths,
+      status: seed.status,
+      robotsIndex: seed.robotsIndex,
+      enabled: seed.enabled,
+      publishedAt,
+      featuredImageUrl: "/images/brand/social-share.jpg",
+      featuredImageAlt: "Marlo Hotels Kathmandu",
+    };
+    await prisma.seoLandingPage.upsert({
+      where: { path: seed.path },
+      create: { path: seed.path, ...data },
+      update: data,
+    });
+    console.log("ok", seed.path);
   }
 } finally {
   await prisma.$disconnect();
