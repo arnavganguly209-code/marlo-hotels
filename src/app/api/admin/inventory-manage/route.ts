@@ -4,8 +4,8 @@ import { getAdminSession } from "@/lib/admin/auth";
 import { assertSameOrigin } from "@/lib/orbit/auth";
 import {
   applyInventoryRange,
-  dateKey,
   getInventoryManageGrid,
+  resolveInventoryViewRange,
   toUtcDate,
   upsertInventoryNight,
 } from "@/lib/admin/inventory-nights";
@@ -27,8 +27,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const url = new URL(request.url);
-  const from = url.searchParams.get("from") || dateKey(new Date());
-  const days = Number(url.searchParams.get("days") || 30);
+  const rawFrom = url.searchParams.get("from") || undefined;
+  const rawDays = url.searchParams.get("days");
+  const daysParsed = rawDays === null ? undefined : Number(rawDays);
+  const { from, days } = resolveInventoryViewRange(
+    rawFrom,
+    Number.isFinite(daysParsed) ? daysParsed : undefined
+  );
   try {
     const grid = await getInventoryManageGrid(from, days);
     return NextResponse.json({ grid });

@@ -11,6 +11,10 @@ import type {
   InventoryManageDay,
   InventoryManageGrid,
 } from "@/lib/admin/inventory-nights-public";
+import {
+  inventoryDateKey as dateKey,
+  inventoryUtcDate as toUtcDate,
+} from "@/lib/admin/inventory-nights-public";
 
 const ACTIVE_BOOKING_STATUSES = [
   "PENDING",
@@ -20,31 +24,7 @@ const ACTIVE_BOOKING_STATUSES = [
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
-export function toUtcDate(value: string | Date) {
-  if (value instanceof Date) {
-    return new Date(
-      Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate())
-    );
-  }
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
-  if (!match) {
-    const parsed = new Date(value);
-    return new Date(
-      Date.UTC(
-        parsed.getUTCFullYear(),
-        parsed.getUTCMonth(),
-        parsed.getUTCDate()
-      )
-    );
-  }
-  return new Date(
-    Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
-  );
-}
-
-export function dateKey(value: string | Date) {
-  return toUtcDate(value).toISOString().slice(0, 10);
-}
+export { dateKey, toUtcDate };
 
 export function enumerateNights(
   checkIn: string | Date,
@@ -353,13 +333,14 @@ export async function applyInventoryRange(input: {
   endDate: string;
   inventory: number;
 }) {
-  const nights = enumerateCalendarDays(
-    input.startDate,
-    Math.round(
-      (toUtcDate(input.endDate).getTime() - toUtcDate(input.startDate).getTime()) /
-        86_400_000
-    ) + 1
-  );
+  const startMs = toUtcDate(input.startDate).getTime();
+  const endMs = toUtcDate(input.endDate).getTime();
+  if (endMs < startMs) {
+    throw new Error("End date must be on or after start date.");
+  }
+  const nightCount =
+    Math.round((endMs - startMs) / 86_400_000) + 1;
+  const nights = enumerateCalendarDays(input.startDate, nightCount);
   for (const date of nights) {
     await upsertInventoryNight({
       slug: input.slug,
@@ -390,4 +371,6 @@ export async function getStayNightRates(
     };
   });
 }
+
+export { resolveInventoryViewRange } from "@/lib/admin/inventory-nights-public";
 

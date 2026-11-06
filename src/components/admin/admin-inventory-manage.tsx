@@ -6,6 +6,10 @@ import type {
   InventoryManageCategory,
   InventoryManageGrid,
 } from "@/lib/admin/inventory-nights-public";
+import {
+  inventoryUtcDaysInMonth as utcDaysInMonth,
+  inventoryUtcMonthStart as utcMonthStart,
+} from "@/lib/admin/inventory-nights-public";
 import { cn } from "@/lib/utils";
 
 const MONTHS = [
@@ -69,8 +73,9 @@ export function AdminInventoryManage({
     setLoading(true);
     setError("");
     try {
+      const monthStart = utcMonthStart(nextFrom);
       const response = await fetch(
-        `/api/admin/inventory-manage?from=${nextFrom}&days=${nextDays}`,
+        `/api/admin/inventory-manage?from=${encodeURIComponent(monthStart)}&days=${nextDays}`,
         { credentials: "same-origin" }
       );
       const result = (await response.json()) as {
@@ -146,10 +151,10 @@ export function AdminInventoryManage({
   }
 
   function goMonth(delta: number) {
-    const next = new Date(Date.UTC(year, month - 1 + delta, 1))
+    const start = new Date(Date.UTC(year, month - 1 + delta, 1))
       .toISOString()
       .slice(0, 10);
-    void load(next, days);
+    void load(start, utcDaysInMonth(start));
   }
 
   return (
@@ -198,7 +203,11 @@ export function AdminInventoryManage({
         <button
           type="button"
           className="rounded-full bg-[#2F6B4F] px-4 py-2 text-xs font-semibold text-white"
-          onClick={() => void load(new Date().toISOString().slice(0, 10), days)}
+          onClick={() => {
+            const today = new Date().toISOString().slice(0, 10);
+            const start = utcMonthStart(today);
+            void load(start, utcDaysInMonth(start));
+          }}
         >
           Today
         </button>
@@ -207,9 +216,10 @@ export function AdminInventoryManage({
           <select
             className="ml-2 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
             value={month}
-            onChange={(event) =>
-              void load(`${year}-${String(event.target.value).padStart(2, "0")}-01`, days)
-            }
+            onChange={(event) => {
+              const start = `${year}-${String(event.target.value).padStart(2, "0")}-01`;
+              void load(start, utcDaysInMonth(start));
+            }}
           >
             {MONTHS.map((label, index) => (
               <option key={label} value={index + 1}>
@@ -223,9 +233,10 @@ export function AdminInventoryManage({
           <select
             className="ml-2 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
             value={year}
-            onChange={(event) =>
-              void load(`${event.target.value}-${String(month).padStart(2, "0")}-01`, days)
-            }
+            onChange={(event) => {
+              const start = `${event.target.value}-${String(month).padStart(2, "0")}-01`;
+              void load(start, utcDaysInMonth(start));
+            }}
           >
             {[year - 1, year, year + 1, year + 2].map((value) => (
               <option key={value} value={value}>
@@ -240,18 +251,23 @@ export function AdminInventoryManage({
             type="date"
             className="ml-2 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
             value={from}
-            onChange={(event) => void load(event.target.value, days)}
+            onChange={(event) => {
+              const start = utcMonthStart(event.target.value);
+              void load(start, utcDaysInMonth(start));
+            }}
           />
         </label>
         <label className="text-xs text-[#6F6458]">
           Days
           <input
             type="number"
-            min={7}
+            min={1}
             max={62}
             className="ml-2 w-16 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
             value={days}
-            onChange={(event) => setDays(Math.max(7, Number(event.target.value) || 30))}
+            onChange={(event) =>
+              setDays(Math.min(62, Math.max(1, Number(event.target.value) || 30)))
+            }
             onBlur={() => void load(from, days)}
           />
         </label>
