@@ -71,8 +71,12 @@ export function inventoryUtcMonthStart(fromIso: string | Date) {
   return `${y}-${String(m).padStart(2, "0")}-01`;
 }
 
+/** Max days in one grid load (≈2 years); scroll right to see all columns. */
+export const INVENTORY_VIEW_MAX_DAYS = 730;
+
 /**
- * Default grid: full calendar month (e.g. Nov 1–30). Optional `days` caps at 62.
+ * Default grid: full calendar month (e.g. Nov 1–30). Optional `days` up to
+ * INVENTORY_VIEW_MAX_DAYS for multi-month / long-range editing.
  */
 export function resolveInventoryViewRange(
   fromInput?: string,
@@ -90,7 +94,10 @@ export function resolveInventoryViewRange(
     Number.isFinite(daysOverride) &&
     daysOverride >= 1
   ) {
-    return { from, days: Math.min(62, Math.floor(daysOverride)) };
+    return {
+      from,
+      days: Math.min(INVENTORY_VIEW_MAX_DAYS, Math.floor(daysOverride)),
+    };
   }
   return { from, days: monthLen };
 }

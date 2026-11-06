@@ -7,6 +7,7 @@ import type {
   InventoryManageGrid,
 } from "@/lib/admin/inventory-nights-public";
 import {
+  INVENTORY_VIEW_MAX_DAYS,
   inventoryUtcDaysInMonth as utcDaysInMonth,
   inventoryUtcMonthStart as utcMonthStart,
 } from "@/lib/admin/inventory-nights-public";
@@ -158,7 +159,7 @@ export function AdminInventoryManage({
   }
 
   return (
-    <div className="-mx-1 overflow-hidden rounded-3xl bg-[#F6F1E8] text-[#2C241C] shadow-[0_20px_60px_-28px_rgba(0,0,0,0.45)]">
+    <div className="-mx-1 min-w-0 rounded-3xl bg-[#F6F1E8] text-[#2C241C] shadow-[0_20px_60px_-28px_rgba(0,0,0,0.45)]">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E6DED0] px-6 py-5">
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-[-0.03em] text-[#3A3128]">
@@ -238,7 +239,7 @@ export function AdminInventoryManage({
               void load(start, utcDaysInMonth(start));
             }}
           >
-            {[year - 1, year, year + 1, year + 2].map((value) => (
+            {Array.from({ length: 8 }, (_, i) => year - 2 + i).map((value) => (
               <option key={value} value={value}>
                 {value}
               </option>
@@ -258,15 +259,21 @@ export function AdminInventoryManage({
           />
         </label>
         <label className="text-xs text-[#6F6458]">
-          Days
+          Days (scroll →)
           <input
             type="number"
             min={1}
-            max={62}
-            className="ml-2 w-16 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
+            max={INVENTORY_VIEW_MAX_DAYS}
+            title="Full month is automatic from month picker; raise this for Nov→Dec or up to ~2 years"
+            className="ml-2 w-20 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
             value={days}
             onChange={(event) =>
-              setDays(Math.min(62, Math.max(1, Number(event.target.value) || 30)))
+              setDays(
+                Math.min(
+                  INVENTORY_VIEW_MAX_DAYS,
+                  Math.max(1, Number(event.target.value) || 30)
+                )
+              )
             }
             onBlur={() => void load(from, days)}
           />
@@ -333,7 +340,7 @@ export function AdminInventoryManage({
         </p>
       ) : null}
 
-      <div className="overflow-x-auto px-4 pb-8">
+      <div className="overflow-x-auto overscroll-x-contain px-4 pb-8 [-webkit-overflow-scrolling:touch]">
         {visible.map((category) => (
           <CategoryTable
             key={category.slug}
@@ -413,7 +420,7 @@ function CategoryTable({
   ];
 
   return (
-    <section className="mb-8 overflow-hidden rounded-2xl border border-[#E6DED0] bg-white">
+    <section className="mb-8 rounded-2xl border border-[#E6DED0] bg-white">
       <div className="flex items-center gap-2 border-b border-[#E6DED0] px-4 py-3">
         <span className="text-[#C4A36A]">▾</span>
         <h2 className="font-semibold">{category.name}</h2>
@@ -422,7 +429,7 @@ function CategoryTable({
       <table className="min-w-max border-collapse text-center text-sm">
         <thead>
           <tr className="bg-[#FBF7F1] text-[11px] text-[#8A7C6E]">
-            <th className="sticky left-0 z-10 min-w-44 bg-[#FBF7F1] px-4 py-3 text-left font-semibold tracking-wide uppercase">
+            <th className="sticky left-0 z-20 min-w-44 bg-[#FBF7F1] px-4 py-3 text-left font-semibold tracking-wide uppercase shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]">
               Room / Metric
             </th>
             {dates.map((item) => (
@@ -441,7 +448,7 @@ function CategoryTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.key} className="border-t border-[#F0E8DC]">
-              <th className="sticky left-0 z-10 bg-white px-4 py-2 text-left text-xs font-medium text-[#6F6458]">
+              <th className="sticky left-0 z-20 bg-white px-4 py-2 text-left text-xs font-medium text-[#6F6458] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.06)]">
                 {row.label}
               </th>
               {category.days.map((day) => {

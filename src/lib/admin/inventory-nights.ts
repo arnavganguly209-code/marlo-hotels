@@ -12,6 +12,7 @@ import type {
   InventoryManageGrid,
 } from "@/lib/admin/inventory-nights-public";
 import {
+  INVENTORY_VIEW_MAX_DAYS,
   inventoryDateKey as dateKey,
   inventoryUtcDate as toUtcDate,
 } from "@/lib/admin/inventory-nights-public";
@@ -41,7 +42,10 @@ export function enumerateNights(
 
 export function enumerateCalendarDays(from: string | Date, count: number) {
   const start = toUtcDate(from).getTime();
-  const days = Math.min(62, Math.max(1, Math.floor(count) || 1));
+  const days = Math.min(
+    INVENTORY_VIEW_MAX_DAYS,
+    Math.max(1, Math.floor(count) || 1)
+  );
   const keys: string[] = [];
   for (let i = 0; i < days; i += 1) {
     keys.push(new Date(start + i * 86_400_000).toISOString().slice(0, 10));
