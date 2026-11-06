@@ -49,7 +49,7 @@ export function FeaturedSuites({
                       fill
                       sizes="(max-width: 1024px) 100vw, 58vw"
                       className="object-cover"
-                      quality={100}
+                      quality={85}
                       unoptimized={imageSrc.startsWith("/media/")}
                     />
                   </div>

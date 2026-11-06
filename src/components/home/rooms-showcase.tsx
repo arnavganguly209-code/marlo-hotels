@@ -28,7 +28,7 @@ export function RoomsShowcase({
         <Stagger className="mt-16 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           {rowOne.map((room) => (
             <StaggerItem key={room.slug}>
-              <RoomCard room={room} labels={content.labels} />
+              <RoomCard room={room} labels={content.labels} priority />
             </StaggerItem>
           ))}
         </Stagger>

@@ -56,7 +56,7 @@ export function GalleryPreview({
                   fill
                   sizes="(max-width: 768px) 50vw, 25vw"
                   className="object-cover"
-                  quality={100}
+                  quality={82}
                   unoptimized={image.src.startsWith("/media/")}
                 />
                 <span className="absolute inset-0 bg-charcoal-950/0 transition-colors duration-500 group-hover:bg-charcoal-950/30" />

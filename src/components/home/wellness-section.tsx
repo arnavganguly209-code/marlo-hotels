@@ -100,7 +100,7 @@ export function WellnessSection({
                   src={primary.src}
                   alt={primary.alt}
                   fill
-                  quality={100}
+                  quality={85}
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                   style={{ objectPosition: objectPosition(primary) }}
@@ -119,7 +119,7 @@ export function WellnessSection({
                   src={secondary.src}
                   alt={secondary.alt}
                   fill
-                  quality={100}
+                  quality={85}
                   sizes="25vw"
                   className="object-cover"
                   style={{ objectPosition: objectPosition(secondary) }}

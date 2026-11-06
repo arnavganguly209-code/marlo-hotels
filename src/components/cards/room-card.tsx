@@ -16,6 +16,7 @@ export function RoomCard({
   labels,
   search,
   bookToCheckout = false,
+  priority = false,
 }: {
   room: Room;
   labels?: Record<string, string>;
@@ -30,6 +31,8 @@ export function RoomCard({
   };
   /** When true and search dates exist, Book Now goes straight to guest checkout. */
   bookToCheckout?: boolean;
+  /** First screenful on the homepage — smaller Next image payload without visible loss. */
+  priority?: boolean;
 }) {
   const cover = room.images[0];
   const soldOut = room.inventory <= 0;
@@ -92,8 +95,9 @@ export function RoomCard({
             alt={cover.alt || room.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            quality={100}
-            loading="lazy"
+            quality={82}
+            priority={priority}
+            loading={priority ? "eager" : "lazy"}
             unoptimized={cover.src.startsWith("/media/")}
             className="object-cover"
           />

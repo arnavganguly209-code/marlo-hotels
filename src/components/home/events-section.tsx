@@ -37,7 +37,7 @@ export function EventsSection({
                     src={event.image.src}
                     alt={event.image.alt}
                     fill
-                    quality={100}
+                    quality={82}
                     sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-cover"
                     style={{ objectPosition: objectPosition(event.image) }}

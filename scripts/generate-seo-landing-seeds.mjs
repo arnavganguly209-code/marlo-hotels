@@ -1,7 +1,8 @@
 /**
  * Generates scripts/seo-landing-seeds.json from:
  * - Base pages (hand-maintained in BASE_SEEDS)
- * - Programmatic Nepal travel-intent pages (100+ unique paths)
+ * - Programmatic Nepal travel-intent pages
+ * - Keyword intent guides (25+ root phrases × variants)
  *
  * Run: node scripts/generate-seo-landing-seeds.mjs
  */
@@ -492,20 +493,183 @@ function buildNepalProgrammaticSeeds() {
   return out;
 }
 
-function mergeSeeds(base, generated) {
+/** @param {typeof BASE_SEEDS} arrays */
+function mergeSeeds(...arrays) {
   const map = new Map();
-  for (const s of base) map.set(s.path, s);
-  for (const s of generated) {
-    if (map.has(s.path)) throw new Error(`Duplicate path: ${s.path}`);
-    map.set(s.path, s);
+  for (const arr of arrays) {
+    for (const s of arr) {
+      if (map.has(s.path)) throw new Error(`Duplicate path: ${s.path}`);
+      map.set(s.path, s);
+    }
   }
   return [...map.values()].sort((a, b) => a.path.localeCompare(b.path));
 }
 
-const programmatic = buildNepalProgrammaticSeeds();
-const merged = mergeSeeds(BASE_SEEDS, programmatic);
+/** High-intent hotel searches (Kathmandu / Thamel / Nepal travel) — Marlo-only copy, no false map claims. */
+const KEYWORD_TOPICS = [
+  { slug: "best-hotel-kathmandu", phrase: "best hotel Kathmandu", hint: "central refined base near Thamel" },
+  { slug: "cheap-hotel-kathmandu", phrase: "cheap hotel Kathmandu", hint: "clear published rates — compare in-booking" },
+  { slug: "budget-hotel-kathmandu", phrase: "budget hotel Kathmandu", hint: "accessible categories with Marlo service" },
+  { slug: "luxury-hotel-kathmandu", phrase: "luxury hotel Kathmandu", hint: "suites, dining and spa recovery" },
+  { slug: "hotel-thamel", phrase: "hotel Thamel Kathmandu", hint: "refined stay with Thamel-area access" },
+  { slug: "hotel-near-thamel", phrase: "hotel near Thamel", hint: "Paryatan Marg base for the district" },
+  { slug: "thamel-budget-hotel", phrase: "Thamel budget hotel", hint: "value-led room categories" },
+  { slug: "kathmandu-hotel-booking", phrase: "Kathmandu hotel booking", hint: "secure direct online confirmation" },
+  { slug: "hotel-nepal-kathmandu", phrase: "hotel in Nepal Kathmandu", hint: "international arrival + valley trips" },
+  { slug: "boutique-hotel-kathmandu", phrase: "boutique hotel Kathmandu", hint: "considered design and calm service" },
+  { slug: "family-hotel-kathmandu", phrase: "family hotel Kathmandu", hint: "spacious categories + dining on site" },
+  { slug: "honeymoon-hotel-nepal", phrase: "honeymoon hotel Nepal", hint: "suite-led stays with spa time" },
+  { slug: "business-hotel-kathmandu", phrase: "business hotel Kathmandu", hint: "front desk + meeting mindset" },
+  { slug: "airport-hotel-kathmandu", phrase: "airport hotel Kathmandu", hint: "buffer nights around Tribhuvan connections" },
+  { slug: "tribhuvan-airport-hotel", phrase: "hotel near Tribhuvan Airport", hint: "arrival-night clarity before domestic legs" },
+  { slug: "spa-hotel-kathmandu", phrase: "spa hotel Kathmandu", hint: "wellness on property — verify hours at check-in" },
+  { slug: "downtown-kathmandu-hotel", phrase: "downtown Kathmandu hotel", hint: "capital base for meetings and touring" },
+  { slug: "durbar-marg-hotel", phrase: "Durbar Marg area hotel", hint: "central valley positioning" },
+  { slug: "lazimpat-hotel", phrase: "Lazimpat hotel Kathmandu", hint: "embassy-district proximity searches" },
+  { slug: "patan-hotel", phrase: "Patan hotel Kathmandu", hint: "heritage day trips from a capital base" },
+  { slug: "bhaktapur-hotel", phrase: "Bhaktapur hotel", hint: "easy valley staging in Kathmandu" },
+  { slug: "trekking-hotel-kathmandu", phrase: "trekking hotel Kathmandu", hint: "pre- and post-trek recovery nights" },
+  { slug: "everest-trek-hotel-base", phrase: "Everest trek hotel base", hint: "buffer nights before Lukla / domestic" },
+  { slug: "annapurna-trek-hotel-base", phrase: "Annapurna trek hotel base", hint: "Pokhara-stage itineraries via KTM" },
+  { slug: "couple-hotel-kathmandu", phrase: "couple hotel Kathmandu", hint: "quiet rooms and dining together" },
+  { slug: "solo-traveller-hotel-kathmandu", phrase: "solo traveller hotel Kathmandu", hint: "clear policies and staffed desk" },
+  { slug: "international-tourist-hotel-nepal", phrase: "international tourist hotel Nepal", hint: "English-friendly service + direct pay" },
+  { slug: "marriott-style-hotel-kathmandu", phrase: "international chain style hotel Kathmandu", hint: "refined independent alternative — one property" },
+  { slug: "premium-hotel-kathmandu", phrase: "premium hotel Kathmandu", hint: "elevated categories and suite-led stays" },
+  { slug: "pokhara-trip-hotel-base", phrase: "Pokhara trip hotel Kathmandu", hint: "buffer nights before lakeside travel" },
+];
+
+const KEYWORD_INTENTS = [
+  {
+    suffix: "",
+    titleSuffix: "",
+    h1Template: (phrase) => `${phrase} — book direct`,
+    metaTitleTemplate: (phrase) => `${phrase} | Marlo Hotels Kathmandu`,
+    metaDescTemplate: (phrase, hint) =>
+      `${phrase} at Marlo Hotels, Paryatan Marg — ${hint}. Published rooms, dining, spa. Secure direct booking on marlohotels.com.`,
+    categoryKey: null,
+    roomFilter: "all",
+    introTemplate: (phrase, hint) =>
+      `If you searched “${phrase}”, you want a hotel page you can trust — not a spam directory. Marlo Hotels is one address in Kathmandu with published rooms, live rates and secure checkout: ${hint}.`,
+    bodyTemplate: (phrase) =>
+      `Every tile below is from Marlo’s catalogue. Open a room for layout detail, then run Check Availability for your exact stay when “${phrase}” leads you here from Google.`,
+  },
+  {
+    suffix: "budget",
+    titleSuffix: " (budget)",
+    h1Template: (phrase) => `Budget — ${phrase}`,
+    metaTitleTemplate: (phrase) => `Budget ${phrase} | Marlo Hotels`,
+    metaDescTemplate: (phrase) =>
+      `Budget ${phrase}: Marlo’s lower published categories in Kathmandu with online booking — transparent starting rates.`,
+    categoryKey: "budget",
+    roomFilter: "budget",
+    introTemplate: (phrase) =>
+      `Budget-led searches for “${phrase}” still deserve honest copy. Marlo lists accessible categories from the same property — no fake “compare 50 hotels” widgets.`,
+    bodyTemplate: (phrase) =>
+      `Pick a category, note starting rates on the card, then confirm the total in the booking step. That is how we keep “${phrase}” aligned with real inventory.`,
+  },
+  {
+    suffix: "luxury",
+    titleSuffix: " (luxury)",
+    h1Template: (phrase) => `Luxury — ${phrase}`,
+    metaTitleTemplate: (phrase) => `Luxury ${phrase} | Marlo Hotels`,
+    metaDescTemplate: (phrase) =>
+      `Luxury ${phrase}: suites and elevated rooms at Marlo Hotels — dining, spa and refined service in Kathmandu.`,
+    categoryKey: "luxury",
+    roomFilter: "luxury",
+    introTemplate: (phrase) =>
+      `Luxury intent behind “${phrase}” usually means space, dining and recovery. Marlo surfaces suite-led categories here when published in our catalogue.`,
+    bodyTemplate: (phrase) =>
+      `Compare suite layouts below, then book direct so “${phrase}” resolves to a confirmed Marlo stay — not an OTA redirect loop.`,
+  },
+  {
+    suffix: "best",
+    titleSuffix: " (top picks)",
+    h1Template: (phrase) => `Top picks — ${phrase}`,
+    metaTitleTemplate: (phrase) => `Best ${phrase} | Marlo Hotels`,
+    metaDescTemplate: (phrase) =>
+      `Best-rated style stay for “${phrase}”: Marlo’s featured room categories in Kathmandu — book direct.`,
+    categoryKey: "best",
+    roomFilter: "featured",
+    introTemplate: (phrase) =>
+      `“Best” searches for “${phrase}” are noisy online. This page keeps it simple: Marlo’s featured catalogue picks, one hotel, one booking path.`,
+    bodyTemplate: (phrase) =>
+      `Featured does not mean paid placement — it is our internal highlight list. Use it to shortlist, then finalize dates for “${phrase}”.`,
+  },
+];
+
+function buildKeywordGuideSeeds() {
+  /** @type {typeof BASE_SEEDS[0][]} */
+  const out = [];
+  for (const topic of KEYWORD_TOPICS) {
+    for (const seg of KEYWORD_INTENTS) {
+      const path =
+        seg.suffix === ""
+          ? `hotels/guide/${topic.slug}`
+          : `hotels/guide/${topic.slug}/${seg.suffix}`;
+      const phrase = topic.phrase;
+      const h1 = seg.h1Template(phrase);
+      const title = `${phrase}${seg.titleSuffix} — Marlo Hotels`.trim();
+      const metaTitle = seg.metaTitleTemplate(phrase);
+      const metaDescription =
+        seg.metaDescTemplate.length >= 2
+          ? seg.metaDescTemplate(phrase, topic.hint)
+          : seg.metaDescTemplate(phrase);
+      const intro =
+        seg.introTemplate.length >= 2
+          ? seg.introTemplate(phrase, topic.hint)
+          : seg.introTemplate(phrase);
+      const body = seg.bodyTemplate(phrase);
+      const faqs = [
+        {
+          question: `Does this page list every ${phrase} in Kathmandu?`,
+          answer:
+            "No. It exists so searches for that phrase can reach Marlo’s official catalogue and booking flow. We do not aggregate other hotels.",
+        },
+        {
+          question: "Why only Marlo room cards?",
+          answer:
+            "You get live inventory language, real photos from Admin, and direct payment — which is what we can stand behind in Search Console.",
+        },
+      ];
+      const related = [
+        "hotels/kathmandu",
+        "hotels/thamel",
+        seg.categoryKey ? `hotels/kathmandu/${seg.categoryKey}` : "hotels/kathmandu/best",
+        `hotels/guide/${topic.slug}`,
+      ]
+        .filter((p, i, a) => a.indexOf(p) === i)
+        .filter((p) => p !== path)
+        .slice(0, 5);
+
+      out.push({
+        path,
+        title,
+        metaTitle,
+        metaDescription,
+        h1,
+        intro,
+        body,
+        faqs,
+        locationKey: "kathmandu",
+        categoryKey: seg.categoryKey,
+        facilityKey: null,
+        roomFilter: seg.roomFilter,
+        relatedPaths: related,
+        status: "PUBLISHED",
+        robotsIndex: true,
+        enabled: true,
+      });
+    }
+  }
+  return out;
+}
+
+const nepalProgrammatic = buildNepalProgrammaticSeeds();
+const keywordProgrammatic = buildKeywordGuideSeeds();
+const merged = mergeSeeds(BASE_SEEDS, nepalProgrammatic, keywordProgrammatic);
 const outPath = path.join(process.cwd(), "scripts/seo-landing-seeds.json");
 writeFileSync(outPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
 console.log(
-  `Wrote ${merged.length} seeds (${BASE_SEEDS.length} base + ${programmatic.length} nepal guides) → ${outPath}`
+  `Wrote ${merged.length} seeds (${BASE_SEEDS.length} base + ${nepalProgrammatic.length} nepal + ${keywordProgrammatic.length} keyword guides) → ${outPath}`
 );

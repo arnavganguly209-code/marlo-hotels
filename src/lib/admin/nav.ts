@@ -1,5 +1,6 @@
 export const adminNav = [
   { label: "Dashboard", href: "/admin/dashboard" },
+  { label: "SEO Alt Pages", href: "/admin/seo-landing-pages" },
   { label: "Rooms", href: "/admin/rooms" },
   { label: "Room Numbers", href: "/admin/room-numbers" },
   { label: "Inventory", href: "/admin/inventory" },

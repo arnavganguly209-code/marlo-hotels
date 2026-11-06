@@ -24,7 +24,7 @@ export function BreakfastSection({
               fill
               className="object-cover transition duration-700 hover:scale-105"
               sizes="(max-width: 1024px) 100vw, 50vw"
-              quality={100}
+              quality={82}
               unoptimized={image.src.startsWith("/media/")}
               style={{
                 objectPosition: `${image.focalX ?? 50}% ${image.focalY ?? 50}%`,

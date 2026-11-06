@@ -36,7 +36,7 @@ export function AttractionsSection({
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
                         className="object-cover"
-                        quality={100}
+                        quality={82}
                         unoptimized={imageSrc.startsWith("/media/")}
                       />
                     ) : (

@@ -46,7 +46,7 @@ export function InstagramStrip({
                     src={image.src}
                     alt={image.alt}
                     fill
-                    quality={100}
+                    quality={80}
                     sizes="(max-width: 768px) 33vw, 16vw"
                     className="object-cover"
                     style={{ objectPosition }}
