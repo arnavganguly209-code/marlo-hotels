@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, LogOut, Menu, Shield, X } from "lucide-react";
+import { LogOut, Menu, Shield, X } from "lucide-react";
 import { useState } from "react";
 import { adminNav } from "@/lib/admin/nav";
 import { cn } from "@/lib/utils";
@@ -101,13 +101,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              className="grid size-10 place-items-center rounded-full border border-white/15 text-cream-200/80"
-              aria-label="Notifications"
-            >
-              <Bell className="size-4" />
-            </button>
             <span className="hidden items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold tracking-[0.18em] text-emerald-300 uppercase sm:inline-flex">
               <Shield className="size-3.5" />
               Secure Session
@@ -125,7 +118,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
 
-        <footer className="border-t border-white/10 px-4 py-4 text-center text-[11px] tracking-[0.08em] text-cream-200/45 sm:px-6">
+        <footer className="border-t border-white/10 px-4 py-4 text-center text-[11px] tracking-[0.08em] text-cream-200/65 sm:px-6">
           Software Developed by{" "}
           <a
             href="https://theglobalorbit.com/"

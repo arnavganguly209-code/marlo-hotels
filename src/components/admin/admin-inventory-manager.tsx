@@ -76,7 +76,7 @@ export function AdminInventoryManager({
 
   if (!rows.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-6 py-16 text-center text-sm text-cream-200/55">
+      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-6 py-16 text-center text-sm text-cream-200/72">
         No Marlo Hotels room categories found. Publish rooms in Admin → Rooms
         first, then set inventory here.
       </div>
@@ -86,7 +86,7 @@ export function AdminInventoryManager({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm text-cream-200/60">
+        <p className="max-w-2xl text-sm text-cream-200/75">
           Set how many rooms are bookable online for each category. Save updates
           live availability. Optional: Sync all copies sellable counts from Room
           Numbers into these values.
@@ -188,7 +188,7 @@ export function AdminInventoryManager({
                 <Stat label="Maintenance Rooms" value={row.maintenance} />
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-3 text-xs text-cream-200/45">
+              <div className="mt-4 flex flex-wrap gap-3 text-xs text-cream-200/65">
                 <span>Cleaning: {row.cleaning}</span>
                 <span>Out of Service: {row.outOfService}</span>
                 <span>Sellable physical: {row.sellableInventory}</span>
@@ -219,7 +219,7 @@ function Stat({
           : "border-white/10 bg-black/15"
       )}
     >
-      <p className="text-[10px] font-semibold tracking-[0.16em] text-cream-200/45 uppercase">
+      <p className="text-[10px] font-semibold tracking-[0.16em] text-cream-200/65 uppercase">
         {label}
       </p>
       <p

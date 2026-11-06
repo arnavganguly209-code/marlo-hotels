@@ -388,7 +388,7 @@ export function AdminOnlineBookingsManager({
           </tbody>
         </table>
         {!visible.length && (
-          <p className="p-12 text-center text-sm text-cream-200/55">
+          <p className="p-12 text-center text-sm text-cream-200/72">
             No online bookings match these filters.
           </p>
         )}
@@ -422,7 +422,7 @@ export function AdminOnlineBookingsManager({
                 ).map(([key, label]) => (
                   <label
                     key={key}
-                    className="grid gap-1 text-xs text-cream-200/60"
+                    className="grid gap-1 text-xs text-cream-200/75"
                   >
                     {label}
                     <input
@@ -434,7 +434,7 @@ export function AdminOnlineBookingsManager({
                     />
                   </label>
                 ))}
-                <label className="grid gap-1 text-xs text-cream-200/60">
+                <label className="grid gap-1 text-xs text-cream-200/75">
                   Status
                   <select
                     className={input}
@@ -448,7 +448,7 @@ export function AdminOnlineBookingsManager({
                     ))}
                   </select>
                 </label>
-                <label className="grid gap-1 text-xs text-cream-200/60">
+                <label className="grid gap-1 text-xs text-cream-200/75">
                   Payment
                   <select
                     className={input}
@@ -465,7 +465,7 @@ export function AdminOnlineBookingsManager({
                     ))}
                   </select>
                 </label>
-                <label className="sm:col-span-2 grid gap-1 text-xs text-cream-200/60">
+                <label className="sm:col-span-2 grid gap-1 text-xs text-cream-200/75">
                   Special requests
                   <textarea
                     className={`${input} h-20`}
@@ -475,7 +475,7 @@ export function AdminOnlineBookingsManager({
                     }
                   />
                 </label>
-                <label className="sm:col-span-2 grid gap-1 text-xs text-cream-200/60">
+                <label className="sm:col-span-2 grid gap-1 text-xs text-cream-200/75">
                   Internal note
                   <textarea
                     className={`${input} h-20`}

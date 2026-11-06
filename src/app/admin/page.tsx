@@ -30,7 +30,7 @@ export default async function AdminLoginPage() {
         <AdminLoginForm />
       </div>
 
-      <p className="relative z-10 mt-10 text-center text-[11px] tracking-[0.1em] text-cream-200/50">
+      <p className="relative z-10 mt-10 text-center text-[11px] tracking-[0.1em] text-cream-200/68">
         Software Developed by{" "}
         <Link
           href="https://theglobalorbit.com/"

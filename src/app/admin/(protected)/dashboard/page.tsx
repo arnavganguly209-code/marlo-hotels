@@ -19,7 +19,7 @@ function StatCard({
         {value}
       </p>
       {hint ? (
-        <p className="mt-2 text-xs text-cream-200/50">{hint}</p>
+        <p className="mt-2 text-xs text-cream-200/68">{hint}</p>
       ) : null}
     </article>
   );
@@ -72,7 +72,7 @@ export default async function AdminDashboardPage() {
         <h1 className="font-display mt-2 text-3xl font-semibold tracking-[-0.02em] text-ivory md:text-4xl">
           Dashboard
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-cream-200/65">
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-cream-200/78">
           Live operational snapshot for Marlo Hotels — bookings, revenue,
           occupancy and guest inquiries.
         </p>

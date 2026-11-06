@@ -274,7 +274,7 @@ export function AdminOfflineBookingsManager({
                 <td className="px-3 py-3 font-medium text-ivory">{b.reference}</td>
                 <td className="px-3 py-3">
                   <div>{b.guestName}</div>
-                  <div className="text-xs text-cream-200/45">{b.guestEmail}</div>
+                  <div className="text-xs text-cream-200/65">{b.guestEmail}</div>
                 </td>
                 <td className="px-3 py-3">{b.room?.name || "—"}</td>
                 <td className="px-3 py-3 whitespace-nowrap">
@@ -310,7 +310,7 @@ export function AdminOfflineBookingsManager({
           </tbody>
         </table>
         {!bookings.length && (
-          <p className="p-10 text-center text-sm text-cream-200/50">
+          <p className="p-10 text-center text-sm text-cream-200/68">
             No offline bookings recorded.
           </p>
         )}
@@ -352,7 +352,7 @@ export function AdminOfflineBookingsManager({
               ).map(([key, label, type]) => (
                 <label
                   key={key}
-                  className="grid gap-1 text-xs text-cream-200/60"
+                  className="grid gap-1 text-xs text-cream-200/75"
                 >
                   {label}
                   <input
@@ -366,7 +366,7 @@ export function AdminOfflineBookingsManager({
                 </label>
               ))}
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Room category
                 <select
                   className={input}
@@ -387,7 +387,7 @@ export function AdminOfflineBookingsManager({
                 </select>
               </label>
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Physical room number
                 <select
                   className={input}
@@ -410,7 +410,7 @@ export function AdminOfflineBookingsManager({
                 </select>
               </label>
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Payment status
                 <select
                   className={input}
@@ -427,7 +427,7 @@ export function AdminOfflineBookingsManager({
                 </select>
               </label>
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Booking status
                 <select
                   className={input}

@@ -221,7 +221,7 @@ export function AdminInquiriesManager({
           </tbody>
         </table>
         {!visible.length && (
-          <p className="p-10 text-center text-sm text-cream-200/50">
+          <p className="p-10 text-center text-sm text-cream-200/68">
             {emptyLabel}
           </p>
         )}

@@ -59,7 +59,7 @@ export function AdminPasswordForm() {
           readOnly
           className="mt-2 h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-cream-200/70 outline-none"
         />
-        <span className="mt-1.5 block text-xs text-cream-200/45">
+        <span className="mt-1.5 block text-xs text-cream-200/65">
           User ID cannot be changed.
         </span>
       </label>

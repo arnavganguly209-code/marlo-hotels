@@ -151,7 +151,7 @@ export function AdminRoomNumbersManager({
 
   if (!categories.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-6 py-16 text-center text-sm text-cream-200/55">
+      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-6 py-16 text-center text-sm text-cream-200/72">
         No Marlo Hotels room categories found. Publish rooms in Admin → Rooms
         first.
       </div>
@@ -199,7 +199,7 @@ export function AdminRoomNumbersManager({
               {activeCategory?.title}
             </h2>
           </div>
-          <p className="text-sm text-cream-200/60">
+          <p className="text-sm text-cream-200/75">
             {filtered.length} room{filtered.length === 1 ? "" : "s"}
           </p>
         </div>
@@ -232,10 +232,10 @@ export function AdminRoomNumbersManager({
                         {STATUS_LABEL[room.status]}
                       </span>
                     </td>
-                    <td className="max-w-[280px] truncate px-3 py-3 text-cream-200/55">
+                    <td className="max-w-[280px] truncate px-3 py-3 text-cream-200/72">
                       {room.notes || "—"}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-cream-200/45">
+                    <td className="px-3 py-3 whitespace-nowrap text-cream-200/65">
                       {new Date(room.updatedAt).toLocaleString()}
                     </td>
                     <td className="px-3 py-3">
@@ -262,7 +262,7 @@ export function AdminRoomNumbersManager({
             </table>
           </div>
         ) : (
-          <p className="mt-8 rounded-xl border border-dashed border-white/12 px-4 py-10 text-center text-sm text-cream-200/50">
+          <p className="mt-8 rounded-xl border border-dashed border-white/12 px-4 py-10 text-center text-sm text-cream-200/68">
             No physical room numbers yet for this category. Add the first room
             number to begin.
           </p>

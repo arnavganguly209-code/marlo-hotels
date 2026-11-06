@@ -17,7 +17,7 @@ export async function AdminModulePage({
       <h1 className="font-display mt-2 text-3xl font-semibold tracking-[-0.02em] text-ivory md:text-4xl">
         {title}
       </h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-cream-200/65">
+      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-cream-200/78">
         {description}
       </p>
       <div className="mt-8">{children}</div>
@@ -36,7 +36,7 @@ export function AdminTable({
 }) {
   if (!rows.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-6 py-16 text-center text-sm text-cream-200/55">
+      <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-6 py-16 text-center text-sm text-cream-200/72">
         {empty}
       </div>
     );

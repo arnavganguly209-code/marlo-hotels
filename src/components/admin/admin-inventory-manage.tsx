@@ -203,7 +203,7 @@ export function AdminInventoryManage({
           <h1 className="font-display text-3xl font-semibold tracking-[-0.03em] text-[#3A3128]">
             Management Console
           </h1>
-          <p className="mt-1 max-w-3xl text-sm text-[#6F6458]">
+          <p className="mt-1 max-w-3xl text-sm text-[#4A4238]">
             Edits save automatically shortly after you stop typing. Clear an
             inventory cell to revert that night to the room&apos;s default from
             Admin → Rooms. Inventory − booked = available. Checkout uses each
@@ -212,7 +212,7 @@ export function AdminInventoryManage({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#E6DED0] bg-white px-3 py-1.5 text-xs text-[#6F6458]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#E6DED0] bg-white px-3 py-1.5 text-xs text-[#4A4238]">
             <Bell className="size-3.5" /> {closedCount} closed
           </span>
           <span className="rounded-full bg-[#2F6B4F] px-3 py-1.5 text-[11px] font-semibold tracking-wide text-white">
@@ -252,7 +252,7 @@ export function AdminInventoryManage({
         >
           Today
         </button>
-        <label className="text-xs text-[#6F6458]">
+        <label className="text-xs text-[#4A4238]">
           Month
           <select
             className="ml-2 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
@@ -269,7 +269,7 @@ export function AdminInventoryManage({
             ))}
           </select>
         </label>
-        <label className="text-xs text-[#6F6458]">
+        <label className="text-xs text-[#4A4238]">
           Year
           <select
             className="ml-2 rounded-full border border-[#E6DED0] bg-white px-3 py-2"
@@ -286,7 +286,7 @@ export function AdminInventoryManage({
             ))}
           </select>
         </label>
-        <label className="text-xs text-[#6F6458]">
+        <label className="text-xs text-[#4A4238]">
           Start
           <input
             type="date"
@@ -298,7 +298,7 @@ export function AdminInventoryManage({
             }}
           />
         </label>
-        <label className="text-xs text-[#6F6458]">
+        <label className="text-xs text-[#4A4238]">
           Days (scroll →)
           <input
             type="number"
@@ -318,7 +318,7 @@ export function AdminInventoryManage({
             onBlur={() => void load(fromRef.current, daysRef.current)}
           />
         </label>
-        <span className="rounded-full border border-[#E6DED0] bg-white px-4 py-2 text-[10px] font-semibold tracking-[0.16em] text-[#6F6458] uppercase">
+        <span className="rounded-full border border-[#E6DED0] bg-white px-4 py-2 text-[10px] font-semibold tracking-[0.16em] text-[#4A4238] uppercase">
           Range view
         </span>
         {loading ? <Loader2 className="size-4 animate-spin text-[#2F6B4F]" /> : null}
@@ -348,7 +348,7 @@ export function AdminInventoryManage({
       </div>
 
       <div className="flex flex-wrap items-end gap-3 px-6 pb-4">
-        <label className="grid gap-1 text-[11px] font-medium text-[#6F6458]">
+        <label className="grid gap-1 text-[11px] font-medium text-[#4A4238]">
           Set inventory for visible dates
           <input
             type="number"
@@ -384,7 +384,7 @@ export function AdminInventoryManage({
               ? "Clear overrides (all rooms)"
               : "Clear overrides (this room)"}
         </button>
-        <p className="text-xs text-[#8A7C6E]">
+        <p className="text-xs text-[#5C5248]">
           Apply / Clear use the range: Start date for exactly Days nights (e.g.
           Start Nov 13 and Days 4 → Nov 13–16 only). All rooms updates every
           category in the grid for that range.
@@ -408,7 +408,7 @@ export function AdminInventoryManage({
           />
         ))}
         {!visible.length ? (
-          <p className="px-4 py-16 text-center text-sm text-[#8A7C6E]">
+          <p className="px-4 py-16 text-center text-sm text-[#5C5248]">
             Publish rooms in Admin → Rooms first.
           </p>
         ) : null}
@@ -434,7 +434,7 @@ function Tab({
         "rounded-full px-4 py-2 text-sm",
         active
           ? "bg-[#3A3128] text-white"
-          : "border border-[#E6DED0] bg-white text-[#6F6458]"
+          : "border border-[#E6DED0] bg-white text-[#4A4238]"
       )}
     >
       {label}
@@ -444,7 +444,7 @@ function Tab({
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 text-[#6F6458]">
+    <span className="inline-flex items-center gap-2 text-[#4A4238]">
       <span className={cn("size-2.5 rounded-full", color)} />
       {label}
     </span>
@@ -487,11 +487,11 @@ function CategoryTable({
       <div className="flex items-center gap-2 border-b border-[#E6DED0] px-4 py-3">
         <span className="text-[#C4A36A]">▾</span>
         <h2 className="font-semibold">{category.name}</h2>
-        <span className="text-sm text-[#8A7C6E]">base {category.baseInventory}</span>
+        <span className="text-sm text-[#5C5248]">base {category.baseInventory}</span>
       </div>
       <table className="min-w-max border-collapse text-center text-sm">
         <thead>
-          <tr className="bg-[#FBF7F1] text-[11px] text-[#8A7C6E]">
+          <tr className="bg-[#FBF7F1] text-[11px] text-[#5C5248]">
             <th className="sticky left-0 z-20 min-w-44 bg-[#FBF7F1] px-4 py-3 text-left font-semibold tracking-wide uppercase shadow-[4px_0_8px_-2px_rgba(0,0,0,0.08)]">
               Room / Metric
             </th>
@@ -511,7 +511,7 @@ function CategoryTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.key} className="border-t border-[#F0E8DC]">
-              <th className="sticky left-0 z-20 bg-white px-4 py-2 text-left text-xs font-medium text-[#6F6458] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.06)]">
+              <th className="sticky left-0 z-20 bg-white px-4 py-2 text-left text-xs font-medium text-[#4A4238] shadow-[4px_0_8px_-2px_rgba(0,0,0,0.06)]">
                 {row.label}
               </th>
               {category.days.map((day) => {
@@ -539,7 +539,7 @@ function CategoryTable({
                 }
                 if (row.kind === "booked") {
                   return (
-                    <td key={day.date} className="px-2 py-2 text-[#6F6458]">
+                    <td key={day.date} className="px-2 py-2 text-[#4A4238]">
                       {day.booked}
                     </td>
                   );

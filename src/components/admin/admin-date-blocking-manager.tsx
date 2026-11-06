@@ -249,7 +249,7 @@ export function AdminDateBlockingManager({
           </tbody>
         </table>
         {!blocks.length && (
-          <p className="p-10 text-center text-sm text-cream-200/50">
+          <p className="p-10 text-center text-sm text-cream-200/68">
             No date blocks recorded.
           </p>
         )}
@@ -273,14 +273,14 @@ export function AdminDateBlockingManager({
               </p>
             )}
             {isHotelWideDateBlock(form.roomCategorySlug) && (
-              <p className="mb-3 text-xs leading-relaxed text-cream-200/55">
+              <p className="mb-3 text-xs leading-relaxed text-cream-200/72">
                 Entire hotel will be closed for these dates. Room types will
                 not appear on /booking or /rooms for that stay.
               </p>
             )}
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Room category
                 <select
                   className={field}
@@ -304,7 +304,7 @@ export function AdminDateBlockingManager({
                 </select>
               </label>
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Physical room number (optional)
                 <select
                   className={field}
@@ -332,7 +332,7 @@ export function AdminDateBlockingManager({
                 </select>
               </label>
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Start date
                 <input
                   className={field}
@@ -344,7 +344,7 @@ export function AdminDateBlockingManager({
                 />
               </label>
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 End date
                 <input
                   className={field}
@@ -356,7 +356,7 @@ export function AdminDateBlockingManager({
                 />
               </label>
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Reason
                 <select
                   className={field}
@@ -376,7 +376,7 @@ export function AdminDateBlockingManager({
                 </select>
               </label>
 
-              <label className="grid gap-1 text-xs text-cream-200/60">
+              <label className="grid gap-1 text-xs text-cream-200/75">
                 Created by
                 <input
                   className={field}
@@ -389,7 +389,7 @@ export function AdminDateBlockingManager({
               </label>
             </div>
 
-            <label className="mt-3 grid gap-1 text-xs text-cream-200/60">
+            <label className="mt-3 grid gap-1 text-xs text-cream-200/75">
               Notes
               <textarea
                 className={`${field} h-24 w-full py-2`}
