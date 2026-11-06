@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { getDb } from "@/lib/db";
 
 export async function AdminModulePage({
@@ -31,7 +32,7 @@ export function AdminTable({
   empty,
 }: {
   headers: string[];
-  rows: string[][];
+  rows: ReactNode[][];
   empty: string;
 }) {
   if (!rows.length) {
@@ -58,7 +59,10 @@ export function AdminTable({
           {rows.map((row, index) => (
             <tr key={index} className="text-cream-200/80">
               {row.map((cell, cellIndex) => (
-                <td key={cellIndex} className="px-4 py-3 whitespace-nowrap">
+                <td
+                  key={cellIndex}
+                  className="max-w-[min(28rem,40vw)] px-4 py-3 align-top text-sm break-words whitespace-normal md:max-w-none md:whitespace-nowrap"
+                >
                   {cell}
                 </td>
               ))}

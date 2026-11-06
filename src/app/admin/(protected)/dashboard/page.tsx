@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getAdminDashboardStats } from "@/lib/admin/stats";
 import { formatCurrency } from "@/lib/utils";
 
@@ -27,6 +28,26 @@ function StatCard({
 
 export default async function AdminDashboardPage() {
   const stats = await getAdminDashboardStats();
+
+  const quickLinks: { label: string; href: string; hint: string }[] = [
+    {
+      label: "Backlink pages",
+      href: "/admin/backlink-pages",
+      hint: "All SEO /hotels/… URLs & snippet check",
+    },
+    { label: "Rooms", href: "/admin/rooms", hint: "Catalogue & publishing" },
+    {
+      label: "Inventory Manage",
+      href: "/admin/inventory-manage",
+      hint: "Nightly allotment & rates",
+    },
+    {
+      label: "Online bookings",
+      href: "/admin/online-bookings",
+      hint: "Reservations",
+    },
+    { label: "Articles", href: "/admin/articles", hint: "Blog & content" },
+  ];
 
   const cards = [
     { label: "Today's Booking", value: String(stats.todaysBookings) },
@@ -77,6 +98,26 @@ export default async function AdminDashboardPage() {
           occupancy and guest inquiries.
         </p>
       </div>
+
+      <nav
+        aria-label="Quick admin categories"
+        className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+      >
+        {quickLinks.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.03] p-4 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.08)] transition hover:border-[#D9B46B]/35"
+          >
+            <p className="text-[10px] font-semibold tracking-[0.22em] text-[#D9B46B] uppercase">
+              {item.label}
+            </p>
+            <p className="mt-2 text-xs leading-snug text-cream-200/68 group-hover:text-cream-200/85">
+              {item.hint}
+            </p>
+          </Link>
+        ))}
+      </nav>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
