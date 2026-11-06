@@ -54,6 +54,9 @@ export function AdminInventoryManage({
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
   const [bulkInventory, setBulkInventory] = useState(0);
+  /** If both set, Apply/Clear use this range instead of visible Start + Days. */
+  const [bulkStartDate, setBulkStartDate] = useState("");
+  const [bulkEndDate, setBulkEndDate] = useState("");
 
   const fromRef = useRef(from);
   const daysRef = useRef(days);
@@ -133,8 +136,41 @@ export function AdminInventoryManage({
     [load]
   );
 
+  function resolveBulkDateRange():
+    | { ok: true; startDate: string; endDate: string }
+    | { ok: false; message: string } {
+    const a = bulkStartDate.trim();
+    const b = bulkEndDate.trim();
+    if (!a && !b) {
+      return {
+        ok: true,
+        startDate: from,
+        endDate: shiftDate(from, days - 1),
+      };
+    }
+    if (!a || !b) {
+      return {
+        ok: false,
+        message:
+          "Set both “Apply from” and “Apply to”, or leave both blank to use the visible range (Start + Days).",
+      };
+    }
+    if (a > b) {
+      return {
+        ok: false,
+        message: "Apply from must be on or before Apply to.",
+      };
+    }
+    return { ok: true, startDate: a, endDate: b };
+  }
+
   async function applyRange() {
-    const endDate = shiftDate(from, days - 1);
+    const range = resolveBulkDateRange();
+    if (!range.ok) {
+      setError(range.message);
+      return;
+    }
+    const { startDate, endDate } = range;
     setSaving("bulk");
     setError("");
     try {
@@ -144,7 +180,7 @@ export function AdminInventoryManage({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           slug: tab === "all" ? "__ALL__" : tab,
-          startDate: from,
+          startDate,
           endDate,
           inventory: bulkInventory,
         }),
@@ -162,7 +198,12 @@ export function AdminInventoryManage({
   }
 
   async function clearOverridesInRange() {
-    const endDate = shiftDate(from, days - 1);
+    const range = resolveBulkDateRange();
+    if (!range.ok) {
+      setError(range.message);
+      return;
+    }
+    const { startDate, endDate } = range;
     setSaving("bulk-clear");
     setError("");
     try {
@@ -172,7 +213,7 @@ export function AdminInventoryManage({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           slug: tab === "all" ? "__ALL__" : tab,
-          startDate: from,
+          startDate,
           endDate,
           clearOverrides: true,
         }),
@@ -349,7 +390,9 @@ export function AdminInventoryManage({
 
       <div className="flex flex-wrap items-end gap-3 px-6 pb-4">
         <label className="grid gap-1 text-[11px] font-medium text-[#4A4238]">
-          Set inventory for visible dates
+          {tab === "all"
+            ? "Set inventory (all categories)"
+            : "Set inventory (this category only)"}
           <input
             type="number"
             min={0}
@@ -360,6 +403,37 @@ export function AdminInventoryManage({
             }
           />
         </label>
+        <div className="flex flex-wrap gap-2 rounded-xl border border-[#E6DED0] bg-white/80 px-3 py-2">
+          <label className="grid gap-1 text-[10px] font-medium text-[#4A4238]">
+            Apply from
+            <input
+              type="date"
+              className="h-9 rounded-lg border border-[#E6DED0] bg-white px-2 text-xs"
+              value={bulkStartDate}
+              onChange={(e) => setBulkStartDate(e.target.value)}
+              title="Optional: bulk apply/clear between these dates"
+            />
+          </label>
+          <label className="grid gap-1 text-[10px] font-medium text-[#4A4238]">
+            Apply to
+            <input
+              type="date"
+              className="h-9 rounded-lg border border-[#E6DED0] bg-white px-2 text-xs"
+              value={bulkEndDate}
+              onChange={(e) => setBulkEndDate(e.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              setBulkStartDate("");
+              setBulkEndDate("");
+            }}
+            className="self-end rounded-lg border border-[#E6DED0] bg-[#FBF7F1] px-2 py-1.5 text-[10px] font-semibold text-[#4A4238]"
+          >
+            Use visible range
+          </button>
+        </div>
         <button
           type="button"
           disabled={saving === "bulk" || saving === "bulk-clear"}
@@ -370,7 +444,7 @@ export function AdminInventoryManage({
             ? "Saving…"
             : tab === "all"
               ? "Apply to all rooms"
-              : "Apply to this room"}
+              : "Apply to this category"}
         </button>
         <button
           type="button"
@@ -382,12 +456,13 @@ export function AdminInventoryManage({
             ? "Clearing…"
             : tab === "all"
               ? "Clear overrides (all rooms)"
-              : "Clear overrides (this room)"}
+              : "Clear overrides (this category)"}
         </button>
-        <p className="text-xs text-[#5C5248]">
-          Apply / Clear use the range: Start date for exactly Days nights (e.g.
-          Start Nov 13 and Days 4 → Nov 13–16 only). All rooms updates every
-          category in the grid for that range.
+        <p className="max-w-xl text-xs text-[#5C5248]">
+          Pick one category tab to change only that room type. Leave Apply
+          from/to empty to use the visible grid (Start + Days). Or set both
+          (e.g. Nov 1–15), Apply, then change the range (e.g. Nov 16–30) and
+          Apply again. Single cells still auto-save when you type.
         </p>
       </div>
 
