@@ -17,6 +17,7 @@ import {
 } from "@/content/rooms";
 import { buildMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
+import { getAvailableCapacity } from "@/lib/admin/availability";
 import { formatCurrency } from "@/lib/utils";
 
 type PageProps = {
@@ -64,6 +65,16 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
   if (!room) notFound();
 
   const related = await getRelatedRooms(room.slug);
+
+  // Reflect this stay's real allotment (admin per-night inventory), not the
+  // static catalogue number, so "Sold Out" matches what checkout enforces.
+  const stayCapacity =
+    query.checkIn && query.checkOut
+      ? await getAvailableCapacity(room.slug, query.checkIn, query.checkOut)
+      : null;
+  const roomWithStay = stayCapacity
+    ? { ...room, inventory: stayCapacity.available }
+    : room;
 
   const facts = [
     { Icon: Expand, label: "Size", value: room.size },
@@ -134,7 +145,7 @@ export default async function RoomDetailPage({ params, searchParams }: PageProps
           {/* Reserve card — directly under gallery on mobile; sticky sidebar on desktop */}
           <div className="order-2 lg:order-none lg:col-span-1 lg:col-start-3 lg:row-span-2 lg:row-start-1 lg:self-start">
             <StickyRoomBookingCard
-              room={room}
+              room={roomWithStay}
               initial={{
                 checkIn: query.checkIn,
                 checkOut: query.checkOut,

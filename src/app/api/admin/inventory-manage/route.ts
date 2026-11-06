@@ -4,9 +4,10 @@ import { getAdminSession } from "@/lib/admin/auth";
 import { assertSameOrigin } from "@/lib/orbit/auth";
 import { getRooms } from "@/content/rooms";
 import {
-  applyInventoryRange,
-  clearInventoryRange,
+  applyInventoryRangeBulk,
+  clearInventoryRangeBulk,
   deleteInventoryNight,
+  getInventoryManageDay,
   getInventoryManageGrid,
   resolveInventoryViewRange,
   toUtcDate,
@@ -63,6 +64,9 @@ export async function PATCH(request: Request) {
       { status: 400 }
     );
   }
+  if (Number.isNaN(+toUtcDate(date))) {
+    return NextResponse.json({ error: "Invalid date." }, { status: 400 });
+  }
 
   const numberOrUndef = (value: unknown) => {
     if (value === undefined) return undefined;
@@ -75,26 +79,52 @@ export async function PATCH(request: Request) {
   const inventoryValue = hasInventoryKey
     ? numberOrUndef(body?.inventory)
     : undefined;
+  const rate1Adult = numberOrUndef(body?.rate1Adult);
+  const rate2Adult = numberOrUndef(body?.rate2Adult);
+  const rate3Adult = numberOrUndef(body?.rate3Adult);
+  const hasRateKey =
+    rate1Adult !== undefined ||
+    rate2Adult !== undefined ||
+    rate3Adult !== undefined;
+
+  if (!hasInventoryKey && !hasRateKey) {
+    return NextResponse.json(
+      { error: "Nothing to save — send inventory or a rate." },
+      { status: 400 }
+    );
+  }
+  if (
+    hasInventoryKey &&
+    inventoryValue !== null &&
+    inventoryValue !== undefined &&
+    inventoryValue < 0
+  ) {
+    return NextResponse.json(
+      { error: "Inventory cannot be negative." },
+      { status: 400 }
+    );
+  }
 
   try {
     if (hasInventoryKey && inventoryValue === null) {
       await deleteInventoryNight(slug, date);
-      revalidateBookingSurfaces();
-      return NextResponse.json({ ok: true });
+    } else {
+      await upsertInventoryNight({
+        slug,
+        date,
+        inventory:
+          inventoryValue === undefined || inventoryValue === null
+            ? undefined
+            : Math.max(0, Math.floor(inventoryValue)),
+        rate1Adult,
+        rate2Adult,
+        rate3Adult,
+      });
     }
-    await upsertInventoryNight({
-      slug,
-      date,
-      inventory:
-        inventoryValue === undefined || inventoryValue === null
-          ? undefined
-          : Math.max(0, Math.floor(inventoryValue)),
-      rate1Adult: numberOrUndef(body?.rate1Adult),
-      rate2Adult: numberOrUndef(body?.rate2Adult),
-      rate3Adult: numberOrUndef(body?.rate3Adult),
-    });
     revalidateBookingSurfaces();
-    return NextResponse.json({ ok: true });
+    // Echo the authoritative stored night so the cell can confirm the save.
+    const day = await getInventoryManageDay(slug, date);
+    return NextResponse.json({ ok: true, day });
   } catch (error) {
     return NextResponse.json(
       {
@@ -114,58 +144,45 @@ export async function POST(request: Request) {
     string,
     unknown
   > | null;
-  const startDate = typeof body?.startDate === "string" ? body.startDate : "";
-  const endDate = typeof body?.endDate === "string" ? body.endDate : startDate;
+  const startDate = typeof body?.startDate === "string" ? body.startDate.trim() : "";
+  const endDate =
+    typeof body?.endDate === "string" && body.endDate.trim()
+      ? body.endDate.trim()
+      : startDate;
   const clearOverrides = body?.clearOverrides === true;
   const inventoryRaw = Number(body?.inventory);
-  const inventory =
-    clearOverrides || !Number.isFinite(inventoryRaw)
-      ? 0
-      : Math.max(0, Math.floor(inventoryRaw));
+  if (!clearOverrides && !Number.isFinite(inventoryRaw)) {
+    return NextResponse.json(
+      { error: "Enter an inventory value to apply." },
+      { status: 400 }
+    );
+  }
+  const inventory = clearOverrides
+    ? 0
+    : Math.max(0, Math.floor(inventoryRaw));
   if (!startDate || Number.isNaN(+toUtcDate(startDate))) {
     return NextResponse.json(
       { error: "A valid date range is required." },
       { status: 400 }
     );
   }
+  if (Number.isNaN(+toUtcDate(endDate))) {
+    return NextResponse.json({ error: "Invalid end date." }, { status: 400 });
+  }
 
-  const slugs =
-    body?.slug === "__ALL__" || body?.slug === "all"
-      ? (await getRooms())
-          .filter((room) => room.published !== false)
-          .map((room) => room.slug)
-      : typeof body?.slug === "string" && body.slug.trim()
-        ? [body.slug.trim()]
-        : [];
-  if (
-    (body?.slug === "__ALL__" || body?.slug === "all") &&
-    !slugs.length
-  ) {
-    const fallbacks = (await getMarloRoomCategories()).map((item) => item.slug);
-    if (fallbacks.length) {
-      if (clearOverrides) {
-        let updated = 0;
-        for (const slug of fallbacks) {
-          updated += await clearInventoryRange({
-            slug,
-            startDate,
-            endDate,
-          });
-        }
-        revalidateBookingSurfaces();
-        return NextResponse.json({ ok: true, updated });
-      }
-      for (const slug of fallbacks) {
-        await applyInventoryRange({
-          slug,
-          startDate,
-          endDate,
-          inventory,
-        });
-      }
-      revalidateBookingSurfaces();
-      return NextResponse.json({ ok: true, updated: fallbacks.length });
+  const requestedAll = body?.slug === "__ALL__" || body?.slug === "all";
+  let slugs: string[];
+  if (requestedAll) {
+    slugs = (await getRooms())
+      .filter((room) => room.published !== false)
+      .map((room) => room.slug);
+    if (!slugs.length) {
+      slugs = (await getMarloRoomCategories()).map((item) => item.slug);
     }
+  } else {
+    slugs = typeof body?.slug === "string" && body.slug.trim()
+      ? [body.slug.trim()]
+      : [];
   }
   if (!slugs.length) {
     return NextResponse.json(
@@ -176,28 +193,29 @@ export async function POST(request: Request) {
 
   try {
     if (clearOverrides) {
-      let updated = 0;
-      for (const slug of slugs) {
-        updated += await clearInventoryRange({
-          slug,
-          startDate,
-          endDate,
-        });
-      }
-      revalidateBookingSurfaces();
-      return NextResponse.json({ ok: true, updated });
-    }
-    let updated = 0;
-    for (const slug of slugs) {
-      updated += await applyInventoryRange({
-        slug,
+      const updated = await clearInventoryRangeBulk({
+        slugs,
         startDate,
         endDate,
-        inventory,
       });
+      revalidateBookingSurfaces();
+      return NextResponse.json({ ok: true, updated, categories: slugs.length });
     }
+    const updated = await applyInventoryRangeBulk({
+      slugs,
+      startDate,
+      endDate,
+      inventory,
+    });
     revalidateBookingSurfaces();
-    return NextResponse.json({ ok: true, updated });
+    return NextResponse.json({
+      ok: true,
+      updated,
+      categories: slugs.length,
+      inventory,
+      startDate,
+      endDate,
+    });
   } catch (error) {
     return NextResponse.json(
       {

@@ -13,9 +13,11 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
-    // Quality 100 is allowed so Orbit can request original-faithful delivery
-    // for hero and above-the-fold imagery via next/image quality={100}.
-    qualities: [75, 85, 90, 95, 100],
+    // Next 15 throws when a `quality` prop is not listed here, which crashed
+    // room cards and several homepage sections. Keep every value the
+    // components actually use (80, 82 catalogue/gallery; 85 sections; 90–100
+    // hero and above-the-fold imagery).
+    qualities: [75, 80, 82, 85, 90, 95, 100],
     remotePatterns: [
       {
         protocol: "https",

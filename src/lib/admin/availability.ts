@@ -208,6 +208,27 @@ export async function getAvailableCapacity(
   return { capacity, booked, blocked, available };
 }
 
+/**
+ * Rooms whose displayed inventory/availability reflect the admin's per-night
+ * allotment for this stay (not just the static catalogue number).
+ */
+export async function withStayInventory<T extends { slug: string; inventory: number }>(
+  rooms: T[],
+  checkIn: string,
+  checkOut: string
+): Promise<(T & { inventory: number; availableNow: number })[]> {
+  return Promise.all(
+    rooms.map(async (room) => {
+      const capacity = await getAvailableCapacity(room.slug, checkIn, checkOut);
+      return {
+        ...room,
+        inventory: capacity.available,
+        availableNow: capacity.available,
+      };
+    })
+  );
+}
+
 /** Physical rooms selectable for offline booking on given dates. */
 export async function getAvailablePhysicalRooms(
   slug: string,

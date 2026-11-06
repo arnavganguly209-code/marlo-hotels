@@ -5,7 +5,7 @@ import { Stagger, StaggerItem } from "@/components/ui/reveal";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { RoomsSearchBar } from "@/components/rooms/rooms-search-bar";
 import { getRooms } from "@/content/rooms";
-import { filterRoomsOpenForStay } from "@/lib/admin/availability";
+import { filterRoomsOpenForStay, withStayInventory } from "@/lib/admin/availability";
 import {
   occupancyIndexFromRooms,
   resolvePartySearch,
@@ -91,8 +91,13 @@ export default async function RoomsPage({ searchParams }: PageProps) {
           search.rooms
         )
       : occupancyMatched;
-  const rooms = matched.filter((room) => room.category === "room");
-  const suites = matched.filter((room) => room.category === "suite");
+  // Show the nights' real allotment so the website never advertises stock the
+  // admin has set to 0 for those dates.
+  const withInventory = search
+    ? await withStayInventory(matched, search.checkIn, search.checkOut)
+    : matched;
+  const rooms = withInventory.filter((room) => room.category === "room");
+  const suites = withInventory.filter((room) => room.category === "suite");
 
   return (
     <>

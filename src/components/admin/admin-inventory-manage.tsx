@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bell, Check, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
 import type {
   InventoryManageCategory,
+  InventoryManageDay,
   InventoryManageGrid,
 } from "@/lib/admin/inventory-nights-public";
 import {
@@ -41,6 +42,27 @@ function statusTone(available: number, inventory: number) {
   return "open";
 }
 
+/** Replace one night in the grid without a full reload (keeps typing intact). */
+function patchGridDay(
+  grid: InventoryManageGrid,
+  slug: string,
+  day: InventoryManageDay
+): InventoryManageGrid {
+  return {
+    ...grid,
+    categories: grid.categories.map((category) =>
+      category.slug === slug
+        ? {
+            ...category,
+            days: category.days.map((item) =>
+              item.date === day.date ? day : item
+            ),
+          }
+        : category
+    ),
+  };
+}
+
 export function AdminInventoryManage({
   initialGrid,
 }: {
@@ -51,10 +73,12 @@ export function AdminInventoryManage({
   const [from, setFrom] = useState(initialGrid.from);
   const [days, setDays] = useState(initialGrid.days);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState("");
+  const [pendingCells, setPendingCells] = useState<Record<string, true>>({});
+  const [bulkBusy, setBulkBusy] = useState<"" | "apply" | "clear">("");
   const [error, setError] = useState("");
-  const [bulkInventory, setBulkInventory] = useState(0);
-  /** If both set, Apply/Clear use this range instead of visible Start + Days. */
+  const [notice, setNotice] = useState("");
+  /** Empty = nothing typed yet, so Apply never writes an accidental 0. */
+  const [bulkInventory, setBulkInventory] = useState("");
   const [bulkStartDate, setBulkStartDate] = useState("");
   const [bulkEndDate, setBulkEndDate] = useState("");
 
@@ -87,7 +111,7 @@ export function AdminInventoryManage({
     try {
       const response = await fetch(
         `/api/admin/inventory-manage?from=${encodeURIComponent(useFrom)}&days=${useDays}`,
-        { credentials: "same-origin" }
+        { credentials: "same-origin", cache: "no-store" }
       );
       const result = (await response.json()) as {
         grid?: InventoryManageGrid;
@@ -113,7 +137,7 @@ export function AdminInventoryManage({
       patch: Record<string, number | null | undefined>
     ) => {
       const key = `${slug}:${date}`;
-      setSaving(key);
+      setPendingCells((current) => ({ ...current, [key]: true }));
       setError("");
       try {
         const response = await fetch("/api/admin/inventory-manage", {
@@ -124,13 +148,25 @@ export function AdminInventoryManage({
         });
         const result = (await response.json().catch(() => ({}))) as {
           error?: string;
+          day?: InventoryManageDay;
         };
         if (!response.ok) throw new Error(result.error || "Save failed");
-        await load(fromRef.current, daysRef.current);
+        if (result.day) {
+          const saved = result.day;
+          setGrid((current) => patchGridDay(current, slug, saved));
+        }
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Save failed");
+        setError(
+          `${cause instanceof Error ? cause.message : "Save failed"} — the cell was reverted.`
+        );
+        // Re-read the truth so a failed cell never looks saved.
+        void load();
       } finally {
-        setSaving("");
+        setPendingCells((current) => {
+          const next = { ...current };
+          delete next[key];
+          return next;
+        });
       }
     },
     [load]
@@ -156,13 +192,15 @@ export function AdminInventoryManage({
       };
     }
     if (a > b) {
-      return {
-        ok: false,
-        message: "Apply from must be on or before Apply to.",
-      };
+      return { ok: false, message: "Apply from must be on or before Apply to." };
     }
     return { ok: true, startDate: a, endDate: b };
   }
+
+  const resolvedRange = resolveBulkDateRange();
+  const rangeLabel = resolvedRange.ok
+    ? `${resolvedRange.startDate} → ${resolvedRange.endDate}`
+    : "invalid range";
 
   async function applyRange() {
     const range = resolveBulkDateRange();
@@ -170,9 +208,20 @@ export function AdminInventoryManage({
       setError(range.message);
       return;
     }
-    const { startDate, endDate } = range;
-    setSaving("bulk");
+    const trimmed = bulkInventory.trim();
+    if (trimmed === "") {
+      setError("Type how many rooms to set before applying.");
+      return;
+    }
+    const inventory = Math.max(0, Math.floor(Number(trimmed)));
+    if (!Number.isFinite(inventory)) {
+      setError("Enter a whole number of rooms (0 or more).");
+      return;
+    }
+
+    setBulkBusy("apply");
     setError("");
+    setNotice("");
     try {
       const response = await fetch("/api/admin/inventory-manage", {
         method: "POST",
@@ -180,20 +229,27 @@ export function AdminInventoryManage({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           slug: tab === "all" ? "__ALL__" : tab,
-          startDate,
-          endDate,
-          inventory: bulkInventory,
+          startDate: range.startDate,
+          endDate: range.endDate,
+          inventory,
         }),
       });
       const result = (await response.json().catch(() => ({}))) as {
         error?: string;
+        updated?: number;
+        categories?: number;
       };
       if (!response.ok) throw new Error(result.error || "Could not apply");
       await load(fromRef.current, daysRef.current);
+      setNotice(
+        `Saved ${inventory} room${inventory === 1 ? "" : "s"} for ${
+          result.categories ?? visible.length
+        } categor${(result.categories ?? visible.length) === 1 ? "y" : "ies"} · ${rangeLabel}.`
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not apply");
     } finally {
-      setSaving("");
+      setBulkBusy("");
     }
   }
 
@@ -203,9 +259,9 @@ export function AdminInventoryManage({
       setError(range.message);
       return;
     }
-    const { startDate, endDate } = range;
-    setSaving("bulk-clear");
+    setBulkBusy("clear");
     setError("");
+    setNotice("");
     try {
       const response = await fetch("/api/admin/inventory-manage", {
         method: "POST",
@@ -213,20 +269,26 @@ export function AdminInventoryManage({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           slug: tab === "all" ? "__ALL__" : tab,
-          startDate,
-          endDate,
+          startDate: range.startDate,
+          endDate: range.endDate,
           clearOverrides: true,
         }),
       });
       const result = (await response.json().catch(() => ({}))) as {
         error?: string;
+        updated?: number;
       };
       if (!response.ok) throw new Error(result.error || "Could not clear");
       await load(fromRef.current, daysRef.current);
+      setNotice(
+        `Cleared ${result.updated ?? 0} night override${
+          (result.updated ?? 0) === 1 ? "" : "s"
+        } · ${rangeLabel}. Base room inventory applies again.`
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not clear");
     } finally {
-      setSaving("");
+      setBulkBusy("");
     }
   }
 
@@ -245,11 +307,10 @@ export function AdminInventoryManage({
             Management Console
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-[#4A4238]">
-            Edits save automatically shortly after you stop typing. Clear an
-            inventory cell to revert that night to the room&apos;s default from
-            Admin → Rooms. Inventory − booked = available. Checkout uses each
-            night&apos;s 1 / 2 /
-            3 adult rate, plus extra-child charges after included children.
+            Every cell saves on its own — type a number and it is stored for that
+            category and that night. Inventory − booked = available, and this is
+            exactly what the website sells. Clear an inventory cell to fall back
+            to the room&apos;s default from Admin → Rooms. A saved 0 stays 0.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -396,11 +457,10 @@ export function AdminInventoryManage({
           <input
             type="number"
             min={0}
+            placeholder="e.g. 3"
             className="h-10 w-28 rounded-xl border border-[#E6DED0] bg-white px-3"
             value={bulkInventory}
-            onChange={(event) =>
-              setBulkInventory(Math.max(0, Math.floor(Number(event.target.value) || 0)))
-            }
+            onChange={(event) => setBulkInventory(event.target.value)}
           />
         </label>
         <div className="flex flex-wrap gap-2 rounded-xl border border-[#E6DED0] bg-white/80 px-3 py-2">
@@ -436,11 +496,11 @@ export function AdminInventoryManage({
         </div>
         <button
           type="button"
-          disabled={saving === "bulk" || saving === "bulk-clear"}
+          disabled={bulkBusy !== ""}
           onClick={() => void applyRange()}
           className="h-10 rounded-xl bg-[#C4A36A] px-4 text-xs font-semibold text-[#2C241C] disabled:opacity-50"
         >
-          {saving === "bulk"
+          {bulkBusy === "apply"
             ? "Saving…"
             : tab === "all"
               ? "Apply to all rooms"
@@ -448,27 +508,31 @@ export function AdminInventoryManage({
         </button>
         <button
           type="button"
-          disabled={saving === "bulk" || saving === "bulk-clear"}
+          disabled={bulkBusy !== ""}
           onClick={() => void clearOverridesInRange()}
           className="h-10 rounded-xl border border-[#D4C4B0] bg-white px-4 text-xs font-semibold text-[#4A4238] disabled:opacity-50"
         >
-          {saving === "bulk-clear"
+          {bulkBusy === "clear"
             ? "Clearing…"
             : tab === "all"
               ? "Clear overrides (all rooms)"
               : "Clear overrides (this category)"}
         </button>
         <p className="max-w-xl text-xs text-[#5C5248]">
-          Pick one category tab to change only that room type. Leave Apply
-          from/to empty to use the visible grid (Start + Days). Or set both
-          (e.g. Nov 1–15), Apply, then change the range (e.g. Nov 16–30) and
-          Apply again. Single cells still auto-save when you type.
+          Bulk target: <strong>{rangeLabel}</strong>. Pick one category tab to
+          change only that room type. Single cells still auto-save when you type.
+          A value of 0 closes those nights on the website.
         </p>
       </div>
 
       {error ? (
         <p className="mx-6 mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+        </p>
+      ) : null}
+      {notice ? (
+        <p className="mx-6 mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          {notice}
         </p>
       ) : null}
 
@@ -478,7 +542,7 @@ export function AdminInventoryManage({
             key={category.slug}
             category={category}
             dates={grid.dates}
-            saving={saving}
+            pendingCells={pendingCells}
             onSave={saveCell}
           />
         ))}
@@ -531,12 +595,12 @@ type FieldKey = "inventory" | "rate1Adult" | "rate2Adult" | "rate3Adult";
 function CategoryTable({
   category,
   dates,
-  saving,
+  pendingCells,
   onSave,
 }: {
   category: InventoryManageCategory;
   dates: InventoryManageGrid["dates"];
-  saving: string;
+  pendingCells: Record<string, true>;
   onSave: (
     slug: string,
     date: string,
@@ -648,7 +712,7 @@ function CategoryTable({
                       : row.kind === "rate2"
                         ? day.rate2Adult
                         : day.rate3Adult;
-                const busy = saving.startsWith(`${category.slug}:${day.date}`);
+                const busy = Boolean(pendingCells[`${category.slug}:${day.date}`]);
                 return (
                   <td
                     key={day.date}
@@ -665,7 +729,8 @@ function CategoryTable({
                       field={field}
                       committed={value}
                       isInventory={row.kind === "inventory"}
-                      disabled={busy || (row.kind === "inventory" && day.blocked)}
+                      busy={busy}
+                      disabled={row.kind === "inventory" && day.blocked}
                       onCommit={onSave}
                     />
                   </td>
@@ -679,12 +744,21 @@ function CategoryTable({
   );
 }
 
+const COMMIT_DELAY_MS = 500;
+
+/**
+ * Cell editor that keeps the user's text while a save is in flight.
+ * - Stays editable during save (never swallows keystrokes).
+ * - Commits after a short pause and on blur/Enter.
+ * - Only adopts server values it did not just send.
+ */
 function DebouncedNumberInput({
   slug,
   date,
   field,
   committed,
   isInventory,
+  busy,
   disabled,
   onCommit,
 }: {
@@ -693,6 +767,7 @@ function DebouncedNumberInput({
   field: FieldKey;
   committed: number;
   isInventory: boolean;
+  busy: boolean;
   disabled: boolean;
   onCommit: (
     slug: string,
@@ -701,53 +776,113 @@ function DebouncedNumberInput({
   ) => void;
 }) {
   const [text, setText] = useState(() => String(committed));
-  const lastServer = useRef(committed);
-  const lastSent = useRef<number | "clear">(committed);
+  /** Last value confirmed by (or sent to) the server. */
+  const sentRef = useRef<number | "clear">(committed);
+  const serverRef = useRef(committed);
+  const timerRef = useRef<number | null>(null);
+  const [savedFlash, setSavedFlash] = useState(false);
 
+  // Adopt external changes (bulk apply, reload, another tab).
   useEffect(() => {
-    if (committed !== lastServer.current) {
-      lastServer.current = committed;
-      lastSent.current = committed;
+    if (committed === serverRef.current) return;
+    serverRef.current = committed;
+    if (committed !== sentRef.current) {
+      sentRef.current = committed;
       setText(String(committed));
     }
   }, [committed, slug, date, field]);
 
   useEffect(() => {
-    if (disabled) return;
+    setText(String(committed));
+    sentRef.current = committed;
+    serverRef.current = committed;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, date, field]);
 
-    if (isInventory && text.trim() === "") {
-      if (lastSent.current === "clear") return;
-      const timer = window.setTimeout(() => {
-        lastSent.current = "clear";
-        onCommit(slug, date, { inventory: null });
-      }, 450);
-      return () => window.clearTimeout(timer);
-    }
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    };
+  }, []);
 
-    const parsed = Number(text);
-    if (!Number.isFinite(parsed)) return;
-    const next = isInventory
-      ? Math.max(0, Math.floor(parsed))
-      : Number(parsed.toFixed(2));
-    if (typeof lastSent.current === "number" && next === lastSent.current) return;
-
-    const timer = window.setTimeout(() => {
-      lastSent.current = next;
-      onCommit(slug, date, { [field]: next });
-    }, 450);
-
+  useEffect(() => {
+    if (!savedFlash) return;
+    const timer = window.setTimeout(() => setSavedFlash(false), 900);
     return () => window.clearTimeout(timer);
-  }, [text, slug, date, field, isInventory, onCommit, disabled]);
+  }, [savedFlash]);
+
+  const commit = useCallback(
+    (raw: string) => {
+      if (disabled) return;
+      if (isInventory && raw.trim() === "") {
+        if (sentRef.current === "clear") return;
+        sentRef.current = "clear";
+        onCommit(slug, date, { inventory: null });
+        setSavedFlash(true);
+        return;
+      }
+      const parsed = Number(raw);
+      if (raw.trim() === "" || !Number.isFinite(parsed)) return;
+      const next = isInventory
+        ? Math.max(0, Math.floor(parsed))
+        : Number(parsed.toFixed(2));
+      if (typeof sentRef.current === "number" && next === sentRef.current) return;
+      sentRef.current = next;
+      onCommit(slug, date, { [field]: next });
+      setSavedFlash(true);
+    },
+    [disabled, field, isInventory, onCommit, slug, date]
+  );
+
+  const schedule = useCallback(
+    (raw: string) => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+      timerRef.current = window.setTimeout(() => {
+        timerRef.current = null;
+        commit(raw);
+      }, COMMIT_DELAY_MS);
+    },
+    [commit]
+  );
 
   return (
-    <input
-      type="number"
-      min={0}
-      step={isInventory ? 1 : 0.01}
-      value={text}
-      disabled={disabled}
-      onChange={(e) => setText(e.target.value)}
-      className="h-8 w-16 rounded-md border border-transparent bg-transparent text-center outline-none hover:border-[#E6DED0] focus:border-[#C4A36A] focus:bg-white disabled:opacity-60"
-    />
+    <span className="relative inline-flex items-center">
+      <input
+        type="number"
+        min={0}
+        step={isInventory ? 1 : 0.01}
+        value={text}
+        disabled={disabled}
+        inputMode="numeric"
+        onChange={(event) => {
+          setText(event.target.value);
+          schedule(event.target.value);
+        }}
+        onBlur={(event) => {
+          if (timerRef.current !== null) {
+            window.clearTimeout(timerRef.current);
+            timerRef.current = null;
+          }
+          commit(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          }
+        }}
+        className={cn(
+          "h-8 w-16 rounded-md border bg-transparent text-center tabular-nums outline-none hover:border-[#E6DED0] focus:border-[#C4A36A] focus:bg-white disabled:opacity-60",
+          busy
+            ? "border-[#C4A36A]"
+            : savedFlash
+              ? "border-emerald-400"
+              : "border-transparent",
+          isInventory && Number(text) === 0 ? "text-red-600" : undefined
+        )}
+      />
+      {busy ? (
+        <Loader2 className="pointer-events-none absolute -right-1 size-3 animate-spin text-[#C4A36A]" />
+      ) : null}
+    </span>
   );
 }

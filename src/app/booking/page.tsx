@@ -10,7 +10,7 @@ import {
   resolvePartySearch,
 } from "@/lib/booking-occupancy";
 import { getRooms } from "@/content/rooms";
-import { filterRoomsOpenForStay } from "@/lib/admin/availability";
+import { filterRoomsOpenForStay, withStayInventory } from "@/lib/admin/availability";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildMetadata({
@@ -90,8 +90,11 @@ export default async function BookingPage({ searchParams }: PageProps) {
           search.rooms
         )
       : occupancyMatched;
-  const rooms = matched.filter((room) => room.category === "room");
-  const suites = matched.filter((room) => room.category === "suite");
+  const withInventory = search
+    ? await withStayInventory(matched, search.checkIn, search.checkOut)
+    : matched;
+  const rooms = withInventory.filter((room) => room.category === "room");
+  const suites = withInventory.filter((room) => room.category === "suite");
 
   return (
     <>

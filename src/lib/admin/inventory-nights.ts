@@ -218,50 +218,7 @@ export async function getInventoryManageGrid(
   for (const room of rooms.sort(
     (a, b) => (a.sortOrder || 100) - (b.sortOrder || 100)
   )) {
-    const defaults = defaultAdultRates(room);
-    const [allotments, booked, closed] = await Promise.all([
-      getNightlyAllotments(room.slug, dates),
-      getBookedByNight(room.slug, dates),
-      closedNightsForCategory(room.slug, dates),
-    ]);
-    const days: InventoryManageDay[] = dates.map((date) => {
-      const override = allotments.get(date);
-      const blocked = closed.has(date);
-      const inventory = blocked
-        ? 0
-        : override
-          ? Math.max(0, override.inventory)
-          : Math.max(0, room.inventory);
-      const bookedCount = booked.get(date) || 0;
-      const available = Math.max(0, inventory - bookedCount);
-      const weekday = WEEKDAYS[toUtcDate(date).getUTCDay()];
-      return {
-        date,
-        weekday,
-        day: Number(date.slice(8, 10)),
-        inventory,
-        booked: bookedCount,
-        available,
-        blocked,
-        rate1Adult: override?.rate1Adult ?? defaults.rate1Adult,
-        rate2Adult: override?.rate2Adult ?? defaults.rate2Adult,
-        rate3Adult: override?.rate3Adult ?? defaults.rate3Adult,
-        inventoryOverridden: Boolean(override) || blocked,
-        rateOverridden: Boolean(
-          override &&
-            (override.rate1Adult !== null ||
-              override.rate2Adult !== null ||
-              override.rate3Adult !== null)
-        ),
-      };
-    });
-    categories.push({
-      slug: room.slug,
-      name: room.name,
-      roomType: room.category === "suite" ? "Suite" : "Room",
-      baseInventory: Math.max(0, room.inventory),
-      days,
-    });
+    categories.push(await buildInventoryCategory(room, dates));
   }
 
   return {
@@ -275,6 +232,74 @@ export async function getInventoryManageGrid(
     categories,
   };
 }
+
+/** Build one category row (inventory, booked, blocked, rates) for given nights. */
+async function buildInventoryCategory(
+  room: InventoryManageRoom,
+  dates: string[]
+): Promise<InventoryManageCategory> {
+  const defaults = defaultAdultRates(room);
+  const [allotments, booked, closed] = await Promise.all([
+    getNightlyAllotments(room.slug, dates),
+    getBookedByNight(room.slug, dates),
+    closedNightsForCategory(room.slug, dates),
+  ]);
+  const days: InventoryManageDay[] = dates.map((date) => {
+    const override = allotments.get(date);
+    const blocked = closed.has(date);
+    const inventory = blocked
+      ? 0
+      : override
+        ? Math.max(0, override.inventory)
+        : Math.max(0, room.inventory);
+    const bookedCount = booked.get(date) || 0;
+    const available = Math.max(0, inventory - bookedCount);
+    const weekday = WEEKDAYS[toUtcDate(date).getUTCDay()];
+    return {
+      date,
+      weekday,
+      day: Number(date.slice(8, 10)),
+      inventory,
+      booked: bookedCount,
+      available,
+      blocked,
+      rate1Adult: override?.rate1Adult ?? defaults.rate1Adult,
+      rate2Adult: override?.rate2Adult ?? defaults.rate2Adult,
+      rate3Adult: override?.rate3Adult ?? defaults.rate3Adult,
+      inventoryOverridden: Boolean(override) || blocked,
+      rateOverridden: Boolean(
+        override &&
+          (override.rate1Adult !== null ||
+            override.rate2Adult !== null ||
+            override.rate3Adult !== null)
+      ),
+    };
+  });
+  return {
+    slug: room.slug,
+    name: room.name,
+    roomType: room.category === "suite" ? "Suite" : "Room",
+    baseInventory: Math.max(0, room.inventory),
+    days,
+  };
+}
+
+/**
+ * Authoritative re-read of a single night after a cell save, so the admin grid
+ * shows exactly what the database (and therefore the website) will use.
+ */
+export async function getInventoryManageDay(slug: string, date: string) {
+  const room = await getRoomBySlug(slug);
+  if (!room || room.published === false) {
+    throw new Error("Unknown Marlo room category.");
+  }
+  const [category] = await Promise.all([
+    buildInventoryCategory(room, [dateKey(date)]),
+  ]);
+  return category.days[0];
+}
+
+type InventoryManageRoom = Awaited<ReturnType<typeof getRooms>>[number];
 
 /** Remove nightly row so inventory and rates fall back to room catalogue defaults. */
 export async function deleteInventoryNight(slug: string, date: string) {
@@ -345,47 +370,122 @@ export async function upsertInventoryNight(input: {
   });
 }
 
+/**
+ * Inclusive UTC night keys for a closed date range.
+ * One place for range validation so bulk writes cannot silently no-op.
+ */
+export function inventoryRangeNights(startDate: string, endDate: string) {
+  const startMs = toUtcDate(startDate).getTime();
+  const endMs = toUtcDate(endDate).getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+    throw new Error("A valid start and end date are required.");
+  }
+  if (endMs < startMs) {
+    throw new Error("End date must be on or after start date.");
+  }
+  const nightCount = Math.round((endMs - startMs) / 86_400_000) + 1;
+  return enumerateCalendarDays(startDate, nightCount);
+}
+
+/** Published category slugs only — unknown/draft rooms throw a clear error. */
+async function publishedSlugsFor(slugs: string[]) {
+  const wanted = Array.from(new Set(slugs.map((slug) => slug.trim()).filter(Boolean)));
+  if (!wanted.length) throw new Error("Choose a room category or All rooms.");
+  const rooms = (await getRooms()).filter((room) => room.published !== false);
+  const published = new Set(rooms.map((room) => room.slug));
+  const invalid = wanted.filter((slug) => !published.has(slug));
+  if (invalid.length) {
+    throw new Error(`Unknown Marlo room category: ${invalid.join(", ")}`);
+  }
+  return wanted;
+}
+
+/**
+ * Write one inventory value across a date range for one or more categories.
+ * Bulk (2 queries total) instead of an upsert per night — the old per-night
+ * loop multiplied by every category timed out on production, so "Apply to all
+ * rooms" appeared to do nothing.
+ */
+export async function applyInventoryRangeBulk(input: {
+  slugs: string[];
+  startDate: string;
+  endDate: string;
+  inventory: number;
+}) {
+  const db = getDb();
+  if (!db) throw new Error("Database unavailable");
+  const slugs = await publishedSlugsFor(input.slugs);
+  const nights = inventoryRangeNights(input.startDate, input.endDate);
+  const inventory = Math.max(0, Math.floor(input.inventory));
+  const dates = nights.map((night) => toUtcDate(night));
+
+  await db.$transaction([
+    db.roomInventoryNight.createMany({
+      data: slugs.flatMap((roomCategorySlug) =>
+        dates.map((date) => ({ roomCategorySlug, date, inventory }))
+      ),
+      skipDuplicates: true,
+    }),
+    db.roomInventoryNight.updateMany({
+      where: {
+        roomCategorySlug: { in: slugs },
+        date: { in: dates },
+      },
+      data: { inventory },
+    }),
+  ]);
+
+  return slugs.length * nights.length;
+}
+
+/** Delete nightly overrides in range so each night uses catalogue defaults. */
+export async function clearInventoryRangeBulk(input: {
+  slugs: string[];
+  startDate: string;
+  endDate: string;
+}) {
+  const db = getDb();
+  if (!db) throw new Error("Database unavailable");
+  const slugs = await publishedSlugsFor(input.slugs);
+  const nights = inventoryRangeNights(input.startDate, input.endDate);
+  const dates = nights.map((night) => toUtcDate(night));
+
+  const result = await db.roomInventoryNight.deleteMany({
+    where: {
+      roomCategorySlug: { in: slugs },
+      date: { in: dates },
+    },
+  });
+  return result.count;
+}
+
 export async function applyInventoryRange(input: {
   slug: string;
   startDate: string;
   endDate: string;
   inventory: number;
 }) {
-  const startMs = toUtcDate(input.startDate).getTime();
-  const endMs = toUtcDate(input.endDate).getTime();
-  if (endMs < startMs) {
-    throw new Error("End date must be on or after start date.");
-  }
-  const nightCount =
-    Math.round((endMs - startMs) / 86_400_000) + 1;
-  const nights = enumerateCalendarDays(input.startDate, nightCount);
-  for (const date of nights) {
-    await upsertInventoryNight({
-      slug: input.slug,
-      date,
-      inventory: input.inventory,
-    });
-  }
+  const nights = inventoryRangeNights(input.startDate, input.endDate);
+  await applyInventoryRangeBulk({
+    slugs: [input.slug],
+    startDate: input.startDate,
+    endDate: input.endDate,
+    inventory: input.inventory,
+  });
   return nights.length;
 }
 
-/** Delete nightly overrides in range so each night uses catalogue defaults. */
 export async function clearInventoryRange(input: {
   slug: string;
   startDate: string;
   endDate: string;
 }) {
-  const startMs = toUtcDate(input.startDate).getTime();
-  const endMs = toUtcDate(input.endDate).getTime();
-  if (endMs < startMs) {
-    throw new Error("End date must be on or after start date.");
-  }
-  const nightCount =
-    Math.round((endMs - startMs) / 86_400_000) + 1;
-  const nights = enumerateCalendarDays(input.startDate, nightCount);
-  for (const date of nights) {
-    await deleteInventoryNight(input.slug, date);
-  }
+  const nights = inventoryRangeNights(input.startDate, input.endDate);
+  await clearInventoryRangeBulk({
+    slugs: [input.slug],
+    startDate: input.startDate,
+    endDate: input.endDate,
+  });
   return nights.length;
 }
 
